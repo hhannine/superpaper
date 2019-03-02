@@ -1,4 +1,4 @@
-![](https://i.imgur.com/jf5ISgX.jpg)
+![](https://raw.githubusercontent.com/hhannine/Superpaper/branch-resources/readme-banner.jpg)
 
 # Superpaper
 
