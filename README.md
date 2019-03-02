@@ -23,7 +23,7 @@ if support for your system of choice is not built-in.
 
 ### Features
 - Set a single image across all displays
-- Set separate images on displays
+- Set different image on every display
 - Pixel per inch correction: span an image flawlessly across displays of different shapes and sizes!
 - Bezel correction
 - Manual pixel offsets for fine-tuning
@@ -40,16 +40,7 @@ In the above banner shot you can see the PPI and bezel corrections in action.
 					  
 ## Installation
 
-### A. Portable releases
-For Linux and Windows there are portable stand-alone packages available under releases.
-These should work on a download-and-run basis without additional requirements. Look for the executable "superpaper" (Linux) or "superpaper.exe" (Windows).
-
-Standalone package for Mac OS X is unfortunately unavailable at this time, but you may look at the alternative way to run Superpaper.
-
-
-### B. Run the script
-
-You may download the "Superpaper" folder from master and run the script in it as is. However you then need to take care of the dependencies.
+You may either clone the repository or just download the script, examples and resources, and run the script. However you then need to take care of its dependencies.
 
 #### Requirements
 - Python 3.5+
@@ -67,6 +58,7 @@ pip3 install screeninfo
 pip3 install wxpython
 pip3 install system_hotkey
 ```
+System_hotkey has dependencies: on linux it needs "xcffib" and "xpybutil" modules, and on Windows it needs "pywin32".
 Note that on Linux wxpython needs to be built and even though it is automated via pip, it has its own [dependencies](https://wxpython.org/blog/2017-08-17-builds-for-linux-with-pip/index.html), 
 and the build may take some time.
 However for a few Centos, Debian, Fedora and Ubuntu flavors there are pre-built wheels so on those you can look at the [instructions](https://wxpython.org/pages/downloads/) to install wxpython
@@ -137,8 +129,18 @@ logging=false
 use hotkeys=true
 next wallpaper hotkey=control+super+w
 pause wallpaper hotkey=control+super+shift+p
+set_command=gsettings set ...
 ```
 Up to three modifiers are supported for a hotkey: "control", "shift", "super" (the win-key) and "alt".
+
+Set_command accepts a user defined one liner to set the wallpaper if your system is not supported. One can tell Superpaper to use feh by setting
+```
+set_command=feh
+```
+In the custom command, replace /path/to/img.jpg by '{image}', i.e. for example with the Gnome command:
+```
+gsettings set org.gnome.desktop.background picture-uri file://{image}
+```
 
 Lastly, if the included white tray icon doesn't go nicely with your rice, included are a couple of alternative colorations and you may even replace the default icon with anything you wish.
 Just overwrite the "default_icon.png".
@@ -152,6 +154,7 @@ Superpaper supports the following arguments, display specific values are given s
 - "--inches", optional, expects display diagonals in inches to compute PPIs
 - "--bezels", optional, expects display bezels in millimeters
 - "--offsets", optional, if image alignment isn't quite right you can add additional offset in pixels
+- "--command", optional, user can pass a custom command to set the wallpaper.
 
 An example using all corrections to set a single spanned image:
 ```
@@ -160,6 +163,11 @@ superpaper.py --setimages /path/to/img.png --inches 27 25 --bezels 9.5 7.0 --off
 Offsets are given as a pair-wise list of "horizontal_offset vertical_offset" starting from the first monitor on the left, 
 i.e. in the above example the display on the left is given no additional offset (0 0) and the display on 
 the right is given a horizontal offset to the right by 40px and a vertical offset of 100px up (40 -100).
+
+In the custom command, replace /path/to/img.jpg by '{image}', i.e. for example with the Gnome command:
+```
+gsettings set org.gnome.desktop.background picture-uri file://{image}
+```
 
 The resulting image is saved into Superpaper/temp/ and then set as the wallpaper.
 
@@ -171,10 +179,10 @@ The resulting image is saved into Superpaper/temp/ and then set as the wallpaper
 As a workaround to set separate images on the monitors you could set the monitors to be side by side virtually on the desktop, though this is understandably fairly undesirable.
 
 ### Linux
-- None at this time.
+- At shutdown OS might nag that the app is not responding just before the app exits.
 
 ### Windows
-- A rare and hard to reproduce issue where setting the wallpaper fails and leads to a black wallpaper.
+- A rare and hard to reproduce issue where setting the wallpaper fails and leads to a black wallpaper. Might be related to source image properties.
 
 ### Mac OS X
 - It is not known whether this works at all. If you try it, tell me how it goes!
