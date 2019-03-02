@@ -193,7 +193,12 @@ As a workaround to set separate images on the monitors you could set the monitor
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
 ## Support
-If you find Superpaper useful please consider supporting its development by buying me a coffee: [Link](here)
+If you find Superpaper useful please consider supporting its development by buying me a coffee: [PayPal][paypal-superpaper].
+
+[![Support via PayPal][paypal-button]][paypal-superpaper]
+
+[paypal-button]: https://raw.githubusercontent.com/hhannine/Superpaper/branch-resources/paypal-github.svg
+[paypal-superpaper]: https://www.paypal.me/superpaper/5
 
 
 ## License
