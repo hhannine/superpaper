@@ -7,11 +7,11 @@ import math
 import random
 import sys
 import argparse
-import signal
+import logging
 from time import sleep
 from pathlib import Path
 from operator import itemgetter
-from threading import Timer
+from threading import Timer, Lock
 
 from PIL import Image
 from screeninfo import get_monitors
@@ -41,6 +41,7 @@ dipslayOffsetArray = []
 DEBUG = False
 VERBOSE = False
 LOGGING = False
+g_logger = logging.getLogger()
 nDisplays = 0
 canvasSize = [0, 0]
 PATH = os.path.dirname(os.path.realpath(__file__))
@@ -50,11 +51,23 @@ if not os.path.isdir(TEMP_PATH):
 PROFILES_PATH = PATH + "/profiles/"
 TRAY_TOOLTIP = "Superpaper"
 TRAY_ICON = PATH + "/resources/default.png"
-VERSION_STRING = "0.8"
+VERSION_STRING = "0.8.5"
 g_set_command_string = ""
+g_wallpaper_change_lock = Lock()
+
+if DEBUG and not LOGGING:
+    g_logger.setLevel(logging.DEBUG)
+    consoleHandler = logging.StreamHandler()
+    g_logger.addHandler(consoleHandler)
 
 if LOGGING:
-    sys.stdout = open(PATH + "/log.txt", "w")
+    DEBUG = True
+    # sys.stdout = open(PATH + "/log.txt", "w")
+    g_logger.setLevel(logging.INFO)
+    fileHandler = logging.FileHandler("{0}/{1}.log".format(PATH, "log"), mode="w")
+    g_logger.addHandler(fileHandler)
+    consoleHandler = logging.StreamHandler()
+    g_logger.addHandler(consoleHandler)
 
 
 class GeneralSettingsData(object):
@@ -80,31 +93,34 @@ class GeneralSettingsData(object):
                             self.logging = True
                             LOGGING = True
                             DEBUG = True
-                            sys.stdout = open(PATH + "/log.txt", "w")
+                            g_logger.setLevel(logging.INFO)
+                            fileHandler = logging.FileHandler("{0}/{1}.log".format(PATH, "log"), mode="w")
+                            g_logger.addHandler(fileHandler)
+                            consoleHandler = logging.StreamHandler()
+                            g_logger.addHandler(consoleHandler)
+                            g_logger.info("Enabled logging to file.")
                     elif words[0] == "use hotkeys":
                         wrds1 = words[1].strip().lower()
                         if wrds1 == "true":
                             self.use_hotkeys = True
                         else:
-                            if DEBUG:
-                                print("(", words[1], ")")
                             self.use_hotkeys = False
                         if DEBUG:
-                            print("use_hotkeys:", self.use_hotkeys)
+                            g_logger.info("use_hotkeys: {}".format(self.use_hotkeys))
                     elif words[0] == "next wallpaper hotkey":
                         binding_strings = words[1].strip().split("+")
                         self.hkBinding_next = tuple(binding_strings)
                         if DEBUG:
-                            print("hkBinding_next:", self.hkBinding_next)
+                            g_logger.info("hkBinding_next: {}".format(self.hkBinding_next))
                     elif words[0] == "pause wallpaper hotkey":
                         binding_strings = words[1].strip().split("+")
                         self.hkBinding_pause = tuple(binding_strings)
                         if DEBUG:
-                            print("hkBinding_pause:", self.hkBinding_pause)
+                            g_logger.info("hkBinding_pause: {}".format(self.hkBinding_pause))
                     elif words[0] == "set_command":
                         g_set_command_string = words[1].strip()
                     else:
-                        print("Exception: Unkown general setting: ", words[0])
+                        g_logger.info("Exception: Unkown general setting: {}".format(words[0]))
             finally:
                 f.close()
         else:
@@ -159,15 +175,13 @@ class ProfileData(object):
                     elif wrd1 == "multi":
                         self.spanmode = wrd1
                     else:
-                        print("Exception: unknown spanmode: ", words[1],
-                                " in profile: ", self.name)
+                        g_logger.info("Exception: unknown spanmode: {} \
+                                in profile: {}".format(words[1],self.name))
                 elif words[0] == "slideshow":
                     wrd1 = words[1].strip().lower()
                     if wrd1 == "true":
                         self.slideshow = True
                     else:
-                        if DEBUG:
-                            print("(", words[1], ")")
                         self.slideshow = False
                 elif words[0] == "delay":
                     self.delayArray = []
@@ -181,8 +195,8 @@ class ProfileData(object):
                     elif wrd1 == "sort":
                         self.sortmode = wrd1
                     else:
-                        print("Exception: unknown sortmode: ", words[1],
-                                " in profile: ", self.name)
+                        g_logger.info("Exception: unknown sortmode: {} \
+                                in profile: {}".format(words[1],self.name))
                 elif words[0] == "offsets":
                     # Use PPI mode algorithm to do cuts.
                     # Defaults assume uniform pixel density
@@ -221,22 +235,22 @@ class ProfileData(object):
                     binding_strings = words[1].strip().split("+")
                     self.hkBinding = tuple(binding_strings)
                     if DEBUG:
-                        print("hkBinding:", self.hkBinding)
+                        g_logger.info("hkBinding:{}".format(self.hkBinding))
                 elif words[0].startswith("display"):
                     paths = words[1].rstrip().split(";")
                     self.pathsArray.append(paths)
                 else:
-                    print("Unknown setting line in config:", line)
+                    g_logger.info("Unknown setting line in config: {}".format(line))
         finally:
             f.close()
 
     def computePPIs(self, inches):
         if len(inches) < nDisplays:
-            print("Exception: Number of read display diagonals was: "
-                + len(inches)
+            g_logger.info("Exception: Number of read display diagonals was: "
+                + str(len(inches))
                 + ", but the number of displays was found to be: "
-                + nDisplays)
-            print("Falling back to no PPI correction.")
+                + str(nDisplays))
+            g_logger.info("Falling back to no PPI correction.")
             self.ppimode = False
             return nDisplays * [100]
         else:
@@ -246,7 +260,7 @@ class ProfileData(object):
                 px_per_inch = diagonal_px / inch
                 ppiArray.append(px_per_inch)
             if DEBUG:
-                print("Computed PPIs: ", ppiArray)
+                g_logger.info("Computed PPIs: {}".format(ppiArray))
             return ppiArray
 
     def computeRelativeDensities(self):
@@ -254,7 +268,7 @@ class ProfileData(object):
         for ppi in self.ppiArray:
             self.ppiArrayRelDensity.append((1 / max_density) * float(ppi))
         if DEBUG:
-            print("relative pixel densities: ", self.ppiArrayRelDensity)
+            g_logger.info("relative pixel densities: {}".format(self.ppiArrayRelDensity))
 
     def computeBezelPixelOffsets(self):
         inch_per_mm = 1.0 / 25.4
@@ -262,11 +276,10 @@ class ProfileData(object):
             self.bezel_px_offsets.append(
                 round(float(ppi) * inch_per_mm * bez_mm))
         if DEBUG:
-            print(
-                "Bezel px calculation: initial manual offset: ",
-                self.manual_offsets,
-                "and bezel pixels: ",
-                self.bezel_px_offsets)
+            g_logger.info(
+                "Bezel px calculation: initial manual offset: {}, \
+                and bezel pixels: {}".format(self.manual_offsets,
+                                        self.bezel_px_offsets))
         # Add these horizontal offsets to manual_offsets:
         # Avoid offsetting the leftmost anchored display i==0
         # -1 since last display doesn't have a next display.
@@ -276,9 +289,9 @@ class ProfileData(object):
                                           self.bezel_px_offsets[i], 
                                           self.manual_offsets[i + 1][1])
         if DEBUG:
-            print(
-                "Bezel px calculation: resulting combined manual offset: ",
-                self.manual_offsets)
+            g_logger.info(
+                "Bezel px calculation: resulting combined manual offset: {}"
+                .format(self.manual_offsets))
 
     def NextWallpaperFiles(self):
         return self.file_handler.Next_Wallpaper_Files()
@@ -316,7 +329,7 @@ class ProfileData(object):
                 else:
                     # reload all files by initializing
                     if DEBUG:
-                        print("Ran into an invalid file, reinitializing..")
+                        g_logger.info("Ran into an invalid file, reinitializing..")
                     self.__init__(self.pathsArray, self.sortmode)
                     files = self.Next_Wallpaper_Files()
                     break
@@ -347,18 +360,18 @@ class ProfileData(object):
             def ArrangeList(self):
                 if self.sortmode == "shuffle":
                     if DEBUG and VERBOSE:
-                        print("Shuffling files: ", self.files)
+                        g_logger.info("Shuffling files: {}".format(self.files))
                     random.shuffle(self.files)
                     if DEBUG and VERBOSE:
-                        print("Shuffled files: ", self.files)
+                        g_logger.info("Shuffled files: {}".format(self.files))
                 elif self.sortmode == "alphabetical":
                     self.files.sort()
                     if DEBUG and VERBOSE:
-                        print("Sorted files: ", self.files)
+                        g_logger.info("Sorted files: {}".format(self.files))
                 else:
-                    print(
-                        "ImageList.ArrangeList: unknown sortmode: ",
-                        self.sortmode)
+                    g_logger.info(
+                        "ImageList.ArrangeList: unknown sortmode: {}"
+                        .format(self.sortmode))
 
 
 class CLIProfileData(ProfileData):
@@ -456,23 +469,24 @@ def getDisplayData():
     topmost_offset = min(dipslayOffsetArray, key=itemgetter(1))[1]
     if topmost_offset < 0:
         if DEBUG:
-            print("Negative topmost display offset: ", dipslayOffsetArray)
+            g_logger.info("Negative topmost display offset: {}".format(dipslayOffsetArray))
         translate_offsets = []
         for offset in dipslayOffsetArray:
             translate_offsets.append((offset[0], offset[1] - topmost_offset))
         dipslayOffsetArray = translate_offsets
         if DEBUG:
-            print("Sanitised display offset: ", dipslayOffsetArray)
+            g_logger.info("Sanitised display offset: {}".format(dipslayOffsetArray))
     if DEBUG:
-        print(
-            "getDisplayData output: nDisplays = ",
+        g_logger.info(
+            "getDisplayData output: nDisplays = {}, {}, {}"
+            .format(
             nDisplays,
             resolutionArray,
-            dipslayOffsetArray)
-        print(res, offset)
+            dipslayOffsetArray))
+        g_logger.info("{}, {}".format(res, offset))
 
 
-def computeCanvas(res_array):
+def computeCanvas_deprec(res_array):
     # Assuming horizontal display arrangement.
     canvasWidth = 0
     for res in res_array:
@@ -482,15 +496,28 @@ def computeCanvas(res_array):
     else:
         # Tallest display sets the canvas height with single row.
         canvasHeight = max(res_array, key=itemgetter(1))[1]
-    if DEBUG:
-        print(
-            "res_array: ",
-            res_array,
-            "canvasWidth: ",
-            canvasWidth,
-            ", canvasHeight: ",
-            canvasHeight)
     canvasSize = [canvasWidth, canvasHeight]
+    if DEBUG:
+        g_logger.info("Canvas size: {}".format(canvasSize))
+    return canvasSize
+
+def computeCanvas(res_array, offset_array):
+    # Take the subtractions of right-most right - left-most left
+    # and bottom-most bottom - top-most top (=0).
+    leftmost = 0
+    topmost = 0
+    right_edges = []
+    bottom_edges = []
+    for res, off in zip(res_array, offset_array):
+        right_edges.append(off[0]+res[0])
+        bottom_edges.append(off[1]+res[1])
+    # Right-most edge.
+    rightmost = max(right_edges)
+    # Bottom-most edge.
+    bottommost = max(bottom_edges)
+    canvasSize = [rightmost - leftmost, bottommost - topmost]
+    if DEBUG:
+        g_logger.info("Canvas size: {}".format(canvasSize))
     return canvasSize
 
 
@@ -527,7 +554,7 @@ def resizeToFill(img, res):
         # crop vertically to target height
         extraH = newSize[1] - res[1]
         if extraH < 0:
-            print(
+            g_logger.info(
                 "Error with cropping vertically, resized image \
                 wasn't taller than target size.")
             return -1
@@ -545,11 +572,9 @@ def resizeToFill(img, res):
         if cropped_res.size == res:
             return cropped_res
         else:
-            print(
-                "Error: result image not of correct size. Cropped size: ",
-                cropped_res.size,
-                " desired size: ",
-                res)
+            g_logger.info(
+                "Error: result image not of correct size. crp:{}, res:{}"
+                .format(cropped_res.size,res))
             return -1
     elif imgRatio >= trgtRatio:      # img not tall enough / is too wide
         resizeFactor = res[1] / imgSize[1]
@@ -560,7 +585,7 @@ def resizeToFill(img, res):
         # crop horizontally to target width
         extraW = newSize[0] - res[0]
         if extraW < 0:
-            print(
+            g_logger.info(
                 "Error with cropping horizontally, resized image \
                 wasn't wider than target size.")
             return -1
@@ -578,11 +603,9 @@ def resizeToFill(img, res):
         if cropped_res.size == res:
             return cropped_res
         else:
-            print(
-                "Error: result image not of correct size. Cropped size: ",
-                cropped_res.size,
-                " desired size: ",
-                res)
+            g_logger.info(
+                "Error: result image not of correct size. crp:{}, res:{}"
+                .format(cropped_res.size,res))
             return -1
 
 
@@ -597,8 +620,9 @@ def get_all_centers(resarr_eff, manual_offsets):
     # from the top.
     center_standard_height = get_center(resarr_eff[0])[1]
     if len(manual_offsets) < len(resarr_eff):
-        print("get_all_centers: Not enough manual offsets: ", len(
-            manual_offsets), " for displays: ", len(resarr_eff))
+        g_logger.info("get_all_centers: Not enough manual offsets: \
+            {} for displays: {}" 
+            .format(len(manual_offsets),len(resarr_eff)))
     else:
         for i in range(len(resarr_eff)):
             horiz_radius = get_horizontal_radius(resarr_eff[i])
@@ -610,7 +634,7 @@ def get_all_centers(resarr_eff, manual_offsets):
             centers.append(center_with_respect_to_AnchorLeftTop)
             sum_widths += resarr_eff[i][0]
     if DEBUG:
-        print("centers: ", centers)
+        g_logger.info("centers: {}".format(centers))
     return centers
 
 
@@ -650,13 +674,13 @@ def computeCropTuples(resolutionArray_eff, manual_offsets):
     topmost = min(crop_tuples, key=itemgetter(1))[1]
     if leftmost is 0 and topmost is 0:
         if DEBUG:
-            print("crop_tuples: ", crop_tuples)
+            g_logger.info("crop_tuples: {}".format(crop_tuples))
         return crop_tuples  # [(left, up, right, bottom),...]
     else:
         crop_tuples_translated = translate_crops(
             crop_tuples, (leftmost, topmost))
         if DEBUG:
-            print("crop_tuples_translated: ", crop_tuples_translated)
+            g_logger.info("crop_tuples_translated: {}".format(crop_tuples_translated))
         return crop_tuples_translated  # [(left, up, right, bottom),...]
 
 
@@ -687,16 +711,10 @@ def computeWorkingCanvas(crop_tuples):
 def spanSingleImage(profile):
     file = profile.NextWallpaperFiles()[0]
     if DEBUG:
-        print(file)
+        g_logger.info(file)
     img = Image.open(file)
-    canvasTuple = tuple(computeCanvas(resolutionArray))
+    canvasTuple = tuple(computeCanvas(resolutionArray,dipslayOffsetArray))
     img_resize = resizeToFill(img, canvasTuple)
-    if DEBUG:
-        print(
-            "resized image to size: ",
-            img_resize.size,
-            " to fill canvas of size: ",
-            canvasTuple)
     outputfile = TEMP_PATH + profile.name + "-a.png"
     if os.path.isfile(outputfile):
         outputfile_old = outputfile
@@ -715,7 +733,7 @@ def spanSingleImage(profile):
 def spanSingleImagePPIcorrection(profile):
     file = profile.NextWallpaperFiles()[0]
     if DEBUG:
-        print(file)
+        g_logger.info(file)
     img = Image.open(file)
     resolutionArray_eff = computeResolutionArrayPPIcorrection(
         resolutionArray, profile.ppiArrayRelDensity)
@@ -732,12 +750,6 @@ def spanSingleImagePPIcorrection(profile):
     # offsets and the width of the combined eff widths + possible manual
     # offsets.
     img_workingsize = resizeToFill(img, canvasTuple_eff)
-    if DEBUG:
-        print(
-            "ppi_corr: resized image to size: ",
-            img_workingsize.size,
-            " to fill canvas of size: ",
-            canvasTuple_eff)
     # Simultaneously make crops at working size and then resize down to actual
     # resolution from resolutionArray as needed.
     for crop, res in zip(crop_tuples, resolutionArray):
@@ -749,7 +761,7 @@ def spanSingleImagePPIcorrection(profile):
             cropped_images.append(crop_img)
     # Combine crops to a single canvas of the size of the actual desktop
     # actual combined size of the display resolutions
-    canvasTuple_fin = tuple(computeCanvas(resolutionArray))
+    canvasTuple_fin = tuple(computeCanvas(resolutionArray,dipslayOffsetArray))
     combinedImage = Image.new("RGB", canvasTuple_fin, color=0)
     combinedImage.load()
     for i in range(len(cropped_images)):
@@ -771,12 +783,12 @@ def spanSingleImagePPIcorrection(profile):
 def setMultipleImages(profile):
     files = profile.NextWallpaperFiles()
     if DEBUG:
-        print(files)
+        g_logger.info(str(files))
     img_resized = []
     for file, res in zip(files, resolutionArray):
         image = Image.open(file)
         img_resized.append(resizeToFill(image, res))
-    canvasTuple = tuple(computeCanvas(resolutionArray))
+    canvasTuple = tuple(computeCanvas(resolutionArray,dipslayOffsetArray))
     combinedImage = Image.new("RGB", canvasTuple, color=0)
     combinedImage.load()
     for i in range(len(files)):
@@ -829,27 +841,28 @@ def setWallpaper(outputfile):
                     END"""
         subprocess.Popen(SCRIPT % outputfile, shell=True)
     else:
-        print("Unknown platform.system(): ", pltform)
+        g_logger.info("Unknown platform.system(): {}".format(pltform))
 
 
 def setWallpaper_linux(outputfile):
     file = "file://" + outputfile
     set_command = g_set_command_string
     if DEBUG:
-        print(file)
+        g_logger.info(file)
     # subprocess.run(["gsettings", "set", "org.cinnamon.desktop.background",
     # "picture-uri", file])  # Old working command for backup
 
     desk_env = os.environ.get("DESKTOP_SESSION")
     if DEBUG:
-        print("DESKTOP_SESSION is: '{env}'".format(env=desk_env))
+        g_logger.info("DESKTOP_SESSION is: '{env}'".format(env=desk_env))
 
     if set_command != "":
         if set_command == "feh":
-            subprocess.run("feh", " --bg-scale", "--no-xinerama", outputfile)
+            subprocess.run(["feh", "--bg-scale", "--no-xinerama", outputfile])
         else:
             os.system(set_command.format(image=outputfile))
-    elif desk_env in ["gnome", "gnome-wayland", "unity", "ubuntu"]:
+    elif desk_env in ["gnome", "gnome-wayland",
+                    "unity", "ubuntu", "pantheon"]:
         subprocess.run(["gsettings", "set",
                         "org.gnome.desktop.background", "picture-uri",
                         file])
@@ -863,42 +876,25 @@ def setWallpaper_linux(outputfile):
                         "org.mate.background",
                         "picture-filename",
                         outputfile])
-    elif desk_env in ["pantheon"]:
-        subprocess.run(["set-wallpaper", outputfile])
     elif desk_env in ["xfce", "xubuntu"]:
-        read_prop = subprocess.Popen(["xfconf-query",
-                                      "-c",
-                                      "xfce4-desktop",
-                                      "-p",
-                                      "/backdrop",
-                                      "-l"],
-                                     stdout=subprocess.PIPE)
-        props = read_prop.stdout.read().decode("utf-8").split("\n")
-        for prop in props:
-            if "last-image" in prop or "image-path" in prop:
-                os.system(
-                    "xfconf-query -c xfce4-desktop -p " +
-                    prop +
-                    " -s ''")
-                os.system(
-                    "xfconf-query -c xfce4-desktop -p " +
-                    prop +
-                    " -s '%s'" %
-                    outputfile)
-            if "image-show" in prop:
-                os.system(
-                    "xfconf-query -c xfce4-desktop -p " +
-                    prop +
-                    " -s 'true'")
+        xfce_actions(outputfile)
     elif desk_env in ["lubuntu", "Lubuntu"]:
-        subprocess.run("pcmanfm", "-w", outputfile)
+        try:
+            subprocess.run("pcmanfm", "-w", outputfile)
+        except:
+            try:
+                subprocess.run("pcmanfm-qt", "-w", outputfile)
+            except:
+                g_logger.info("Exception: failure to find either command \
+                    'pcmanfm' or 'pcmanfm-qt'. Exiting.")
+                sys.exit(1)
     elif desk_env in ["/usr/share/xsessions/plasma"]:
-        kde_is_a_very_special_de(outputfile)
+        kdeplasma_actions(outputfile)
     elif "i3" in desk_env:
-        subprocess.run("feh", " --bg-scale", "--no-xinerama", outputfile)
+        subprocess.run(["feh", "--bg-scale", "--no-xinerama", outputfile])
     else:
         if set_command == "":
-            print(
+            g_logger.info(
                 "Your DE could not be detected to set the wallpaper. \
                 You need to set the 'set_command' option in your \
                 settings file superpaper/general_settings")
@@ -907,16 +903,8 @@ def setWallpaper_linux(outputfile):
             os.system(set_command.format(image=outputfile))
 
 
-def kde_is_a_very_special_de(outputfile):
-    script = """
-var listDesktops = desktops();
-print (listDesktops);
-d = listDesktops[{index}];
-d.wallpaperPlugin = "org.kde.image";
-d.currentConfigGroup = Array("Wallpaper", "org.kde.image", "General");
-d.writeConfig("Image", "file://{filename}")
-"""
-    # outputfile needs to be split into monitor pieces since KDE is special
+def special_image_cropper(outputfile):
+    # file needs to be split into monitor pieces since KDE/XFCE are special
     img = Image.open(outputfile)
     outputname = os.path.splitext(outputfile)[0]
     img_names = []
@@ -928,10 +916,40 @@ d.writeConfig("Image", "file://{filename}")
         bottom = top + res[1]
         crop_tuple = (left, top, right, bottom)
         cropped_img = img.crop(crop_tuple)
-        fname = outputname + "-kde-" + str(id) + ".png"
+        fname = outputname + "-crop-" + str(id) + ".png"
         img_names.append(fname)
         cropped_img.save(fname, "PNG")
         id += 1
+    return img_names
+
+def remove_old_temp_files(outputfile):
+    opbase = os.path.basename(outputfile)
+    opname = os.path.splitext(opbase)[0]
+    oldfileid = ""
+    if "-a" in opname:
+        oldfileid = "-b"
+    elif "-b" in opname:
+        oldfileid = "-a"
+    else:
+        pass
+    if oldfileid:
+        # Must take care than only temps of current profile are deleted.
+        match_string = opname + "-crop"
+        for f in os.listdir(TEMP_PATH):
+            if match_string in f:
+                os.remove(os.path.join(TEMP_PATH, f))
+
+def kdeplasma_actions(outputfile):
+    script = """
+var listDesktops = desktops();
+g_logger.info (listDesktops);
+d = listDesktops[{index}];
+d.wallpaperPlugin = "org.kde.image";
+d.currentConfigGroup = Array("Wallpaper", "org.kde.image", "General");
+d.writeConfig("Image", "file://{filename}")
+"""
+    img_names = special_image_cropper(outputfile)
+
     sessionb = dbus.SessionBus()
     plasmaInterface = dbus.Interface(
         sessionb.get_object(
@@ -943,42 +961,69 @@ d.writeConfig("Image", "file://{filename}")
             script.format(index=idx, filename=fname))
 
     # Delete old images after new ones are set
-    if "-a" in outputfile:
-        oldfileid = "-b"
-    elif "-b" in outputfile:
-        oldfileid = "-a"
-    else:
-        print("problem identifying output file parity.")
-        sys.exit(1)
-    for f in os.listdir(TEMP_PATH):
-        if oldfileid in f:
-            os.remove(os.path.join(TEMP_PATH, f))
+    remove_old_temp_files(outputfile)
+
+
+def xfce_actions(outputfile):
+    monitors = []
+    for m in range(nDisplays):
+        monitors.append("monitor" + str(m))
+    img_names = special_image_cropper(outputfile)
+
+    read_prop = subprocess.Popen(["xfconf-query",
+                                    "-c",
+                                    "xfce4-desktop",
+                                    "-p",
+                                    "/backdrop",
+                                    "-l"],
+                                    stdout=subprocess.PIPE)
+    props = read_prop.stdout.read().decode("utf-8").split("\n")
+    for prop in props:
+        for monitor, imgname in zip(monitors,img_names):
+            if monitor in prop:
+                if "last-image" in prop or "image-path" in prop:
+                    os.system(
+                        "xfconf-query -c xfce4-desktop -p "
+                        + prop
+                        + " -s ''")
+                    os.system(
+                        "xfconf-query -c xfce4-desktop -p "
+                        + prop
+                        + " -s '%s'" % imgname)
+                if "image-show" in prop:
+                    os.system(
+                        "xfconf-query -c xfce4-desktop -p "
+                        + prop
+                        + " -s 'true'")
+    # Delete old images after new ones are set
+    remove_old_temp_files(outputfile)
 
 
 def changeWallpaperJob(profile):
-    if profile.spanmode.startswith("single") and profile.ppimode is False:
-        spanSingleImage(profile)
-    elif profile.spanmode.startswith("single") and profile.ppimode is True:
-        spanSingleImagePPIcorrection(profile)
-    elif profile.spanmode.startswith("multi"):
-        setMultipleImages(profile)
-    else:
-        print("Unkown profile spanmode: (", profile.spanmode, ")")
+    with g_wallpaper_change_lock:
+        if profile.spanmode.startswith("single") and profile.ppimode is False:
+            spanSingleImage(profile)
+        elif profile.spanmode.startswith("single") and profile.ppimode is True:
+            spanSingleImagePPIcorrection(profile)
+        elif profile.spanmode.startswith("multi"):
+            setMultipleImages(profile)
+        else:
+            g_logger.info("Unkown profile spanmode: {}".format(profile.spanmode))
 
 
 def runProfileJob(profile):
     repeating_timer = None
     getDisplayData()  # Check here so new profile has fresh data.
     if DEBUG:
-        print("running profile job with profile: ", profile.name)
+        g_logger.info("running profile job with profile: {}".format(profile.name))
 
     if not profile.slideshow:
         if DEBUG:
-            print("Running a one-off wallpaper change.")
+            g_logger.info("Running a one-off wallpaper change.")
         changeWallpaperJob(profile)
     elif profile.slideshow:
         if DEBUG:
-            print("Running wallpaper slideshow.")
+            g_logger.info("Running wallpaper slideshow.")
         changeWallpaperJob(profile)
         repeating_timer = RepeatedTimer(
             profile.delayArray[0], changeWallpaperJob, profile)
@@ -986,17 +1031,19 @@ def runProfileJob(profile):
 
 
 def quickProfileJob(profile):
-    # Look for old temp image:
-    files = [i for i in os.listdir(TEMP_PATH)
-            if os.path.isfile(os.path.join(TEMP_PATH,i))
-            and i.startswith(profile.name + "-")]
-    if DEBUG:
-        print("quickswitch file lookup: ", files)
-    if files:
-        setWallpaper(os.path.join(TEMP_PATH, files[0]))
-    else:
+    with g_wallpaper_change_lock:
+        # Look for old temp image:
+        files = [i for i in os.listdir(TEMP_PATH)
+                if os.path.isfile(os.path.join(TEMP_PATH,i))
+                and i.startswith(profile.name + "-")]
         if DEBUG:
-            print("Old file for quickswitch was not found.", files)
+            g_logger.info("quickswitch file lookup: {}".format(files))
+        if files:
+            setWallpaper(os.path.join(TEMP_PATH, files[0]))
+        else:
+            pass
+            if DEBUG:
+                g_logger.info("Old file for quickswitch was not found. {}".format(files))
 
 
 # Profile and data handling
@@ -1006,7 +1053,7 @@ def listProfiles():
     for i in range(len(files)):
         profile_list.append(ProfileData(PROFILES_PATH + files[i]))
         if DEBUG:
-            print("Listed profile:", profile_list[i].name)
+            g_logger.info("Listed profile: {}".format(profile_list[i].name))
     return profile_list
 
 
@@ -1021,9 +1068,16 @@ def readActiveProfile():
                 line.rstrip("\r\n")
                 profname = line
                 if DEBUG:
-                    print("read profile name from 'running_profile':", 
-                        profname)
-                profile = ProfileData(PROFILES_PATH + profname + ".txt")
+                    g_logger.info("read profile name from 'running_profile':{}"
+                        .format(profname))
+                prof_file = PROFILES_PATH + profname + ".profile"
+                if os.path.isfile(prof_file):
+                    profile = ProfileData(prof_file)
+                else:
+                    profile = None
+                    g_logger.info("Exception: Previously run profile configuration \
+                        file not found. Is the filename same as the \
+                        profile name: {pname}?".format(pname=profname))
         finally:
             f.close()
     else:
@@ -1060,21 +1114,22 @@ try:
             self.set_icon(TRAY_ICON)
             self.Bind(wx.adv.EVT_TASKBAR_LEFT_DOWN, self.on_left_down)
             # profile initialization
+            self.jobLock = Lock()
             getDisplayData()
             self.repeating_timer = None
             self.pause_item = None
             self.is_paused = False
             if DEBUG:
-                print("START Listing profiles for menu.")
+                g_logger.info("START Listing profiles for menu.")
             self.list_of_profiles = listProfiles()
             if DEBUG:
-                print("END Listing profiles for menu.")
+                g_logger.info("END Listing profiles for menu.")
             # Should now return an object if a previous profile was written or
             # None if no previous data was found
             self.active_profile = readActiveProfile()
             self.start_prev_profile(self.active_profile)
             if self.active_profile is None:
-                print("Starting up the first profile found.")
+                g_logger.info("Starting up the first profile found.")
                 self.start_profile(wx.EVT_MENU, self.list_of_profiles[0])
 
             if g_settings.use_hotkeys is True:
@@ -1082,10 +1137,9 @@ try:
                     # import keyboard # https://github.com/boppreh/keyboard
                     from system_hotkey import SystemHotkey
                 except Exception as e:
-                    print(
+                    g_logger.info(
                         "Could not import keyboard hotkey hook library, \
-                        hotkeys will not work. Exception: ",
-                        e)
+                        hotkeys will not work. Exception: {}".format(e))
                 try:
                     # Keyboard bindings: https://github.com/boppreh/keyboard
                     #
@@ -1112,30 +1166,30 @@ try:
                     # register profile specific bindings
                     for profile in self.list_of_profiles:
                         if DEBUG:
-                            print(
-                                "Registering binding: ",
-                                profile.hkBinding,
-                                "for profile: ",
-                                profile.name)
+                            g_logger.info(
+                                "Registering binding: \
+                                {} for profile: {}"
+                                .format(profile.hkBinding,profile.name))
                         if (profile.hkBinding is not None and 
                                 profile.hkBinding not in seen_binding):
                             hk2.register(profile.hkBinding, profile)
                             seen_binding.add(profile.hkBinding)
                         elif profile.hkBinding in seen_binding:
-                            print(
-                                "Could not register hotkey:",
-                                profile.hkBinding,
-                                "for profile:",
-                                profile.name,
-                                ". It is already registered elsewhere.")
+                            g_logger.info(
+                                "Could not register hotkey: \
+                                {}\
+                                for profile: \
+                                {}\
+                                . It is already registered elsewhere."
+                                .format(profile.hkBinding,profile.name))
                 except Exception as e:
                     if DEBUG:
-                        print("Coulnd't register hotkeys, exception:")
-                        print(e)
+                        g_logger.info("Coulnd't register hotkeys, exception:")
+                        g_logger.info(e)
 
         def profile_consumer(self, event, hotkey, profile):
             if DEBUG:
-                print("Profile object is: ", profile)
+                g_logger.info("Profile object is: {}".format(profile))
             self.start_profile(wx.EVT_MENU, profile[0][0])
 
         def CreatePopupMenu(self):
@@ -1160,7 +1214,7 @@ try:
             self.SetIcon(icon, TRAY_TOOLTIP)
 
         def on_left_down(self, *event):
-            print('Tray icon was left-clicked.')
+            g_logger.info('Tray icon was left-clicked.')
 
         def open_config(self, event):
             if platform.system() == "Windows":
@@ -1183,76 +1237,79 @@ try:
             self.list_of_profiles = listProfiles()
 
         def start_prev_profile(self, profile):
-            if profile is None:
-                print("No previous profile was found.")
-            else:
-                self.repeating_timer = runProfileJob(profile)
+            with self.jobLock:
+                if profile is None:
+                    g_logger.info("No previous profile was found.")
+                else:
+                    self.repeating_timer = runProfileJob(profile)
 
         def start_profile(self, event, profile):
-            if DEBUG:
-                print("Start profile: ", profile.name)
-            if profile is None:
-                print(
-                    "start_profile: profile is None. \
-                    Do you have any profiles in /profiles?")
-            elif self.active_profile is not None:
+            with self.jobLock:
                 if DEBUG:
-                    print(
-                        "Check if the starting profile is already running: ",
-                        profile.name)
-                    print(
-                        "name check: ",
-                        profile.name,
-                        self.active_profile.name)
-                if profile.name == self.active_profile.name:
-                    print(
-                        "start_profile: Do nothing if attempting to \
-                        change to the current profile.")
+                    g_logger.info("Start profile: {}".format(profile.name))
+                if profile is None:
+                    g_logger.info(
+                        "start_profile: profile is None. \
+                        Do you have any profiles in /profiles?")
+                elif self.active_profile is not None:
+                    if DEBUG:
+                        g_logger.info(
+                            "Check if the starting profile is already running: {}"
+                            .format(profile.name))
+                        g_logger.info(
+                            "name check: {}, {}"
+                            .format(profile.name,
+                            self.active_profile.name))
+                    if profile.name == self.active_profile.name:
+                        self.next_wallpaper(event)
+                    else:
+                        if (self.repeating_timer is not None and
+                                self.repeating_timer.is_running):
+                            self.repeating_timer.stop()
+                        if DEBUG:
+                            g_logger.info(
+                                "Running quick profile job with profile: {}"
+                                .format(profile.name))
+                        quickProfileJob(profile)
+                        if DEBUG:
+                            g_logger.info(
+                                "Starting timed profile job with profile: {}"
+                                .format(profile.name))
+                        self.repeating_timer = runProfileJob(profile)
+                        self.active_profile = profile
+                        writeActiveProfile(profile.name)
+                        if DEBUG:
+                            g_logger.info("Wrote active profile: {}"
+                                .format(profile.name))
                 else:
-                    if (self.repeating_timer is not None and
-                            self.repeating_timer.is_running):
+                    if (self.repeating_timer is not None
+                            and self.repeating_timer.is_running):
                         self.repeating_timer.stop()
                     if DEBUG:
-                        print(
-                            "Running quick profile job with profile: ",
-                            profile.name)
+                        g_logger.info(
+                            "Running quick profile job with profile: {}"
+                            .format(profile.name))
                     quickProfileJob(profile)
                     if DEBUG:
-                        print(
-                            "Starting timed profile job with profile: ",
-                            profile.name)
+                        g_logger.info(
+                            "Starting timed profile job with profile: {}"
+                            .format(profile.name))
                     self.repeating_timer = runProfileJob(profile)
                     self.active_profile = profile
                     writeActiveProfile(profile.name)
                     if DEBUG:
-                        print("Wrote active profile: ", profile.name)
-            else:
+                        g_logger.info("Wrote active profile: {}"
+                            .format(profile.name))
+
+        def next_wallpaper(self, event):
+            with self.jobLock:
                 if (self.repeating_timer is not None
                         and self.repeating_timer.is_running):
                     self.repeating_timer.stop()
-                if DEBUG:
-                    print(
-                        "Running quick profile job with profile: ",
-                        profile.name)
-                quickProfileJob(profile)
-                if DEBUG:
-                    print(
-                        "Starting timed profile job with profile: ",
-                        profile.name)
-                self.repeating_timer = runProfileJob(profile)
-                self.active_profile = profile
-                writeActiveProfile(profile.name)
-                if DEBUG:
-                    print("Wrote active profile: ", profile.name)
-
-        def next_wallpaper(self, event):
-            if (self.repeating_timer is not None
-                    and self.repeating_timer.is_running):
-                self.repeating_timer.stop()
-                changeWallpaperJob(self.active_profile)
-                self.repeating_timer.start()
-            else:
-                changeWallpaperJob(self.active_profile)
+                    changeWallpaperJob(self.active_profile)
+                    self.repeating_timer.start()
+                else:
+                    changeWallpaperJob(self.active_profile)
 
         def rt_stop(self):
             if (self.repeating_timer is not None
@@ -1266,15 +1323,15 @@ try:
                 self.repeating_timer.stop()
                 self.is_paused = True
                 if DEBUG:
-                    print("Paused timer")
+                    g_logger.info("Paused timer")
             elif (self.repeating_timer is not None
                   and not self.repeating_timer.is_running):
                 self.repeating_timer.start()
                 self.is_paused = False
                 if DEBUG:
-                    print("Resumed timer")
+                    g_logger.info("Resumed timer")
             else:
-                print("Current profile isn't using a timer.")
+                g_logger.info("Current profile isn't using a timer.")
 
         def on_about(self, event):
             # Credit for AboutDiaglog example to Jan Bodnar of
@@ -1329,8 +1386,8 @@ try:
             return True
 except Exception as e:
     if DEBUG:
-        print("Failed to define tray applet classes. Is wxPython installed?")
-        print(e)
+        g_logger.info("Failed to define tray applet classes. Is wxPython installed?")
+        g_logger.info(e)
 
 
 def cli_logic():
@@ -1355,49 +1412,62 @@ def cli_logic():
                         Should only be necessary with single spanned image.")
     parser.add_argument("-c", "--command", nargs='*',
                         help="Custom command to set the wallpaper. \
-                            Substitute /path/to/image.jpg by '{image}'.")
+                            Substitute /path/to/image.jpg by '{image}'. \
+                            Must be in quotes.")
+    parser.add_argument("-d", "--debug", action="store_true",
+                        help="Run the full application with debugging g_logger.infos.")
     args = parser.parse_args()
 
-    if DEBUG:
-        print(args.setimages)
-        print(args.ppi)
-        print(args.inches)
-        print(args.bezels)
-        print(args.offsets)
-        print(args.command)
-    if not args.setimages:
-        print("Exception: You must pass image(s) to set as \
-            wallpaper with '-s' or '--setimages'. Exiting.")
-        exit()
+    if args.debug:
+        global DEBUG
+        DEBUG = True
+        g_logger.setLevel(logging.DEBUG)
+        consoleHandler = logging.StreamHandler()
+        g_logger.addHandler(consoleHandler)
+        g_logger.info(args.setimages)
+        g_logger.info(args.ppi)
+        g_logger.info(args.inches)
+        g_logger.info(args.bezels)
+        g_logger.info(args.offsets)
+        g_logger.info(args.command)
+        g_logger.info(args.debug)
+    if args.debug and not args.setimages:
+        tray_loop()
     else:
-        for file in args.setimages:
-            if not os.path.isfile(file):
-                print("Exception: One of the passed images was not \
-                    a file: ({fname}). Exiting.".format(fname=file))
-                exit()
-    if args.bezels and not (args.ppi or args.inches):
-        print("The bezel correction feature needs display PPIs, \
-                provide these with --inches or --ppi.")
-    if len(args.offsets) % 2 != 0:
-        print("Exception: Number of offset pixels not even. If passing manual \
-            offsets, give width and height offset for each display, even if \
-            not actually offsetting every display. Exiting.")
-        exit()
-    if args.command:
-        if len(args.command) > 1:
-            print("Exception: Remember to put the custom command in quotes. \
-            Exiting.")
+        if not args.setimages:
+            g_logger.info("Exception: You must pass image(s) to set as \
+                wallpaper with '-s' or '--setimages'. Exiting.")
             exit()
-        g_set_command_string = args.command
+        else:
+            for file in args.setimages:
+                if not os.path.isfile(file):
+                    g_logger.error("Exception: One of the passed images was not \
+                        a file: ({fname}). Exiting.".format(fname=file))
+                    exit()
+        if args.bezels and not (args.ppi or args.inches):
+            g_logger.info("The bezel correction feature needs display PPIs, \
+                    provide these with --inches or --ppi.")
+        if args.offsets and len(args.offsets) % 2 != 0:
+            g_logger.error("Exception: Number of offset pixels not even. If passing manual \
+                offsets, give width and height offset for each display, even if \
+                not actually offsetting every display. Exiting.")
+            exit()
+        if args.command:
+            if len(args.command) > 1:
+                g_logger.error("Exception: Remember to put the custom command in quotes. \
+                Exiting.")
+                exit()
+            global g_set_command_string
+            g_set_command_string = args.command[0]
 
-    getDisplayData()
-    profile = CLIProfileData(args.setimages,
-                             args.ppi,
-                             args.inches,
-                             args.bezels,
-                             args.offsets,
-                             )
-    changeWallpaperJob(profile)
+        getDisplayData()
+        profile = CLIProfileData(args.setimages,
+                                args.ppi,
+                                args.inches,
+                                args.bezels,
+                                args.offsets,
+                                )
+        changeWallpaperJob(profile)
 
 
 def tray_loop():

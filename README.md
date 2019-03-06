@@ -8,12 +8,12 @@ for Linux and Windows operating systems, with partial and untested support for M
 Supported Linux desktop environments / window managers are:
 - Cinnamon
 - Gnome
-- i3
-- KDE
+- i3 (via feh)
+- KDE*
 - LXDE
 - Mate
 - Pantheon
-- XFCE
+- XFCE*
 
 and additionally there is support for
 - feh
@@ -21,24 +21,38 @@ and additionally there is support for
 
 if support for your system of choice is not built-in.
 
+*KDE and XFCE work most reliably with monitors in a single horizontal row: some configurations with 3 or more
+displays in a complex/non-row setup can have issues with spanning.
+
 ### Features
 - Set a single image across all displays
 - Set different image on every display
-- Pixel per inch correction: span an image flawlessly across displays of different shapes and sizes!
-- Bezel correction
+- Pixel per inch correction*: span an image flawlessly across displays of different shapes and sizes!
+- Bezel correction*
 - Manual pixel offsets for fine-tuning
 - Slideshow with configurable file order from local sources
 - Command-line interface
 - Tray applet for slideshow control
 - Hotkey support for easy slideshow control (Only Linux and Windows)
 
-A single horizontal row of monitors is supported at this time. Monitors can be in portrait.
-By default Superpaper assumes that your displays' center points are on a horizontal line, if they are not you can adjust the wallpaper
+Span single image and set multiple image modes should work on most multi monitors arrangements.
+
+*For PPI and bezel corrections only a single _horizontal row of monitors_ is supported at this time. Monitors can be in portrait.
+For PPI correction Superpaper assumes that your displays' physical center points are on a horizontal line, if they are not you can adjust the wallpaper
 using the manual offset.
 
 In the above banner shot you can see the PPI and bezel corrections in action.
 					  
 ## Installation
+
+### A. Portable releases
+For Windows there are portable stand-alone packages available under releases.
+These should work on a download-and-run basis without additional requirements. Look for the executable "superpaper.exe".
+
+Standalone packages for Linux and Mac OS X are unfortunately unavailable at this time, but you may look at the alternative way to run Superpaper.
+
+
+### B. Run the script
 
 You may either clone the repository or just download the script, examples and resources, and run the script. However you then need to take care of its dependencies.
 
@@ -58,10 +72,10 @@ pip3 install screeninfo
 pip3 install wxpython
 pip3 install system_hotkey
 ```
-System_hotkey has dependencies: on linux it needs "xcffib" and "xpybutil" modules, and on Windows it needs "pywin32".
+System_hotkey has dependencies: on Linux it needs "xcffib" and "xpybutil" modules, and on Windows it needs "pywin32".
 Note that on Linux wxpython needs to be built and even though it is automated via pip, it has its own [dependencies](https://wxpython.org/blog/2017-08-17-builds-for-linux-with-pip/index.html), 
 and the build may take some time.
-However for a few Centos, Debian, Fedora and Ubuntu flavors there are pre-built wheels so on those you can look at the [instructions](https://wxpython.org/pages/downloads/) to install wxpython
+However for a few CentOS, Debian, Fedora and Ubuntu flavors there are pre-built wheels so on those you can look at the [instructions](https://wxpython.org/pages/downloads/) to install wxpython
 without having to build it yourself.
 
 
@@ -153,7 +167,7 @@ Superpaper supports the following arguments, display specific values are given s
 - "--setimages", list of images to set on your monitors, if given only one it will be spanned across.
 - "--inches", optional, expects display diagonals in inches to compute PPIs
 - "--bezels", optional, expects display bezels in millimeters
-- "--offsets", optional, if image alignment isn't quite right you can add additional offset in pixels
+- "--offsets", optional, if image alignment with ppi&bezels isn't quite right you can add additional offset in pixels
 - "--command", optional, user can pass a custom command to set the wallpaper.
 
 An example using all corrections to set a single spanned image:
@@ -164,7 +178,7 @@ Offsets are given as a pair-wise list of "horizontal_offset vertical_offset" sta
 i.e. in the above example the display on the left is given no additional offset (0 0) and the display on 
 the right is given a horizontal offset to the right by 40px and a vertical offset of 100px up (40 -100).
 
-In the custom command, replace /path/to/img.jpg by '{image}', i.e. for example with the Gnome command:
+In the custom command, replace '/path/to/img.jpg' by '{image}', i.e. for example with the Gnome command:
 ```
 gsettings set org.gnome.desktop.background picture-uri file://{image}
 ```
@@ -172,28 +186,40 @@ gsettings set org.gnome.desktop.background picture-uri file://{image}
 The resulting image is saved into Superpaper/temp/ and then set as the wallpaper.
 
 
+## Troubleshooting
+
+If you run into issues and Superpaper closes unexpectedly, you can either:
+- Enable logging in the 'general_settings' by setting 'logging=true'
+- Run Superpaper from the command-line with the switch '--debug' to get debugging prints.
+```
+python superpaper.pyw --debug
+```
+
+On KDE or XFCE if you're having issues on a larger multi monitor setup it might be worthwhile to try the 'feh' mode.
+
+
+Stumbling stones to keep in mind if you have issues:
+- Check your image paths that there are no typos.
+- Check that there are no typos in your profile configs and that the profile name in the config matches the filename.
+
 ## Known issues
 
 ### General shortcomings
-- Only a single horizontal row of displays is supported at this time, i.e. monitors side by side. 
-As a workaround to set separate images on the monitors you could set the monitors to be side by side virtually on the desktop, though this is understandably fairly undesirable.
+- PPI & Bezel corr. only work on a single horizontal row of displays at this time, i.e. monitors side by side. 
 
 ### Linux
-- At shutdown OS might nag that the app is not responding just before the app exits.
+- None known at this time.
 
 ### Windows
-- A rare and hard to reproduce issue where setting the wallpaper fails and leads to a black wallpaper. Might be related to source image properties.
+- A rare issue where setting the wallpaper fails and leads to a black wallpaper. Might be related to source image properties.
 
 ### Mac OS X
 - It is not known whether this works at all. If you try it, tell me how it goes!
 - The library implementing global hotkeys does not support Mac OS X at this time unfortunately.
 
 
-## Contributing
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-
 ## Support
-If you find Superpaper useful please consider supporting its development by buying me a coffee: [PayPal][paypal-superpaper].
+A number of late nights of my paternity leave were spent crafting Superpaper, so if you find it useful please consider supporting its development: [PayPal][paypal-superpaper].
 
 [![Support via PayPal][paypal-button]][paypal-superpaper]
 
