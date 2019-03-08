@@ -35,13 +35,13 @@ displays in a complex/non-row setup can have issues with spanning.
 - Tray applet for slideshow control
 - Hotkey support for easy slideshow control (Only Linux and Windows)
 
-Span single image and set multiple image modes should work on most multi monitors arrangements.
+Span single image and set multiple image modes should work on most multi monitor arrangements.
 
 *For PPI and bezel corrections only a single _horizontal row of monitors_ is supported at this time. Monitors can be in portrait.
 For PPI correction Superpaper assumes that your displays' physical center points are on a horizontal line, if they are not you can adjust the wallpaper
 using the manual offset.
 
-In the above banner shot you can see the PPI and bezel corrections in action.
+In the above banner photo you can see the PPI and bezel corrections in action. The left one is a 27" 4K display, and the right one is a 25" 1440p display.
 					  
 ## Installation
 
