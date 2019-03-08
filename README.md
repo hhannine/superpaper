@@ -3,7 +3,7 @@
 # Superpaper
 
 Superpaper is an advanced multi monitor wallpaper manager 
-for **Linux** and **Windows** operating systems, with partial and untested support for **Mac OS X**.
+for Linux and Windows operating systems, with partial and untested support for Mac OS X.
 
 Supported Linux desktop environments / window managers are:
 - Cinnamon
@@ -27,8 +27,8 @@ displays in a complex/non-row setup can have issues with spanning.
 ### Features
 - Set a single image across all displays
 - Set different image on every display
-- **Pixel per inch correction***: span an image flawlessly across displays of different shapes and sizes!
-- **Bezel correction***
+- Pixel per inch correction*: span an image flawlessly across displays of different shapes and sizes!
+- Bezel correction*
 - Manual pixel offsets for fine-tuning
 - Slideshow with configurable file order from local sources
 - Command-line interface
@@ -84,10 +84,6 @@ without having to build it yourself.
 You can either run Superpaper to use all of its features, or alternatively you may call it from the command-line to set your multi monitor wallpaper, 
 with or without pixel density / bezel corrections or manual offsets.
 
-**Note**: You might have to set your OS to span the wallpaper so it is displayed correctly regardless of the settings you give Superpaper:
-- On Windows: Personalization -> Background -> Choose a fit -> Span.
-
-
 ### Full functionality / tray applet mode
 
 To provide your desired wallpaper settings, you create yourprofile.profile files in Superpaper/profiles.
@@ -111,8 +107,8 @@ display1paths=C:\Path\To\Image\Folder1;C:\Path\To\Image\Folder2;C:\Path\To\Image
 ```
 Accepted values and their explanations are:
 - spanmode:
-	- single &mdash; Span a single image across all of your monitors. Use with or without PPI correction.
-	- multi &mdash; Multi image mode: set different image on every display.
+	- single
+	- multi
 - slideshow:
 	- true
 	- false
@@ -151,18 +147,17 @@ set_command=gsettings set ...
 ```
 Up to three modifiers are supported for a hotkey: "control", "shift", "super" (the win-key) and "alt".
 
-The option 'set_command' accepts a user defined one liner to set the wallpaper if your system is not supported. 
-As a special case, one can tell Superpaper to use feh with a tested and built-in command by setting:
+Set_command accepts a user defined one liner to set the wallpaper if your system is not supported. One can tell Superpaper to use feh by setting
 ```
 set_command=feh
 ```
-In the custom command, replace '/path/to/img.jpg' by '{image}', i.e. for example with the Gnome command:
+In the custom command, replace /path/to/img.jpg by '{image}', i.e. for example with the Gnome command:
 ```
 gsettings set org.gnome.desktop.background picture-uri file://{image}
 ```
 
 Lastly, if the included white tray icon doesn't go nicely with your rice, included are a couple of alternative colorations and you may even replace the default icon with anything you wish.
-Just overwrite the "default.png".
+Just overwrite the "default_icon.png".
 
 
 ### CLI usage
@@ -224,8 +219,11 @@ Stumbling stones to keep in mind if you have issues:
 
 
 ## Support
-A number of late nights of my paternity leave were spent crafting Superpaper, so if you find it useful please consider supporting its development: [Support via PayPal][paypal-superpaper].
+A number of late nights of my paternity leave were spent crafting Superpaper, so if you find it useful please consider supporting its development: [PayPal][paypal-superpaper].
 
+[![Support via PayPal][paypal-button]][paypal-superpaper]
+
+[paypal-button]: https://raw.githubusercontent.com/hhannine/Superpaper/branch-resources/paypal-github.svg
 [paypal-superpaper]: https://www.paypal.me/superpaper/5
 
 
