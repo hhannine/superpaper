@@ -54,16 +54,16 @@ Standalone packages for Linux and Mac OS X are unfortunately unavailable at this
 
 ### B. Run the script
 
-You may either clone the repository or just download the script, examples and resources, and run the script. However you then need to take care of its dependencies.
+You may either clone the repository or download the packaged script under releases. You will need to take care of its dependencies, which are:
 
 #### Requirements
 - Python 3.5+
-- Pillow (or the slower PIL should also work)
+- Pillow (or the slower PIL should also work, or on Linux the faster Pillow-SIMD)
 - screeninfo
 - wxpython (tray applet & slideshow, optional)
 - system_hotkey (hotkeys, optional)
 
-If you are going to run only in CLI mode you need to install the first three in the list. For full functionality you will of course need to install all of them.
+If you are going to run only in CLI mode you will need to install the first three in the list. For full functionality you will of course need to install all of them.
 
 One can install these easily via pip3:
 ```
