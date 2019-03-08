@@ -213,7 +213,7 @@ Stumbling stones to keep in mind if you have issues:
 - PPI & Bezel corr. only work on a single horizontal row of displays at this time, i.e. monitors side by side. 
 
 ### Linux
-- None known at this time.
+- (Found in virtual machine testing) In KDE and XFCE environments image spanning can have issues if monitors are not in a horizontal row.
 
 ### Windows
 - A rare issue where setting the wallpaper fails and leads to a black wallpaper. Might be related to source image properties.
