@@ -18,10 +18,7 @@ from screeninfo import get_monitors
 try:
     import wx
     import wx.adv
-    # import wx.lib.agw.hyperlink as hl
 except BaseException:
-    # wx = None
-    # wxadv = None
     pass
 if platform.system() == "Windows":
     import ctypes
@@ -51,12 +48,12 @@ if not os.path.isdir(TEMP_PATH):
 PROFILES_PATH = PATH + "/profiles/"
 TRAY_TOOLTIP = "Superpaper"
 TRAY_ICON = PATH + "/resources/default.png"
-VERSION_STRING = "0.8.5"
+VERSION_STRING = "1.0-beta.2"
 g_set_command_string = ""
 g_wallpaper_change_lock = Lock()
 
 if DEBUG and not LOGGING:
-    g_logger.setLevel(logging.DEBUG)
+    g_logger.setLevel(logging.INFO)
     consoleHandler = logging.StreamHandler()
     g_logger.addHandler(consoleHandler)
 
@@ -64,11 +61,19 @@ if LOGGING:
     DEBUG = True
     # sys.stdout = open(PATH + "/log.txt", "w")
     g_logger.setLevel(logging.INFO)
-    fileHandler = logging.FileHandler("{0}/{1}.log".format(PATH, "log"), mode="w")
+    fileHandler = logging.FileHandler("{0}/{1}.log".format(PATH, "log"),
+                                    mode="w")
     g_logger.addHandler(fileHandler)
     consoleHandler = logging.StreamHandler()
     g_logger.addHandler(consoleHandler)
 
+def ShowMessageDialog(message,msg_type="Info"):
+    # Type can be 'Info', 'Error', 'Question', 'Exclamation'
+    if "wx" in sys.modules:
+        dial = wx.MessageDialog(None, message, msg_type, wx.OK)
+        dial.ShowModal()
+    else:
+        pass
 
 class GeneralSettingsData(object):
     def __init__(self):
@@ -79,7 +84,7 @@ class GeneralSettingsData(object):
         self.parse_settings()
 
     def parse_settings(self):
-        global DEBUG, LOGGING
+        global DEBUG, LOGGING, g_set_command_string
         fname = os.path.join(PATH, "general_settings")
         if os.path.isfile(fname):
             f = open(fname, "r")
@@ -94,7 +99,9 @@ class GeneralSettingsData(object):
                             LOGGING = True
                             DEBUG = True
                             g_logger.setLevel(logging.INFO)
-                            fileHandler = logging.FileHandler("{0}/{1}.log".format(PATH, "log"), mode="w")
+                            fileHandler = logging.FileHandler("{0}/{1}.log"
+                                                    .format(PATH, "log"),
+                                                    mode="w")
                             g_logger.addHandler(fileHandler)
                             consoleHandler = logging.StreamHandler()
                             g_logger.addHandler(consoleHandler)
@@ -204,13 +211,13 @@ class ProfileData(object):
                     self.ppimode = True
                     self.manual_offsets = []
                     # w1,h1;w2,h2;...
-                    offsetStrings = words[1].rstrip().split(";")
+                    offsetStrings = words[1].strip().split(";")
                     for str in offsetStrings:
                         res_str = str.split(",")
                         self.manual_offsets.append((int(res_str[0]),
                                                     int(res_str[1])))
                 elif words[0] == "bezels":
-                    bezelMillimeter_Strings = words[1].rstrip().split(";")
+                    bezelMillimeter_Strings = words[1].strip().split(";")
                     for str in bezelMillimeter_Strings:
                         self.bezels.append(float(str))
                 elif words[0] == "ppi":
@@ -218,7 +225,7 @@ class ProfileData(object):
                     # overwrite initialized arrays.
                     self.ppiArray = []
                     self.ppiArrayRelDensity = []
-                    ppiStrings = words[1].rstrip().split(";")
+                    ppiStrings = words[1].strip().split(";")
                     for str in ppiStrings:
                         self.ppiArray.append(int(str))
                 elif words[0] == "diagonal_inches":
@@ -226,7 +233,7 @@ class ProfileData(object):
                     # overwrite initialized arrays.
                     self.ppiArray = []
                     self.ppiArrayRelDensity = []
-                    inchStrings = words[1].rstrip().split(";")
+                    inchStrings = words[1].strip().split(";")
                     inches = []
                     for str in inchStrings:
                         inches.append(float(str))
@@ -237,7 +244,8 @@ class ProfileData(object):
                     if DEBUG:
                         g_logger.info("hkBinding:{}".format(self.hkBinding))
                 elif words[0].startswith("display"):
-                    paths = words[1].rstrip().split(";")
+                    paths = words[1].strip().split(";")
+                    paths = list(filter(None, paths))  # drop empty strings
                     self.pathsArray.append(paths)
                 else:
                     g_logger.info("Unknown setting line in config: {}".format(line))
@@ -308,8 +316,15 @@ class ProfileData(object):
                 for path in paths_list:
                     # Add list items to the end of the list instead of
                     # appending the list to the list.
-                    list_of_images += [os.path.join(path, f)
-                                       for f in os.listdir(path)]
+                    if not os.path.exists(path):
+                        message = "A path was not found: '{}'.\n\
+Use absolute paths for best reliabilty.".format(path)
+                        g_logger.info(message)
+                        ShowMessageDialog(message, "Error")
+                        continue
+                    else:
+                        list_of_images += [os.path.join(path, f)
+                                        for f in os.listdir(path)]
                 # Append the list of monitor_i specific files to the list of
                 # lists of images.
                 self.all_files_in_paths.append(list_of_images)
@@ -862,7 +877,8 @@ def setWallpaper_linux(outputfile):
         else:
             os.system(set_command.format(image=outputfile))
     elif desk_env in ["gnome", "gnome-wayland",
-                    "unity", "ubuntu", "pantheon"]:
+                    "unity", "ubuntu", 
+                    "pantheon", "budgie-desktop"]:
         subprocess.run(["gsettings", "set",
                         "org.gnome.desktop.background", "picture-uri",
                         file])
@@ -890,14 +906,15 @@ def setWallpaper_linux(outputfile):
                 sys.exit(1)
     elif desk_env in ["/usr/share/xsessions/plasma"]:
         kdeplasma_actions(outputfile)
-    elif "i3" in desk_env:
+    elif "i3" in desk_env or desk_env in ["/usr/share/xsessions/bspwm"]:
         subprocess.run(["feh", "--bg-scale", "--no-xinerama", outputfile])
     else:
         if set_command == "":
-            g_logger.info(
-                "Your DE could not be detected to set the wallpaper. \
+            message = "Your DE could not be detected to set the wallpaper. \
                 You need to set the 'set_command' option in your \
-                settings file superpaper/general_settings")
+                settings file superpaper/general_settings. Exiting."
+            g_logger.info(message)
+            ShowMessageDialog(message, "Error")
             sys.exit(1)
         else:
             os.system(set_command.format(image=outputfile))
@@ -925,24 +942,28 @@ def special_image_cropper(outputfile):
 def remove_old_temp_files(outputfile):
     opbase = os.path.basename(outputfile)
     opname = os.path.splitext(opbase)[0]
+    print(opname)
     oldfileid = ""
     if "-a" in opname:
         oldfileid = "-b"
+        print(oldfileid)
     elif "-b" in opname:
         oldfileid = "-a"
+        print(oldfileid)
     else:
         pass
     if oldfileid:
         # Must take care than only temps of current profile are deleted.
-        match_string = opname + "-crop"
+        match_string = oldfileid + "-crop"
         for f in os.listdir(TEMP_PATH):
             if match_string in f:
+                print(f)
                 os.remove(os.path.join(TEMP_PATH, f))
 
 def kdeplasma_actions(outputfile):
     script = """
 var listDesktops = desktops();
-g_logger.info (listDesktops);
+print(listDesktops);
 d = listDesktops[{index}];
 d.wallpaperPlugin = "org.kde.image";
 d.currentConfigGroup = Array("Wallpaper", "org.kde.image", "General");
@@ -1421,7 +1442,7 @@ def cli_logic():
     if args.debug:
         global DEBUG
         DEBUG = True
-        g_logger.setLevel(logging.DEBUG)
+        g_logger.setLevel(logging.INFO)
         consoleHandler = logging.StreamHandler()
         g_logger.addHandler(consoleHandler)
         g_logger.info(args.setimages)

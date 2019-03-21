@@ -6,6 +6,8 @@ Superpaper is an advanced multi monitor wallpaper manager
 for **Linux** and **Windows** operating systems, with partial and untested support for **Mac OS X**.
 
 Supported Linux desktop environments / window managers are:
+- BSPWM
+- Budgie
 - Cinnamon
 - Gnome
 - i3 (via feh)
