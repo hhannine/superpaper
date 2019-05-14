@@ -35,7 +35,9 @@ displays in a complex/non-row setup can have issues with spanning.
 - Slideshow with configurable file order from local sources
 - Command-line interface
 - Tray applet for slideshow control
+- GUI for settings configuration
 - Hotkey support for easy slideshow control (Only Linux and Windows)
+- Align test tool to help fine tune your settings (Accessible only from GUI)
 
 Span single image and set multiple image modes should work on most multi monitor arrangements.
 
@@ -48,10 +50,10 @@ In the above banner photo you can see the PPI and bezel corrections in action. T
 ## Installation
 
 ### A. Portable releases
-For Windows there are portable stand-alone packages available under releases.
-These should work on a download-and-run basis without additional requirements. Look for the executable "superpaper.exe".
+For Linux and Windows there are portable stand-alone binary packages available under [releases](https://github.com/hhannine/Superpaper/releases).
+These work on a download-and-run basis without additional requirements. Look for the executable "superpaper.exe", or "superpaper" on Linux.
 
-Standalone packages for Linux and Mac OS X are unfortunately unavailable at this time, but you may look at the alternative way to run Superpaper.
+Standalone package for Mac OS X is unfortunately unavailable at this time, but you may look at the alternative way to run Superpaper.
 
 
 ### B. Run the script
@@ -90,13 +92,13 @@ with or without pixel density / bezel corrections or manual offsets.
 - On Windows: Personalization -> Background -> Choose a fit -> Span.
 
 
-### Full functionality / tray applet mode
+### Full functionality / GUI mode
 
-To provide your desired wallpaper settings, you create yourprofile.profile files in Superpaper/profiles.
+To provide your desired wallpaper settings, you access the 'Profile Configuration' Tray Menu item, or also during first run. General application settings are under 'Settings' in the Tray.
 
 #### Profile configuration
 
-Example profile configurations are provided in the Superpaper/profiles folder.
+Example profile configurations are provided and accessible in the Profile Configuration. (or in the Superpaper/profiles folder.)
 
 Following settings are supported and they are expected in this form:
 ```
@@ -153,7 +155,7 @@ set_command=gsettings set ...
 ```
 Up to three modifiers are supported for a hotkey: "control", "shift", "super" (the win-key) and "alt".
 
-The option 'set_command' accepts a user defined one liner to set the wallpaper if your system is not supported. 
+The option 'set_command' accepts a user defined one liner to set the wallpaper if your system is not supported out of the box. 
 As a special case, one can tell Superpaper to use feh with a tested and built-in command by setting:
 ```
 set_command=feh
@@ -164,7 +166,7 @@ gsettings set org.gnome.desktop.background picture-uri file://{image}
 ```
 
 Lastly, if the included white tray icon doesn't go nicely with your rice, included are a couple of alternative colorations and you may even replace the default icon with anything you wish.
-Just overwrite the "default.png".
+Just overwrite the "default.png" icon file.
 
 
 ### CLI usage
@@ -212,13 +214,15 @@ Stumbling stones to keep in mind if you have issues:
 ## Known issues
 
 ### General shortcomings
-- PPI & Bezel corr. only work on a single horizontal row of displays at this time, i.e. monitors side by side. 
+- PPI & Bezel corr. only work on a single horizontal row of displays at this time, i.e. monitors side by side.
+- The module used for display data gathering seems to have issues with some setups, detecting displays in a wrong order for example.
 
 ### Linux
-- (Found in virtual machine testing) In KDE and XFCE environments image spanning can have issues if monitors are not in a horizontal row.
+- (Found in virtual machine testing) In KDE and XFCE environments image spanning can have issues if monitors are not in a horizontal row. Found with 3 virtual displays in an "L" shape.
 
 ### Windows
 - A rare issue where setting the wallpaper fails and leads to a black wallpaper. Might be related to source image properties.
+- On some (older?) system configurations your monitors can be detected in the wrong order and Windows10 DPI scaling options can interfere with the detection.
 
 ### Mac OS X
 - It is not known whether this works at all. If you try it, tell me how it goes!
@@ -226,7 +230,7 @@ Stumbling stones to keep in mind if you have issues:
 
 
 ## Support
-A number of late nights of my paternity leave were spent crafting Superpaper, so if you find it useful please consider supporting its development: [Support via PayPal][paypal-superpaper].
+If you find Superpaper useful please consider supporting its development: [Support via PayPal][paypal-superpaper].
 
 [paypal-superpaper]: https://www.paypal.me/superpaper/5
 
