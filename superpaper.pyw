@@ -11,7 +11,7 @@ import logging
 from time import sleep
 from pathlib import Path
 from operator import itemgetter
-from threading import Timer, Lock
+from threading import Timer, Lock, Thread
 
 from PIL import Image
 from screeninfo import get_monitors
@@ -41,16 +41,26 @@ LOGGING = False
 g_logger = logging.getLogger()
 nDisplays = 0
 canvasSize = [0, 0]
-PATH = os.path.dirname(os.path.realpath(__file__))
+# Set path to binary / script
+if getattr(sys, 'frozen', False):
+    # If the application is run as a bundle, the pyInstaller bootloader
+    # extends the sys module by a flag frozen=True and sets the app 
+    # path into variable _MEIPASS'.
+    # PATH = sys._MEIPASS
+    PATH = os.path.dirname(os.path.realpath(sys.executable))
+else:
+    PATH = os.path.dirname(os.path.realpath(__file__))
+# Derivative paths
 TEMP_PATH = PATH + "/temp/"
 if not os.path.isdir(TEMP_PATH):
     os.mkdir(TEMP_PATH)
 PROFILES_PATH = PATH + "/profiles/"
 TRAY_TOOLTIP = "Superpaper"
 TRAY_ICON = PATH + "/resources/default.png"
-VERSION_STRING = "1.0-beta.2"
+VERSION_STRING = "1.1"
 g_set_command_string = ""
 g_wallpaper_change_lock = Lock()
+g_supported_image_extensions = (".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".webp")
 
 if DEBUG and not LOGGING:
     g_logger.setLevel(logging.INFO)
@@ -67,6 +77,10 @@ if LOGGING:
     consoleHandler = logging.StreamHandler()
     g_logger.addHandler(consoleHandler)
 
+def custom_exception_handler(type, value, tb):
+    # g_logger.exception("Uncaught exception: {}".format(str(value)))
+    g_logger.exception("Uncaught exception.")
+
 def ShowMessageDialog(message,msg_type="Info"):
     # Type can be 'Info', 'Error', 'Question', 'Exclamation'
     if "wx" in sys.modules:
@@ -81,10 +95,13 @@ class GeneralSettingsData(object):
         self.use_hotkeys = True
         self.hkBinding_next = None
         self.hkBinding_pause = None
+        self.set_command = ""
+        self.show_help = True
         self.parse_settings()
 
     def parse_settings(self):
         global DEBUG, LOGGING, g_set_command_string
+        global g_logger, fileHandler, consoleHandler
         fname = os.path.join(PATH, "general_settings")
         if os.path.isfile(fname):
             f = open(fname, "r")
@@ -98,10 +115,14 @@ class GeneralSettingsData(object):
                             self.logging = True
                             LOGGING = True
                             DEBUG = True
+                            g_logger = logging.getLogger()
                             g_logger.setLevel(logging.INFO)
-                            fileHandler = logging.FileHandler("{0}/{1}.log"
-                                                    .format(PATH, "log"),
-                                                    mode="w")
+                            # Install exception handler
+                            sys.excepthook = custom_exception_handler
+                            fileHandler = logging.FileHandler(
+                                "{0}/{1}.log"
+                                .format(PATH, "log"),
+                                mode="w")
                             g_logger.addHandler(fileHandler)
                             consoleHandler = logging.StreamHandler()
                             g_logger.addHandler(consoleHandler)
@@ -113,21 +134,40 @@ class GeneralSettingsData(object):
                         else:
                             self.use_hotkeys = False
                         if DEBUG:
-                            g_logger.info("use_hotkeys: {}".format(self.use_hotkeys))
+                            g_logger.info("use_hotkeys: {}"
+                                          .format(self.use_hotkeys))
                     elif words[0] == "next wallpaper hotkey":
-                        binding_strings = words[1].strip().split("+")
-                        self.hkBinding_next = tuple(binding_strings)
+                        try:
+                            binding_strings = words[1].strip().split("+")
+                        except:
+                            pass
+                        if binding_strings:
+                            self.hkBinding_next = tuple(binding_strings)
                         if DEBUG:
-                            g_logger.info("hkBinding_next: {}".format(self.hkBinding_next))
+                            g_logger.info("hkBinding_next: {}"
+                                          .format(self.hkBinding_next))
                     elif words[0] == "pause wallpaper hotkey":
-                        binding_strings = words[1].strip().split("+")
-                        self.hkBinding_pause = tuple(binding_strings)
+                        try:
+                            binding_strings = words[1].strip().split("+")
+                        except:
+                            pass
+                        if binding_strings:
+                            self.hkBinding_pause = tuple(binding_strings)
                         if DEBUG:
-                            g_logger.info("hkBinding_pause: {}".format(self.hkBinding_pause))
+                            g_logger.info("hkBinding_pause: {}"
+                                          .format(self.hkBinding_pause))
                     elif words[0] == "set_command":
                         g_set_command_string = words[1].strip()
+                        self.set_command = g_set_command_string
+                    elif words[0].strip() == "show_help_at_start":
+                        show_state = words[1].strip().lower()
+                        if show_state == "false":
+                            self.show_help = False
+                        else:
+                            pass
                     else:
-                        g_logger.info("Exception: Unkown general setting: {}".format(words[0]))
+                        g_logger.info("Exception: Unkown general setting: {}"
+                                      .format(words[0]))
             finally:
                 f.close()
         else:
@@ -142,9 +182,42 @@ class GeneralSettingsData(object):
             f.write("set_command=")
             f.close()
 
+    def Save(self):
+        fname = os.path.join(PATH, "general_settings")
+        f = open(fname, "w")
+
+        if self.logging:
+            f.write("logging=true\n")
+        else:
+            f.write("logging=false\n")
+
+        if self.use_hotkeys:
+            f.write("use hotkeys=true\n")
+        else:
+            f.write("use hotkeys=false\n")
+
+        if self.hkBinding_next:
+            hk_string = "+".join(self.hkBinding_next)
+            f.write("next wallpaper hotkey={}\n".format(hk_string))
+
+        if self.hkBinding_pause:
+            hk_string_p = "+".join(self.hkBinding_pause)
+            f.write("pause wallpaper hotkey={}\n".format(hk_string_p))
+
+        if self.show_help:
+            f.write("show_help_at_start=true\n")
+        else:
+            f.write("show_help_at_start=false\n")
+
+        f.write("set_command={}".format(self.set_command))
+
+        f.close()
+
+
+
+
 
 class ProfileData(object):
-    # def __init__(self, name, monitorMode, wpMode, pathArray):
     def __init__(self, file):
         self.name = "default_profile"
         self.spanmode = "single"  # single / multi
@@ -154,7 +227,9 @@ class ProfileData(object):
         self.ppimode = False
         self.ppiArray = nDisplays * [100]
         self.ppiArrayRelDensity = []
+        self.inches = []
         self.manual_offsets = nDisplays * [(0, 0)]
+        self.manual_offsets_useronly = []
         self.bezels = []
         self.bezel_px_offsets = []
         self.hkBinding = None
@@ -210,12 +285,15 @@ class ProfileData(object):
                     # if no custom values are given.
                     self.ppimode = True
                     self.manual_offsets = []
+                    self.manual_offsets_useronly = []
                     # w1,h1;w2,h2;...
                     offsetStrings = words[1].strip().split(";")
                     for str in offsetStrings:
                         res_str = str.split(",")
                         self.manual_offsets.append((int(res_str[0]),
                                                     int(res_str[1])))
+                        self.manual_offsets_useronly.append((int(res_str[0]),
+                                                    int(res_str[1])))                    
                 elif words[0] == "bezels":
                     bezelMillimeter_Strings = words[1].strip().split(";")
                     for str in bezelMillimeter_Strings:
@@ -234,10 +312,10 @@ class ProfileData(object):
                     self.ppiArray = []
                     self.ppiArrayRelDensity = []
                     inchStrings = words[1].strip().split(";")
-                    inches = []
+                    self.inches = []
                     for str in inchStrings:
-                        inches.append(float(str))
-                    self.ppiArray = self.computePPIs(inches)
+                        self.inches.append(float(str))
+                    self.ppiArray = self.computePPIs(self.inches)
                 elif words[0] == "hotkey":
                     binding_strings = words[1].strip().split("+")
                     self.hkBinding = tuple(binding_strings)
@@ -323,8 +401,11 @@ Use absolute paths for best reliabilty.".format(path)
                         ShowMessageDialog(message, "Error")
                         continue
                     else:
+                        # List only images that are of supported type.
                         list_of_images += [os.path.join(path, f)
-                                        for f in os.listdir(path)]
+                                            for f in os.listdir(path)
+                                            if f.endswith(g_supported_image_extensions)
+                                            ]
                 # Append the list of monitor_i specific files to the list of
                 # lists of images.
                 self.all_files_in_paths.append(list_of_images)
@@ -418,6 +499,10 @@ class CLIProfileData(ProfileData):
             off_pairs = [tuple(p) for p in off_pairs_zip]
             for off, i in zip(off_pairs,range(len(self.manual_offsets))):
                 self.manual_offsets[i] = off
+            # print(self.manual_offsets)
+            for pair in self.manual_offsets:
+                self.manual_offsets[self.manual_offsets.index(pair)] = (int(pair[0]), int(pair[1]))
+            # print(self.manual_offsets)
 
         self.ppiArrayRelDensity = []
         self.bezels = bezels
@@ -431,6 +516,219 @@ class CLIProfileData(ProfileData):
 
     def NextWallpaperFiles(self):
         return self.files
+
+class TempProfileData(object):
+    def __init__(self):
+        self.name = None
+        self.spanmode = None
+        self.slideshow = None
+        self.delay = None
+        self.sortmode = None
+        # self.ppiArray = None
+        self.inches = None
+        self.manual_offsets = None
+        self.bezels = None
+        self.hkBinding = None
+        self.pathsArray = []
+
+    def Save(self):
+        if self.name is not None:
+            fname = PROFILES_PATH + self.name + ".profile"
+            try:
+                f = open(fname, "w")
+            except:
+                msg = "Cannot write to file {}".format(fname)
+                ShowMessageDialog(msg, "Error")
+                return None
+            f.write("name=" + str(self.name) + "\n")
+            if self.spanmode:
+                f.write("spanmode=" + str(self.spanmode) + "\n")
+            if self.slideshow is not None:
+                f.write("slideshow=" + str(self.slideshow) + "\n")
+            if self.delay:
+                f.write("delay=" + str(self.delay) + "\n")
+            if self.sortmode:
+                f.write("sortmode=" + str(self.sortmode) + "\n")
+            # f.write("ppi=" + str(self.ppiArray) + "\n")
+            if self.inches:
+                f.write("diagonal_inches=" + str(self.inches) + "\n")
+            if self.manual_offsets:
+                f.write("offsets=" + str(self.manual_offsets) + "\n")
+            if self.bezels:
+                f.write("bezels=" + str(self.bezels) + "\n")
+            if self.hkBinding:
+                f.write("hotkey=" + str(self.hkBinding) + "\n")
+            if self.pathsArray:
+                for paths in self.pathsArray:
+                    # paths_formatted = ";".join(paths)
+                    f.write("display" + str(self.pathsArray.index(paths)) + "paths=" + paths + "\n")
+                    
+            f.close()
+            return fname
+        else:
+            print("tmp.Save(): name is not set.")
+            return None
+
+    def TestSave(self):
+        valid_profile = False
+        if self.name is not None and self.name.strip() is not "":
+            fname = PROFILES_PATH + self.name + ".deleteme"
+            try:
+                f = open(fname, "w")
+                f.close()
+                os.remove(fname)
+            except:
+                msg = "Cannot write to file {}".format(fname)
+                ShowMessageDialog(msg, "Error")
+                return False
+            if self.spanmode == "single":
+                if len(self.pathsArray) > 1:
+                    msg = "When spanning a single image across all monitors, only one paths field is needed."
+                    ShowMessageDialog(msg, "Error")
+                    return False
+            if self.spanmode == "multi":
+                if len(self.pathsArray) < 2:
+                    msg = "When setting a different image on every display, each display needs its own paths field."
+                    ShowMessageDialog(msg, "Error")
+                    return False
+            if self.slideshow is True and not self.delay:
+                msg = "When using slideshow you need to enter a delay."
+                ShowMessageDialog(msg, "Info")
+                return False
+            if self.delay:
+                try:
+                    val = int(self.delay)
+                    if val < 20:
+                        msg = "It is advisable to set the slideshow delay to be at least 20 seconds due to the time the image processing takes."
+                        ShowMessageDialog(msg, "Info")
+                        return False
+                except ValueError:
+                    msg = "Slideshow delay must be an integer of seconds."
+                    ShowMessageDialog(msg, "Error")
+                    return False
+            # if self.sortmode:
+                # No test needed
+            if self.inches:
+                if self.is_list_float(self.inches):
+                    pass
+                else:
+                    msg = "Display diagonals must be given in numeric values using decimal point and separated by semicolon ';'."
+                    ShowMessageDialog(msg, "Error")
+                    return False
+            if self.manual_offsets:
+                if self.is_list_offsets(self.manual_offsets):
+                    pass
+                else:
+                    msg = "Display offsets must be given in width,height pixel pairs and separated by semicolon ';'."
+                    ShowMessageDialog(msg, "Error")
+                    return False
+            if self.bezels:
+                if self.is_list_float(self.bezels):
+                    if self.manual_offsets:
+                        if len(self.manual_offsets.split(";")) < len(self.bezels.split(";")):
+                            msg = "When using both offset and bezel corrections, take care to enter an offset for each display that you enter a bezel thickness."
+                            ShowMessageDialog(msg, "Error")
+                            return False
+                        else:
+                            pass
+                    else:
+                        pass
+                else:
+                    msg = "Display bezels must be given in millimeters using decimal point and separated by semicolon ';'."
+                    ShowMessageDialog(msg, "Error")
+                    return False
+            if self.hkBinding:
+                if self.is_valid_hotkey(self.hkBinding):
+                    pass
+                else:
+                    msg = "Hotkey must be given as 'mod1+mod2+mod3+key'. Valid modifiers are 'control', 'super', 'alt', 'shift'."
+                    ShowMessageDialog(msg, "Error")
+                    return False
+            if self.pathsArray:
+                if self.is_list_valid_paths(self.pathsArray):
+                    pass
+                else:
+                    # msg = "Paths must be separated by a semicolon ';'."
+                    # ShowMessageDialog(msg, "Error")
+                    return False
+            else:
+                msg = "You must enter at least one path for images."
+                ShowMessageDialog(msg, "Error")
+                return False
+            # Passed all tests.
+            valid_profile = True
+            return valid_profile
+        else:
+            print("tmp.Save(): name is not set.")
+            msg = "You must enter a name for the profile."
+            ShowMessageDialog(msg, "Error")
+            return False
+
+    def is_list_float(self, input):
+        is_floats = True
+        list_input = input.split(";")
+        for item in list_input:
+            try:
+                val = float(item)
+            except ValueError:
+                return False
+        return is_floats
+
+    def is_list_offsets(self, input):
+        list_input = input.split(";")
+        # if len(list_input) < nDisplays:
+        #     msg = "Enter an offset for every display, even if it is (0,0)."
+        #     ShowMessageDialog(msg, "Error")
+        #     return False
+        try:
+            for off_pair in list_input:
+                offset = off_pair.split(",")
+                if len(offset) > 2:
+                    return False
+                try:
+                    val_w = int(offset[0])
+                    val_h = int(offset[1])
+                except ValueError:
+                    return False
+        except:
+            return False
+        # Passed tests.
+        return True
+
+    def is_valid_hotkey(self, input):
+        # Validity is hard to properly verify here.
+        # Instead do it when registering hotkeys at startup.
+        is_hk = True
+        return is_hk
+
+    def is_list_valid_paths(self, input):
+        if input == [""]:
+            msg = "At least one path for wallpapers must be given."
+            ShowMessageDialog(msg, "Error")
+            return False
+        if "" in input:
+            msg = "Take care not to save a profile with an empty display paths field."
+            ShowMessageDialog(msg, "Error")
+            return False
+        for path_list_str in input:
+            path_list = path_list_str.split(";")
+            for path in path_list:
+                if os.path.isdir(path) is True:
+                    supported_files = [f for f in os.listdir(path)
+                                        if f.endswith(g_supported_image_extensions)]
+                    if supported_files:
+                        continue
+                    else:
+                        msg = "Path '{}' does not contain supported image files.".format(path)
+                        ShowMessageDialog(msg, "Error")
+                        return False
+                else:
+                    msg = "Path '{}' was not recognized as a directory.".format(path)
+                    ShowMessageDialog(msg, "Error")
+                    return False
+        valid_pathsarray = True
+        return valid_pathsarray
+
 
 
 class RepeatedTimer(object):
@@ -481,13 +779,14 @@ def getDisplayData():
     # Check that the display offsets are sane, i.e. translate the values if
     # there are any negative values (Windows).
     # Top-most edge of the crop tuples.
+    leftmost_offset = min(dipslayOffsetArray, key=itemgetter(0))[0]
     topmost_offset = min(dipslayOffsetArray, key=itemgetter(1))[1]
-    if topmost_offset < 0:
+    if leftmost_offset < 0 or topmost_offset < 0:
         if DEBUG:
-            g_logger.info("Negative topmost display offset: {}".format(dipslayOffsetArray))
+            g_logger.info("Negative display offset: {}".format(dipslayOffsetArray))
         translate_offsets = []
         for offset in dipslayOffsetArray:
-            translate_offsets.append((offset[0], offset[1] - topmost_offset))
+            translate_offsets.append((offset[0] - leftmost_offset, offset[1] - topmost_offset))
         dipslayOffsetArray = translate_offsets
         if DEBUG:
             g_logger.info("Sanitised display offset: {}".format(dipslayOffsetArray))
@@ -1023,11 +1322,17 @@ def xfce_actions(outputfile):
 def changeWallpaperJob(profile):
     with g_wallpaper_change_lock:
         if profile.spanmode.startswith("single") and profile.ppimode is False:
-            spanSingleImage(profile)
+            # spanSingleImage(profile)
+            thrd = Thread(target=spanSingleImage, args=(profile,), daemon=True)
+            thrd.start()
         elif profile.spanmode.startswith("single") and profile.ppimode is True:
-            spanSingleImagePPIcorrection(profile)
+            # spanSingleImagePPIcorrection(profile)
+            thrd = Thread(target=spanSingleImagePPIcorrection, args=(profile,), daemon=True)
+            thrd.start()
         elif profile.spanmode.startswith("multi"):
-            setMultipleImages(profile)
+            # setMultipleImages(profile)
+            thrd = Thread(target=setMultipleImages, args=(profile,), daemon=True)
+            thrd.start()
         else:
             g_logger.info("Unkown profile spanmode: {}".format(profile.spanmode))
 
@@ -1060,7 +1365,9 @@ def quickProfileJob(profile):
         if DEBUG:
             g_logger.info("quickswitch file lookup: {}".format(files))
         if files:
-            setWallpaper(os.path.join(TEMP_PATH, files[0]))
+            # setWallpaper(os.path.join(TEMP_PATH, files[0]))
+            thrd = Thread(target=setWallpaper, args=(os.path.join(TEMP_PATH, files[0]),), daemon=True)
+            thrd.start()
         else:
             pass
             if DEBUG:
@@ -1072,7 +1379,14 @@ def listProfiles():
     files = sorted(os.listdir(PROFILES_PATH))
     profile_list = []
     for i in range(len(files)):
-        profile_list.append(ProfileData(PROFILES_PATH + files[i]))
+        try:
+            profile_list.append(ProfileData(PROFILES_PATH + files[i]))
+        except Exception as e:
+            msg = "There was an error when loading profile '{}'. Exiting.".format(files[i])
+            g_logger.info(msg)
+            g_logger.info(e)
+            ShowMessageDialog(msg, "Error")
+            exit()
         if DEBUG:
             g_logger.info("Listed profile: {}".format(profile_list[i].name))
     return profile_list
@@ -1115,20 +1429,720 @@ def writeActiveProfile(profname):
     f.close()
 
 
+
 # TRAY ICON APPLET definitions
     # Credit:
     # https://stackoverflow.com/questions/6389580/quick-and-easy-trayicon-with-python/48401917#48401917
 
-def create_menu_item(menu, label, func, *args, **kwargs):
-    item = wx.MenuItem(menu, -1, label, **kwargs)
-    menu.Bind(wx.EVT_MENU, lambda event: func(event, *args), id=item.GetId())
-    menu.Append(item)
-    return item
-
 try:
+
+    def create_menu_item(menu, label, func, *args, **kwargs):
+        item = wx.MenuItem(menu, -1, label, **kwargs)
+        menu.Bind(wx.EVT_MENU, lambda event: func(event, *args), id=item.GetId())
+        menu.Append(item)
+        return item
+
+    class ConfigFrame(wx.Frame):
+        def __init__(self, parent_tray_obj):
+            wx.Frame.__init__(self, parent=None, title="Superpaper Profile Configuration")
+            self.fSizer = wx.BoxSizer(wx.VERTICAL)
+            config_panel = ConfigPanel(self, parent_tray_obj)
+            self.fSizer.Add(config_panel, 1, wx.EXPAND)
+            self.SetAutoLayout(True)
+            self.SetSizer(self.fSizer)
+            self.Fit()
+            self.Layout()
+            self.Center()
+            self.Show()
+
+
+    class ConfigPanel(wx.Panel):
+        def __init__(self, parent, parent_tray_obj):
+            wx.Panel.__init__(self, parent)
+            self.frame = parent
+            self.parent_tray_obj = parent_tray_obj
+            self.sizer_main = wx.BoxSizer(wx.HORIZONTAL)
+            self.sizer_left = wx.BoxSizer(wx.VERTICAL) # buttons and prof sel
+            self.sizer_right = wx.BoxSizer(wx.VERTICAL) # option fields
+            self.sizer_paths = wx.BoxSizer(wx.VERTICAL)
+            self.sizer_paths_buttons = wx.BoxSizer(wx.HORIZONTAL)
+
+            self.paths_controls = []
+
+            self.list_of_profiles = listProfiles()
+            self.profnames = []
+            for p in self.list_of_profiles:
+                self.profnames.append(p.name)
+            self.profnames.append("Create a new profile")
+            # self.choiceProfile = wx.Choice(self, -1, name="ProfileChoice", size=(200, -1), choices=self.profnames)
+            self.choiceProfile = wx.Choice(self, -1, name="ProfileChoice", choices=self.profnames)
+            self.choiceProfile.Bind(wx.EVT_CHOICE, self.onSelect)
+            self.sizer_grid_options = wx.GridSizer(5, 4, 5, 5)
+            pnl = self
+            st_name = wx.StaticText(pnl, -1, "Name")
+            st_span = wx.StaticText(pnl, -1, "Spanmode")
+            st_slide = wx.StaticText(pnl, -1, "Slideshow")
+            st_sort = wx.StaticText(pnl, -1, "Sort")
+            st_del = wx.StaticText(pnl, -1, "Delay (600) [sec]")
+            st_off = wx.StaticText(pnl, -1, "Offsets (w1,h1;w2,h2) [px]")
+            st_in = wx.StaticText(pnl, -1, "Diagonal inches (24.0;13.3) [in]")
+            # st_ppi = wx.StaticText(pnl, -1, "PPIs")
+            st_bez = wx.StaticText(pnl, -1, "Bezels (10.1;9.5) [mm]")
+            st_hk = wx.StaticText(pnl, -1, "Hotkey (control+alt+w)")
+            
+            tc_width = 160
+            self.tc_name = wx.TextCtrl(pnl, -1, size=(tc_width, -1))
+            self.ch_span = wx.Choice(pnl, -1, name="SpanChoice", size=(tc_width, -1), choices=["Single","Multi"])
+            self.ch_sort = wx.Choice(pnl, -1, name="SortChoice", size=(tc_width, -1), choices=["Shuffle","Alphabetical"])
+            self.tc_delay = wx.TextCtrl(pnl, -1, size=(tc_width, -1))
+            self.tc_offsets = wx.TextCtrl(pnl, -1, size=(tc_width, -1))
+            self.tc_inches = wx.TextCtrl(pnl, -1, size=(tc_width, -1))
+            # self.tc_ppis = wx.TextCtrl(pnl, -1, size=(tc_width, -1))
+            self.tc_bez = wx.TextCtrl(pnl, -1, size=(tc_width, -1))
+            self.tc_hotkey = wx.TextCtrl(pnl, -1, size=(tc_width, -1))
+            self.cb_slideshow = wx.CheckBox(pnl, -1, "")  # Put the title in the left column
+            self.sizer_grid_options.AddMany(
+                [
+                    (st_name, 0, wx.ALIGN_RIGHT|wx.ALL|wx.ALIGN_CENTER_VERTICAL),
+                    (self.tc_name, 0, wx.ALIGN_LEFT|wx.ALL),
+                    (st_span, 0, wx.ALIGN_RIGHT|wx.ALL|wx.ALIGN_CENTER_VERTICAL),
+                    (self.ch_span, 0, wx.ALIGN_LEFT),
+                    (st_slide, 0, wx.ALIGN_RIGHT|wx.ALL|wx.ALIGN_CENTER_VERTICAL),
+                    (self.cb_slideshow, 0, wx.ALIGN_LEFT|wx.ALL|wx.ALIGN_CENTER_VERTICAL),
+                    (st_sort, 0, wx.ALIGN_RIGHT|wx.ALL|wx.ALIGN_CENTER_VERTICAL),
+                    (self.ch_sort, 0, wx.ALIGN_LEFT),
+                    (st_del, 0, wx.ALIGN_RIGHT|wx.ALL|wx.ALIGN_CENTER_VERTICAL),
+                    (self.tc_delay, 0, wx.ALIGN_LEFT),
+                    (st_off, 0, wx.ALIGN_RIGHT|wx.ALL|wx.ALIGN_CENTER_VERTICAL),
+                    (self.tc_offsets, 0, wx.ALIGN_LEFT),
+                    (st_in, 0, wx.ALIGN_RIGHT|wx.ALL|wx.ALIGN_CENTER_VERTICAL),
+                    (self.tc_inches, 0, wx.ALIGN_LEFT),
+                    # (st_ppi, 0, wx.ALIGN_RIGHT),
+                    # (self.tc_ppis, 0, wx.ALIGN_LEFT),
+                    (st_bez, 0, wx.ALIGN_RIGHT|wx.ALL|wx.ALIGN_CENTER_VERTICAL),
+                    (self.tc_bez, 0, wx.ALIGN_LEFT),
+                    (st_hk, 0, wx.ALIGN_RIGHT|wx.ALL|wx.ALIGN_CENTER_VERTICAL),
+                    (self.tc_hotkey, 0, wx.ALIGN_LEFT),
+                ]
+            )
+            
+            # Paths display
+            self.pathsWidget_default = self.createPathsWidget()
+            self.sizer_paths.Add(self.pathsWidget_default, 0, wx.CENTER|wx.ALL, 5)
+
+
+            # Left column buttons
+            self.button_apply = wx.Button(self, label="Apply")
+            self.button_new = wx.Button(self, label="New")
+            self.button_delete = wx.Button(self, label="Delete")
+            self.button_save = wx.Button(self, label="Save")
+            # self.button_settings = wx.Button(self, label="Settings")
+            self.button_testimage = wx.Button(self, label="Align Test")  # internally called 'testimage'
+            self.button_help = wx.Button(self, label="Help")
+            self.button_close = wx.Button(self, label="Close")
+
+            self.button_apply.Bind(wx.EVT_BUTTON, self.onApply)
+            self.button_new.Bind(wx.EVT_BUTTON, self.onCreateNewProfile)
+            self.button_delete.Bind(wx.EVT_BUTTON, self.onDeleteProfile)
+            self.button_save.Bind(wx.EVT_BUTTON, self.onSave)
+            # self.button_settings.Bind(wx.EVT_BUTTON, self.onSettings)
+            self.button_testimage.Bind(wx.EVT_BUTTON, self.onTestImage)
+            self.button_help.Bind(wx.EVT_BUTTON, self.onHelp)
+            self.button_close.Bind(wx.EVT_BUTTON, self.onClose)
+
+            # Right column buttons
+            self.button_add_paths = wx.Button(self, label="Add path")
+            self.button_remove_paths = wx.Button(self, label="Remove path")
+
+            self.button_add_paths.Bind(wx.EVT_BUTTON, self.onAddDisplay)
+            self.button_remove_paths.Bind(wx.EVT_BUTTON, self.onRemoveDisplay)
+
+            self.sizer_paths_buttons.Add(self.button_add_paths, 0, wx.CENTER|wx.ALL, 5)
+            self.sizer_paths_buttons.Add(self.button_remove_paths, 0, wx.CENTER|wx.ALL, 5)
+
+
+            # Left add items
+            self.sizer_left.Add(self.choiceProfile, 0, wx.CENTER|wx.ALL, 5)
+            self.sizer_left.Add(self.button_apply, 0, wx.CENTER|wx.ALL, 5)
+            self.sizer_left.Add(self.button_new, 0, wx.CENTER|wx.ALL, 5)
+            self.sizer_left.Add(self.button_delete, 0, wx.CENTER|wx.ALL, 5)
+            self.sizer_left.Add(self.button_save, 0, wx.CENTER|wx.ALL, 5)
+            # self.sizer_left.Add(self.button_settings, 0, wx.CENTER|wx.ALL, 5)
+            self.sizer_left.Add(self.button_testimage, 0, wx.CENTER|wx.ALL, 5)
+            self.sizer_left.Add(self.button_help, 0, wx.CENTER|wx.ALL, 5)
+            self.sizer_left.Add(self.button_close, 0, wx.CENTER|wx.ALL, 5)
+
+            # Right add items
+            self.sizer_right.Add(self.sizer_grid_options, 0, wx.CENTER|wx.ALL, 5)
+            self.sizer_right.Add(self.sizer_paths, 0, wx.CENTER|wx.ALL, 5)
+            self.sizer_right.Add(self.sizer_paths_buttons, 0, wx.CENTER|wx.ALL, 5)
+
+            # Collect items at main sizer
+            self.sizer_main.Add(self.sizer_left, 0, wx.CENTER|wx.EXPAND)
+            self.sizer_main.Add(self.sizer_right, 0, wx.CENTER|wx.EXPAND)
+
+            self.SetSizer(self.sizer_main)
+            self.sizer_main.Fit(parent)
+
+            ### End __init__.
+
+        def update_choiceprofile(self):
+            self.list_of_profiles = listProfiles()
+            self.profnames = []
+            for p in self.list_of_profiles:
+                self.profnames.append(p.name)
+            self.profnames.append("Create a new profile")
+            self.choiceProfile.SetItems(self.profnames)
+
+        def createPathsWidget(self):
+            new_paths_widget = wx.BoxSizer(wx.HORIZONTAL)
+            st_new_paths = wx.StaticText(self, -1, "display" + str(len(self.paths_controls)+1) + "paths")
+            tc_new_paths = wx.TextCtrl(self, -1, size=(500, -1))
+            self.paths_controls.append(tc_new_paths)
+
+            new_paths_widget.Add(st_new_paths, 0, wx.CENTER|wx.ALL, 5)
+            new_paths_widget.Add(tc_new_paths, 0, wx.CENTER|wx.ALL|wx.EXPAND, 5)
+            
+            button_name = "browse-"+str(len(self.paths_controls)-1)
+            button_new_browse = wx.Button(self, label="Browse" , name=button_name)
+            button_new_browse.Bind(wx.EVT_BUTTON, self.onBrowsePaths)
+            new_paths_widget.Add(button_new_browse, 0, wx.CENTER|wx.ALL, 5)
+
+            return new_paths_widget
+
+        # Profile setting displaying functions.
+        def populateFields(self, profile):
+            self.tc_name.ChangeValue(profile.name)
+            self.tc_delay.ChangeValue(str(profile.delayArray[0]))
+            self.tc_offsets.ChangeValue(self.show_offset(profile.manual_offsets_useronly))
+            show_inch = self.val_list_to_colonstr(profile.inches)
+            self.tc_inches.ChangeValue(show_inch)
+            # show_ppi = self.val_list_to_colonstr(profile.ppiArray)
+            # self.tc_ppis.ChangeValue(show_ppi)
+            show_bez = self.val_list_to_colonstr(profile.bezels)
+            self.tc_bez.ChangeValue(show_bez)
+            self.tc_hotkey.ChangeValue(self.show_hkbinding(profile.hkBinding))
+            
+            # Paths displays: get number to show from profile.
+            while (len(self.paths_controls) < len(profile.pathsArray)):
+                self.onAddDisplay(wx.EVT_BUTTON)
+            while (len(self.paths_controls) > len(profile.pathsArray)):
+                self.onRemoveDisplay(wx.EVT_BUTTON)
+            for text_field, paths_list in zip(self.paths_controls, profile.pathsArray):
+                text_field.ChangeValue(self.show_list_paths(paths_list))
+
+            if profile.slideshow:
+                self.cb_slideshow.SetValue(True)
+            else:
+                self.cb_slideshow.SetValue(False)
+            
+            if profile.spanmode == "single":
+                self.ch_span.SetSelection(0)
+            elif profile.spanmode == "multi":
+                self.ch_span.SetSelection(1)
+            else:
+                pass
+            if profile.sortmode == "shuffle":
+                self.ch_sort.SetSelection(0)
+            elif profile.sortmode == "alphabetical":
+                self.ch_sort.SetSelection(1)
+            else:
+                pass
+
+        def val_list_to_colonstr(self, array):
+            list_strings = []
+            if array:
+                for item in array:
+                    list_strings.append(str(item))
+                return ";".join(list_strings)
+            else:
+                return ""
+
+        def show_offset(self, offarray):
+            offstr_arr = []
+            offstr = ""
+            if offarray:
+                for offs in offarray:
+                    offstr_arr.append(str(offs).strip("(").strip(")").replace(" ", ""))
+                offstr = ";".join(offstr_arr)
+                return offstr
+            else:
+                return ""
+
+        def show_hkbinding(self, hktuple):
+            if hktuple:
+                hkstring = "+".join(hktuple)                
+                return hkstring
+            else:
+                return ""
+
+
+        # Path display related functions.
+        def show_list_paths(self, paths_list):
+            # Format a list of paths into the set style of listed paths.
+            if paths_list:
+                pathsstring = ";".join(paths_list)
+                return pathsstring
+            else:
+                return ""
+
+        def onAddDisplay(self,event):
+            new_disp_widget = self.createPathsWidget()
+            self.sizer_paths.Add(new_disp_widget, 0, wx.CENTER|wx.ALL, 5)
+            self.frame.fSizer.Layout()
+            self.frame.Fit()
+
+        def onRemoveDisplay(self,event):
+            if self.sizer_paths.GetChildren():
+                self.sizer_paths.Hide(len(self.paths_controls)-1)
+                self.sizer_paths.Remove(len(self.paths_controls)-1)
+                del self.paths_controls[-1]
+                self.frame.fSizer.Layout()
+                self.frame.Fit()
+
+        def onBrowsePaths(self,event):
+            dlg = BrowsePaths(None, self, event)
+            dlg.ShowModal()
+
+
+        # Top level button definitions
+        def onClose(self, event):
+            self.frame.Close(True)
+
+        def onSelect(self, event):
+            choiceObj = event.GetEventObject()
+            if choiceObj.GetName()=="ProfileChoice":
+                item = event.GetSelection()
+                if event.GetString() == "Create a new profile":
+                    self.onCreateNewProfile(event)
+                else:
+                    self.populateFields(self.list_of_profiles[item])
+            else:
+                pass
+
+        def onApply(self, event):
+            saved_file = self.onSave(event)
+            print(saved_file)
+            if saved_file is not None:
+                saved_profile = ProfileData(saved_file)
+                self.parent_tray_obj.reload_profiles(event)
+                self.parent_tray_obj.start_profile(event, saved_profile)
+            else:
+                pass
+
+        def onCreateNewProfile(self, event):
+            self.choiceProfile.SetSelection(self.choiceProfile.FindString("Create a new profile"))
+
+            self.tc_name.ChangeValue("")
+            self.tc_delay.ChangeValue("")
+            self.tc_offsets.ChangeValue("")
+            self.tc_inches.ChangeValue("")
+            # show_ppi = self.val_list_to_colonstr(profile.ppiArray)
+            # self.tc_ppis.ChangeValue(show_ppi)
+            self.tc_bez.ChangeValue("")
+            self.tc_hotkey.ChangeValue("")
+            
+            # Paths displays: get number to show from profile.
+            while (len(self.paths_controls) < 1):
+                self.onAddDisplay(wx.EVT_BUTTON)
+            while (len(self.paths_controls) > 1):
+                self.onRemoveDisplay(wx.EVT_BUTTON)
+            for text_field in self.paths_controls:
+                text_field.ChangeValue("")
+
+            self.cb_slideshow.SetValue(False)
+            self.ch_span.SetSelection(-1)
+            self.ch_sort.SetSelection(-1)
+
+        def onDeleteProfile(self, event):
+            profname = self.tc_name.GetLineText(0)
+            fname = PROFILES_PATH + profname + ".profile"
+            file_exists = os.path.isfile(fname)
+            if not file_exists:
+                msg = "Selected profile is not saved."
+                ShowMessageDialog(msg, "Error")
+                return
+            # Open confirmation dialog
+            dlg = wx.MessageDialog(None, 
+                                "Do you want to delete profile:"+ profname +"?",
+                                'Confirm Delete',
+                                wx.YES_NO | wx.ICON_QUESTION)
+            result = dlg.ShowModal()
+            if result == wx.ID_YES and file_exists:
+                os.remove(fname)
+            else:
+                pass
+
+        def onSave(self, event):
+            tmp_profile = TempProfileData()
+            tmp_profile.name = self.tc_name.GetLineText(0)
+            tmp_profile.spanmode = self.ch_span.GetString(self.ch_span.GetSelection()).lower()
+            tmp_profile.slideshow = self.cb_slideshow.GetValue()
+            tmp_profile.delay = self.tc_delay.GetLineText(0)
+            tmp_profile.sortmode = self.ch_sort.GetString(self.ch_sort.GetSelection()).lower()
+            # tmp_profile.ppiArray = self.tc_ppis.GetLineText(0)
+            tmp_profile.inches = self.tc_inches.GetLineText(0)
+            tmp_profile.manual_offsets = self.tc_offsets.GetLineText(0)
+            tmp_profile.bezels = self.tc_bez.GetLineText(0)
+            tmp_profile.hkBinding = self.tc_hotkey.GetLineText(0)
+            for text_field in self.paths_controls:
+                tmp_profile.pathsArray.append(text_field.GetLineText(0))
+
+            g_logger.info(tmp_profile.name)
+            g_logger.info(tmp_profile.spanmode)
+            g_logger.info(tmp_profile.slideshow)
+            g_logger.info(tmp_profile.delay)
+            g_logger.info(tmp_profile.sortmode)
+            # g_logger.info(tmp_profile.ppiArray)
+            g_logger.info(tmp_profile.inches)
+            g_logger.info(tmp_profile.manual_offsets)
+            g_logger.info(tmp_profile.bezels)
+            g_logger.info(tmp_profile.hkBinding)
+            g_logger.info(tmp_profile.pathsArray)
+
+            if tmp_profile.TestSave():
+                saved_file = tmp_profile.Save()
+                self.update_choiceprofile()
+                self.parent_tray_obj.reload_profiles(event)
+                self.parent_tray_obj.register_hotkeys()
+                # self.parent_tray_obj.register_hotkeys()
+                self.choiceProfile.SetSelection(self.choiceProfile.FindString(tmp_profile.name))
+                return saved_file
+            else:
+                g_logger.info("TestSave failed.")
+                return None
+
+        def onTestImage(self, event):
+            # Use the settings currently written out in the fields!
+            testimage = [PATH + "/resources/test.png"]
+            if not os.path.isfile(testimage[0]):
+                print(testimage)
+                msg = "Test image not found in {}.".format(testimage)
+                ShowMessageDialog(msg, "Error")
+            ppi = None
+            inches = self.tc_inches.GetLineText(0).split(";")
+            if (inches == "") or (len(inches) < nDisplays):
+                msg = "You must enter a diagonal inch value for every display, serparated by a semicolon ';'."
+                ShowMessageDialog(msg, "Error")
+
+            # print(inches)
+            inches = [float(i) for i in inches]
+            bezels = self.tc_bez.GetLineText(0).split(";")
+            bezels = [float(b) for b in bezels]
+            offsets = self.tc_offsets.GetLineText(0).split(";")
+            offsets = [[int(i.split(",")[0]), int(i.split(",")[1])] for i in offsets]
+            flat_offsets = []
+            for off in offsets:
+                for pix in off:
+                    flat_offsets.append(pix)
+            # print("flat_offsets= ", flat_offsets)
+            # Use the simplified CLI profile class
+            getDisplayData()
+            profile = CLIProfileData(testimage,
+                                    ppi,
+                                    inches,
+                                    bezels,
+                                    flat_offsets,
+                                    )
+            changeWallpaperJob(profile)
+
+        def onHelp(self,event):
+            help_frame = HelpFrame()
+
+
+    class BrowsePaths(wx.Dialog):
+        def __init__(self, parent, parent_self, parent_event):
+            wx.Dialog.__init__(self, parent, -1, 'Choose Image Source Directories', size=(500,700))
+            self.parent_self = parent_self
+            self.parent_event = parent_event
+            self.paths = []
+            sizer_main = wx.BoxSizer(wx.VERTICAL)
+            sizer_browse = wx.BoxSizer(wx.VERTICAL)
+            sizer_textfield = wx.BoxSizer(wx.VERTICAL)
+            sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
+            self.dir3 = wx.GenericDirCtrl(self, -1, 
+                # style=wx.DIRCTRL_MULTIPLE,
+                # style=0,
+                size=(450,550))
+            sizer_browse.Add(self.dir3, 0, wx.CENTER|wx.ALL|wx.EXPAND, 5)
+            self.tc_paths = wx.TextCtrl(self, -1, size=(450, -1))
+            sizer_textfield.Add(self.tc_paths, 0, wx.CENTER|wx.ALL, 5)
+
+            self.button_add = wx.Button(self, label="Add")
+            self.button_remove = wx.Button(self, label="Remove")
+            self.button_ok = wx.Button(self, label="Ok")
+            self.button_cancel = wx.Button(self, label="Cancel")
+
+            self.button_add.Bind(wx.EVT_BUTTON, self.onAdd)
+            self.button_remove.Bind(wx.EVT_BUTTON, self.onRemove)
+            self.button_ok.Bind(wx.EVT_BUTTON, self.onOk)
+            self.button_cancel.Bind(wx.EVT_BUTTON, self.onCancel)
+
+            sizer_buttons.Add(self.button_add, 0, wx.CENTER|wx.ALL, 5)
+            sizer_buttons.Add(self.button_remove, 0, wx.CENTER|wx.ALL, 5)
+            sizer_buttons.Add(self.button_ok, 0, wx.CENTER|wx.ALL, 5)
+            sizer_buttons.Add(self.button_cancel, 0, wx.CENTER|wx.ALL, 5)
+
+            sizer_main.Add(sizer_browse, 5, wx.ALL|wx.ALIGN_CENTER|wx.EXPAND)
+            sizer_main.Add(sizer_textfield, 5, wx.ALL|wx.ALIGN_CENTER)
+            sizer_main.Add(sizer_buttons, 5, wx.ALL|wx.ALIGN_CENTER)
+            self.SetSizer(sizer_main)
+            self.SetAutoLayout(True)
+
+        def onAdd(self, event):
+            text_field = self.tc_paths.GetLineText(0)
+            new_path = self.dir3.GetPath()
+            self.paths.append(new_path)
+            if text_field == "":
+                text_field = new_path
+            else:
+                text_field = ";".join([text_field, new_path])
+            self.tc_paths.SetValue(text_field)
+            self.tc_paths.SetInsertionPointEnd()
+
+        def onRemove(self, event):
+            if len(self.paths) > 0:
+                del self.paths[-1]
+                text_field = ";".join(self.paths)
+                self.tc_paths.SetValue(text_field)
+                self.tc_paths.SetInsertionPointEnd()
+
+        def onOk(self, event):
+            paths_string = self.tc_paths.GetLineText(0)
+            # If paths textctrl is empty, assume user wants current selection.
+            if paths_string == "":
+                paths_string = self.dir3.GetPath()
+            button_obj = self.parent_event.GetEventObject()
+            button_name = button_obj.GetName()
+            button_id = int(button_name.split("-")[1])
+            text_field = self.parent_self.paths_controls[button_id]
+            old_text = text_field.GetLineText(0)
+            if old_text == "":
+                new_text = paths_string
+            else:
+                new_text = old_text + ";" + paths_string
+            text_field.ChangeValue(new_text)
+            self.Destroy()
+
+        def onCancel(self, event):
+            self.Destroy()
+
+
+
+    class SettingsFrame(wx.Frame):
+        def __init__(self, parent_tray_obj):
+            wx.Frame.__init__(self, parent=None, title="Superpaper General Settings")
+            self.fSizer = wx.BoxSizer(wx.VERTICAL)
+            settings_panel = SettingsPanel(self, parent_tray_obj)
+            self.fSizer.Add(settings_panel, 1, wx.EXPAND)
+            self.SetAutoLayout(True)
+            self.SetSizer(self.fSizer)
+            self.Fit()
+            self.Layout()
+            self.Center()
+            self.Show()
+
+    class SettingsPanel(wx.Panel):
+        def __init__(self, parent, parent_tray_obj):
+            wx.Panel.__init__(self, parent)
+            self.frame = parent
+            self.parent_tray_obj = parent_tray_obj
+            self.sizer_main = wx.BoxSizer(wx.VERTICAL)
+            self.sizer_grid_settings = wx.GridSizer(5, 2, 5, 5)
+            self.sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
+            pnl = self
+            st_logging = wx.StaticText(pnl, -1, "Logging")
+            st_usehotkeys = wx.StaticText(pnl, -1, "Use hotkeys")
+            st_hk_next = wx.StaticText(pnl, -1, "Hotkey: Next wallpaper")
+            st_hk_pause = wx.StaticText(pnl, -1, "Hotkey: Pause slideshow")
+            st_setcmd = wx.StaticText(pnl, -1, "Custom command")
+            self.cb_logging = wx.CheckBox(pnl, -1, "")
+            self.cb_usehotkeys = wx.CheckBox(pnl, -1, "")
+            self.tc_hk_next = wx.TextCtrl(pnl, -1, size=(200, -1))
+            self.tc_hk_pause = wx.TextCtrl(pnl, -1, size=(200, -1))
+            self.tc_setcmd = wx.TextCtrl(pnl, -1, size=(200, -1))
+
+            self.sizer_grid_settings.AddMany(
+                [
+                    (st_logging, 0, wx.ALIGN_RIGHT),
+                    (self.cb_logging, 0, wx.ALIGN_LEFT),
+                    (st_usehotkeys, 0, wx.ALIGN_RIGHT),
+                    (self.cb_usehotkeys, 0, wx.ALIGN_LEFT),
+                    (st_hk_next, 0, wx.ALIGN_RIGHT),
+                    (self.tc_hk_next, 0, wx.ALIGN_LEFT),
+                    (st_hk_pause, 0, wx.ALIGN_RIGHT),
+                    (self.tc_hk_pause, 0, wx.ALIGN_LEFT),
+                    (st_setcmd, 0, wx.ALIGN_RIGHT),
+                    (self.tc_setcmd, 0, wx.ALIGN_LEFT),
+                ]
+            )
+            self.update_fields()
+            self.button_save = wx.Button(self, label="Save")
+            self.button_close = wx.Button(self, label="Close")
+            self.button_save.Bind(wx.EVT_BUTTON, self.onSave)
+            self.button_close.Bind(wx.EVT_BUTTON, self.onClose)
+            self.sizer_buttons.Add(self.button_save, 0, wx.CENTER|wx.ALL, 5)
+            self.sizer_buttons.Add(self.button_close, 0, wx.CENTER|wx.ALL, 5)
+            self.sizer_main.Add(self.sizer_grid_settings, 0, wx.CENTER|wx.EXPAND)
+            self.sizer_main.Add(self.sizer_buttons, 0, wx.CENTER|wx.EXPAND)
+            self.SetSizer(self.sizer_main)
+            self.sizer_main.Fit(parent)
+
+        def update_fields(self):
+            g_settings = GeneralSettingsData()
+            self.cb_logging.SetValue(g_settings.logging)
+            self.cb_usehotkeys.SetValue(g_settings.use_hotkeys)
+            self.tc_hk_next.ChangeValue(self.show_hkbinding(g_settings.hkBinding_next))
+            self.tc_hk_pause.ChangeValue(self.show_hkbinding(g_settings.hkBinding_pause))
+            self.tc_setcmd.ChangeValue(g_settings.set_command)
+
+        def show_hkbinding(self, hktuple):
+            hkstring = "+".join(hktuple)                
+            return hkstring
+
+        def onSave(self, event):
+            current_settings = GeneralSettingsData()
+            show_help = current_settings.show_help
+
+            fname = os.path.join(PATH, "general_settings")
+            f = open(fname, "w")
+            if self.cb_logging.GetValue():
+                f.write("logging=true\n")
+            else:
+                f.write("logging=false\n")
+            if self.cb_usehotkeys.GetValue():
+                f.write("use hotkeys=true\n")
+            else:
+                f.write("use hotkeys=false\n")
+            f.write("next wallpaper hotkey=" + self.tc_hk_next.GetLineText(0) + "\n")
+            f.write("pause wallpaper hotkey=" + self.tc_hk_pause.GetLineText(0) + "\n")
+            if show_help:
+                f.write("show_help_at_start=true\n")
+            else:
+                f.write("show_help_at_start=false\n")
+            f.write("set_command=" + self.tc_setcmd.GetLineText(0))
+            f.close()
+            # after saving file apply in tray object
+            self.parent_tray_obj.read_general_settings()
+
+        def onClose(self, event):
+            self.frame.Close(True)
+
+
+    class HelpFrame(wx.Frame):
+        def __init__(self):
+            wx.Frame.__init__(self, parent=None, title="Superpaper Help")
+            self.fSizer = wx.BoxSizer(wx.VERTICAL)
+            help_panel = HelpPanel(self)
+            self.fSizer.Add(help_panel, 1, wx.EXPAND)
+            self.SetAutoLayout(True)
+            self.SetSizer(self.fSizer)
+            self.Fit()
+            self.Layout()
+            self.Center()
+            self.Show()
+
+    class HelpPanel(wx.Panel):
+        def __init__(self, parent):
+            wx.Panel.__init__(self, parent)
+            self.frame = parent
+            self.sizer_main = wx.BoxSizer(wx.VERTICAL)
+            self.sizer_helpcontent = wx.BoxSizer(wx.VERTICAL)
+            self.sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
+
+            current_settings = GeneralSettingsData()
+            show_help = current_settings.show_help
+
+            st_show_at_start = wx.StaticText(self, -1, "Show this help at start")
+            self.cb_show_at_start = wx.CheckBox(self, -1, "")
+            self.cb_show_at_start.SetValue(show_help)
+            self.button_close = wx.Button(self, label="Close")
+            self.button_close.Bind(wx.EVT_BUTTON, self.onClose)
+            self.sizer_buttons.Add(st_show_at_start, 0, wx.CENTER|wx.ALL, 5)
+            self.sizer_buttons.Add(self.cb_show_at_start, 0, wx.CENTER|wx.ALL, 5)
+            self.sizer_buttons.Add(self.button_close, 0, wx.CENTER|wx.ALL, 5)
+
+            help_str = """
+How to use Superpaper:
+
+In the Profile Configuration you can adjust all your wallpaper settings.
+Only required options are name and wallpaper paths. Other application
+wide settings can be changed in the Settings menu. Both are accessible
+from the system tray menu.
+
+IMPORTANT NOTE: For the wallpapers to be set correctly, you must set in
+your OS the background fitting option to 'Span'.
+
+Description of Profile Configuration options:
+In the text field description an example is shown in parantheses and in
+brackets the expected units of numerical values.
+
+"Diagonal inches": The diagonal diameters of your monitors in
+                                 order starting from the left most monitor.
+                                 These affect the wallpaper only in "Single"
+                                 spanmode.
+
+"Spanmode": "Single" (span a single image across all monitors)
+                        "Multi" (set a different image on every monitor.)
+
+"Sort":  Applies to slideshow mode wallpaper order.
+
+"Offsets":  Wallpaper alignment correction offsets for your displays
+                   if using "Single" spanmode. Entered as "width,height"
+                   pixel value pairs, pairs separated by a semicolon ";".
+                   Positive offsets move the portion of the image on 
+                   the monitor down and to the right, negative offets
+                   up or left.
+
+"Bezels":   Bezel correction for "Single" spanmode wallpaper. Use this
+                  if you want the image to continue behind the bezels,
+                  like a scenery does behind a window frame.
+
+"Hotkey":   An optional key combination to apply/start the profile.
+                    Supports up to 3 modifiers and a key. Valid modifiers
+                    are 'control', 'super', 'alt' and 'shift'. Separate
+                    keys with a '+', like 'control+alt+w'.
+
+"display{N}paths":  Wallpaper folder paths for the display in the Nth
+                            position from the left. Multiple can be entered with
+                            the browse tool using "Add". If you have more than
+                            one vertically stacked row, they should be listed
+                            row by row starting from the top most row.
+
+Tips:
+    - You can use the given example profiles as templates: just change
+       the name and whatever else, save, and its a new profile.
+    - 'Align Test' feature allows you to test your offset and bezel settings.
+       Display diagonals, offsets and bezels need to be entered.
+"""
+            st_help = wx.StaticText(self, -1, help_str)
+            self.sizer_helpcontent.Add(st_help, 0, wx.EXPAND|wx.CENTER|wx.ALL, 5)
+
+            self.sizer_main.Add(self.sizer_helpcontent, 0, wx.CENTER|wx.EXPAND)
+            self.sizer_main.Add(self.sizer_buttons, 0, wx.CENTER|wx.EXPAND)
+            self.SetSizer(self.sizer_main)
+            self.sizer_main.Fit(parent)
+
+        def onClose(self, event):
+            if self.cb_show_at_start.GetValue() is True:
+                current_settings = GeneralSettingsData()
+                if current_settings.show_help is False:
+                    current_settings.show_help = True
+                    current_settings.Save()
+            else:
+                # Save that the help at start is not wanted.
+                current_settings = GeneralSettingsData()
+                show_help = current_settings.show_help
+                if show_help:
+                    current_settings.show_help = False
+                    current_settings.Save()
+            self.frame.Close(True)
+
+
+
     class TaskBarIcon(wx.adv.TaskBarIcon):
         def __init__(self, frame):
-            g_settings = GeneralSettingsData()
+            self.g_settings = GeneralSettingsData()
 
             self.frame = frame
             super(TaskBarIcon, self).__init__()
@@ -1149,81 +2163,164 @@ try:
             # None if no previous data was found
             self.active_profile = readActiveProfile()
             self.start_prev_profile(self.active_profile)
-            if self.active_profile is None:
-                g_logger.info("Starting up the first profile found.")
-                self.start_profile(wx.EVT_MENU, self.list_of_profiles[0])
+            # if self.active_profile is None:
+            #     g_logger.info("Starting up the first profile found.")
+            #     self.start_profile(wx.EVT_MENU, self.list_of_profiles[0])
 
-            if g_settings.use_hotkeys is True:
+            # self.hk = None
+            # self.hk2 = None
+            if self.g_settings.use_hotkeys is True:
+                try:
+                    # import keyboard # https://github.com/boppreh/keyboard
+                    from system_hotkey import SystemHotkey
+                    self.hk = SystemHotkey(check_queue_interval=0.05)
+                    self.hk2 = SystemHotkey(
+                        consumer=self.profile_consumer,
+                        check_queue_interval=0.05)
+                    self.seen_binding = set()
+                except Exception as e:
+                    g_logger.info(
+                        "WARNING: Could not import keyboard hotkey hook library, \
+    hotkeys will not work. Exception: {}".format(e))
+                self.register_hotkeys()
+            if self.g_settings.show_help is True:
+                config_frame = ConfigFrame(self)
+                help_frame = HelpFrame()
+
+
+
+        def register_hotkeys(self):
+            if self.g_settings.use_hotkeys is True:
                 try:
                     # import keyboard # https://github.com/boppreh/keyboard
                     from system_hotkey import SystemHotkey
                 except Exception as e:
                     g_logger.info(
-                        "Could not import keyboard hotkey hook library, \
-                        hotkeys will not work. Exception: {}".format(e))
-                try:
-                    # Keyboard bindings: https://github.com/boppreh/keyboard
-                    #
-                    # Alternative KB bindings for X11 systems and Windows:
-                    # system_hotkey https://github.com/timeyyy/system_hotkey
-                    seen_binding = set()
-                    hk = SystemHotkey(check_queue_interval=0.05)
-                    hk2 = SystemHotkey(
-                        consumer=self.profile_consumer,
-                        check_queue_interval=0.05)
-                    # register general bindings
-                    if g_settings.hkBinding_next not in seen_binding:
-                        hk.register(
-                            g_settings.hkBinding_next,
-                            callback=lambda x: self.next_wallpaper(wx.EVT_MENU))
-                        seen_binding.add(g_settings.hkBinding_next)
-                    if g_settings.hkBinding_pause not in seen_binding:
-                        hk.register(
-                            g_settings.hkBinding_pause,
-                            callback=lambda x: self.pause_timer(wx.EVT_MENU))
-                        seen_binding.add(g_settings.hkBinding_pause)
-                    hk.register(('control', 'super', 'shift', 'q'),
-                                callback=lambda x: self.on_exit(wx.EVT_MENU))
-                    # register profile specific bindings
-                    for profile in self.list_of_profiles:
+                        "WARNING: Could not import keyboard hotkey hook library, \
+    hotkeys will not work. Exception: {}".format(e))
+                if "system_hotkey" in sys.modules:
+                    try:
+                        # Keyboard bindings: https://github.com/boppreh/keyboard
+                        #
+                        # Alternative KB bindings for X11 systems and Windows:
+                        # system_hotkey https://github.com/timeyyy/system_hotkey
+                        # seen_binding = set()
+                        # self.hk = SystemHotkey(check_queue_interval=0.05)
+                        # self.hk2 = SystemHotkey(
+                        #     consumer=self.profile_consumer,
+                        #     check_queue_interval=0.05)
+
+                        # Unregister previous hotkeys
+                        if self.seen_binding:
+                            for binding in self.seen_binding:
+                                try:
+                                    self.hk.unregister(binding)
+                                    if DEBUG:
+                                        g_logger.info("Unreg hotkey {}".format(binding))
+                                except:
+                                    try:
+                                        self.hk2.unregister(binding)
+                                        if DEBUG:
+                                            g_logger.info("Unreg hotkey {}".format(binding))
+                                    except:
+                                        if DEBUG:
+                                            g_logger.info("Could not unreg hotkey '{}'".format(binding))
+                            self.seen_binding = set()                                
+
+
+                        # register general bindings
+                        if self.g_settings.hkBinding_next not in self.seen_binding:
+                            try:
+                                self.hk.register(
+                                    self.g_settings.hkBinding_next,
+                                    callback=lambda x: self.next_wallpaper(wx.EVT_MENU),
+                                    overwrite=False)
+                                self.seen_binding.add(self.g_settings.hkBinding_next)
+                            except:
+                                msg = "Error: could not register hotkey {}. \
+    Check that it is formatted properly and valid keys.".format(self.g_settings.hkBinding_next)
+                                g_logger.info(msg)
+                                g_logger.info(sys.exc_info()[0])
+                                ShowMessageDialog(msg, "Error")
+                        if self.g_settings.hkBinding_pause not in self.seen_binding:
+                            try:
+                                self.hk.register(
+                                    self.g_settings.hkBinding_pause,
+                                    callback=lambda x: self.pause_timer(wx.EVT_MENU),
+                                    overwrite=False)
+                                self.seen_binding.add(self.g_settings.hkBinding_pause)
+                            except:
+                                msg = "Error: could not register hotkey {}. \
+    Check that it is formatted properly and valid keys.".format(self.g_settings.hkBinding_pause)
+                                g_logger.info(msg)
+                                g_logger.info(sys.exc_info()[0])
+                                ShowMessageDialog(msg, "Error")
+                        try:
+                            hk.register(('control', 'super', 'shift', 'q'),
+                                        callback=lambda x: self.on_exit(wx.EVT_MENU))
+                        except:
+                            pass
+                        # register profile specific bindings
+                        self.list_of_profiles = listProfiles()
+                        for profile in self.list_of_profiles:
+                            if DEBUG:
+                                g_logger.info(
+                                    "Registering binding: \
+                                    {} for profile: {}"
+                                    .format(profile.hkBinding,profile.name))
+                            if (profile.hkBinding is not None and 
+                                    profile.hkBinding not in self.seen_binding):
+                                try:
+                                    self.hk2.register(profile.hkBinding, profile,
+                                        overwrite=False)
+                                    self.seen_binding.add(profile.hkBinding)
+                                except:
+                                    msg = "Error: could not register hotkey {}. \
+    Check that it is formatted properly and valid keys.".format(profile.hkBinding)
+                                    g_logger.info(msg)
+                                    g_logger.info(sys.exc_info()[0])
+                                    ShowMessageDialog(msg, "Error")
+                            elif profile.hkBinding in self.seen_binding:
+                                msg="Could not register hotkey: '{}' for profile: '{}'.\n\
+It is already registered for another action.".format(profile.hkBinding,profile.name)
+                                g_logger.info(msg)
+                                ShowMessageDialog(msg, "Error")
+                    except:
                         if DEBUG:
-                            g_logger.info(
-                                "Registering binding: \
-                                {} for profile: {}"
-                                .format(profile.hkBinding,profile.name))
-                        if (profile.hkBinding is not None and 
-                                profile.hkBinding not in seen_binding):
-                            hk2.register(profile.hkBinding, profile)
-                            seen_binding.add(profile.hkBinding)
-                        elif profile.hkBinding in seen_binding:
-                            g_logger.info(
-                                "Could not register hotkey: \
-                                {}\
-                                for profile: \
-                                {}\
-                                . It is already registered elsewhere."
-                                .format(profile.hkBinding,profile.name))
-                except Exception as e:
-                    if DEBUG:
-                        g_logger.info("Coulnd't register hotkeys, exception:")
-                        g_logger.info(e)
+                            g_logger.info("Coulnd't register hotkeys, exception:")
+                            g_logger.info(sys.exc_info()[0])
+
+
 
         def profile_consumer(self, event, hotkey, profile):
             if DEBUG:
                 g_logger.info("Profile object is: {}".format(profile))
             self.start_profile(wx.EVT_MENU, profile[0][0])
 
+        def read_general_settings(self):
+            # THIS FAILS MISERABLY, creating additional tray items.
+            # Reload settings by reloading the whole object.
+            # BUG if logging is on, this creates additional logging handlers
+            # leading to multiple log prints per event.
+            # self.__init__(self.frame)
+            self.g_settings = GeneralSettingsData()
+            self.register_hotkeys()
+            msg = "New settings are applied after an application restart. New hotkeys are registered."
+            ShowMessageDialog(msg, "Info")
+
         def CreatePopupMenu(self):
             menu = wx.Menu()
-            create_menu_item(menu, "Open config folder", self.open_config)
-            create_menu_item(menu, "Reload profiles", self.reload_profiles)
+            create_menu_item(menu, "Open Config Folder", self.open_config)
+            create_menu_item(menu, "Profile Configuration", self.configure_profiles)
+            create_menu_item(menu, "Settings", self.configure_settings)
+            create_menu_item(menu, "Reload Profiles", self.reload_profiles)
             menu.AppendSeparator()
             for item in self.list_of_profiles:
                 create_menu_item(menu, item.name, self.start_profile, item)
             menu.AppendSeparator()
-            create_menu_item(menu, "Next wallpaper", self.next_wallpaper)
+            create_menu_item(menu, "Next Wallpaper", self.next_wallpaper)
             self.pause_item = create_menu_item(
-                menu, "Pause timer", self.pause_timer, kind=wx.ITEM_CHECK)
+                menu, "Pause Timer", self.pause_timer, kind=wx.ITEM_CHECK)
             self.pause_item.Check(self.is_paused)
             menu.AppendSeparator()
             create_menu_item(menu, 'About', self.on_about)
@@ -1254,6 +2351,12 @@ try:
                 except BaseException:
                     pass
 
+        def configure_profiles(self, event):
+            config_frame = ConfigFrame(self)
+        
+        def configure_settings(self, event):
+            setting_frame = SettingsFrame(self)
+
         def reload_profiles(self, event):
             self.list_of_profiles = listProfiles()
 
@@ -1265,25 +2368,26 @@ try:
                     self.repeating_timer = runProfileJob(profile)
 
         def start_profile(self, event, profile):
-            with self.jobLock:
+            if DEBUG:
+                g_logger.info("Start profile: {}".format(profile.name))
+            if profile is None:
+                g_logger.info(
+                    "start_profile: profile is None. \
+                    Do you have any profiles in /profiles?")
+            elif self.active_profile is not None:
                 if DEBUG:
-                    g_logger.info("Start profile: {}".format(profile.name))
-                if profile is None:
                     g_logger.info(
-                        "start_profile: profile is None. \
-                        Do you have any profiles in /profiles?")
-                elif self.active_profile is not None:
-                    if DEBUG:
-                        g_logger.info(
-                            "Check if the starting profile is already running: {}"
-                            .format(profile.name))
-                        g_logger.info(
-                            "name check: {}, {}"
-                            .format(profile.name,
-                            self.active_profile.name))
-                    if profile.name == self.active_profile.name:
-                        self.next_wallpaper(event)
-                    else:
+                        "Check if the starting profile is already running: {}"
+                        .format(profile.name))
+                    g_logger.info(
+                        "name check: {}, {}"
+                        .format(profile.name,
+                                self.active_profile.name))
+                if profile.name == self.active_profile.name:
+                    self.next_wallpaper(event)
+                    return 0
+                else:
+                    with self.jobLock:
                         if (self.repeating_timer is not None and
                                 self.repeating_timer.is_running):
                             self.repeating_timer.stop()
@@ -1301,8 +2405,10 @@ try:
                         writeActiveProfile(profile.name)
                         if DEBUG:
                             g_logger.info("Wrote active profile: {}"
-                                .format(profile.name))
-                else:
+                                        .format(profile.name))
+                        return 0
+            else:
+                with self.jobLock:
                     if (self.repeating_timer is not None
                             and self.repeating_timer.is_running):
                         self.repeating_timer.stop()
@@ -1320,7 +2426,8 @@ try:
                     writeActiveProfile(profile.name)
                     if DEBUG:
                         g_logger.info("Wrote active profile: {}"
-                            .format(profile.name))
+                                    .format(profile.name))
+                    return 0
 
         def next_wallpaper(self, event):
             with self.jobLock:
@@ -1385,7 +2492,7 @@ try:
             info.SetVersion(VERSION_STRING)
             info.SetDescription(description)
             info.SetCopyright('(C) 2019 Henri Hänninen')
-            info.SetWebSite('http://www.github.com')
+            info.SetWebSite('https://github.com/hhannine/Superpaper/')
             info.SetLicence(licence)
             info.AddDeveloper('Henri Hänninen')
             info.AddArtist(artists)
@@ -1443,6 +2550,8 @@ def cli_logic():
         global DEBUG
         DEBUG = True
         g_logger.setLevel(logging.INFO)
+        # Install exception handler
+        # sys.excepthook = custom_exception_handler
         consoleHandler = logging.StreamHandler()
         g_logger.addHandler(consoleHandler)
         g_logger.info(args.setimages)
@@ -1483,10 +2592,10 @@ def cli_logic():
 
         getDisplayData()
         profile = CLIProfileData(args.setimages,
-                                args.ppi,
-                                args.inches,
-                                args.bezels,
-                                args.offsets,
+                                 args.ppi,
+                                 args.inches,
+                                 args.bezels,
+                                 args.offsets,
                                 )
         changeWallpaperJob(profile)
 
