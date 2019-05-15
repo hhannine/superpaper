@@ -31,9 +31,9 @@ elif platform.system() == "Linux":
 # Global variables
 
 # list of display resolutions (width,height), use tuples.
-resolutionArray = []
+RESOLUTION_ARRAY = []
 # list of display offsets (width,height), use tuples.
-dipslayOffsetArray = []
+DISPLAY_OFFSET_ARRAY = []
 
 DEBUG = False
 VERBOSE = False
@@ -44,7 +44,7 @@ canvasSize = [0, 0]
 # Set path to binary / script
 if getattr(sys, 'frozen', False):
     # If the application is run as a bundle, the pyInstaller bootloader
-    # extends the sys module by a flag frozen=True and sets the app 
+    # extends the sys module by a flag frozen=True and sets the app
     # path into variable _MEIPASS'.
     # PATH = sys._MEIPASS
     PATH = os.path.dirname(os.path.realpath(sys.executable))
@@ -57,7 +57,7 @@ if not os.path.isdir(TEMP_PATH):
 PROFILES_PATH = PATH + "/profiles/"
 TRAY_TOOLTIP = "Superpaper"
 TRAY_ICON = PATH + "/resources/default.png"
-VERSION_STRING = "1.1"
+VERSION_STRING = "1.1.1"
 g_set_command_string = ""
 g_wallpaper_change_lock = Lock()
 g_supported_image_extensions = (".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".webp")
@@ -72,16 +72,18 @@ if LOGGING:
     # sys.stdout = open(PATH + "/log.txt", "w")
     g_logger.setLevel(logging.INFO)
     fileHandler = logging.FileHandler("{0}/{1}.log".format(PATH, "log"),
-                                    mode="w")
+                                      mode="w")
     g_logger.addHandler(fileHandler)
     consoleHandler = logging.StreamHandler()
     g_logger.addHandler(consoleHandler)
 
-def custom_exception_handler(type, value, tb):
-    # g_logger.exception("Uncaught exception: {}".format(str(value)))
-    g_logger.exception("Uncaught exception.")
+def custom_exception_handler(exceptiontype, value, tb_var):
+    g_logger.exception("Uncaught exceptionn type: {}".format(str(exceptiontype)))
+    g_logger.exception("Exception: {}".format(str(value)))
+    g_logger.exception(str(tb_var))
+    # g_logger.exception("Uncaught exception.")
 
-def ShowMessageDialog(message,msg_type="Info"):
+def ShowMessageDialog(message, msg_type="Info"):
     # Type can be 'Info', 'Error', 'Question', 'Exclamation'
     if "wx" in sys.modules:
         dial = wx.MessageDialog(None, message, msg_type, wx.OK)
@@ -258,7 +260,7 @@ class ProfileData(object):
                         self.spanmode = wrd1
                     else:
                         g_logger.info("Exception: unknown spanmode: {} \
-                                in profile: {}".format(words[1],self.name))
+                                in profile: {}".format(words[1], self.name))
                 elif words[0] == "slideshow":
                     wrd1 = words[1].strip().lower()
                     if wrd1 == "true":
@@ -278,7 +280,7 @@ class ProfileData(object):
                         self.sortmode = wrd1
                     else:
                         g_logger.info("Exception: unknown sortmode: {} \
-                                in profile: {}".format(words[1],self.name))
+                                in profile: {}".format(words[1], self.name))
                 elif words[0] == "offsets":
                     # Use PPI mode algorithm to do cuts.
                     # Defaults assume uniform pixel density
@@ -293,7 +295,7 @@ class ProfileData(object):
                         self.manual_offsets.append((int(res_str[0]),
                                                     int(res_str[1])))
                         self.manual_offsets_useronly.append((int(res_str[0]),
-                                                    int(res_str[1])))                    
+                                                             int(res_str[1])))
                 elif words[0] == "bezels":
                     bezelMillimeter_Strings = words[1].strip().split(";")
                     for str in bezelMillimeter_Strings:
@@ -333,15 +335,15 @@ class ProfileData(object):
     def computePPIs(self, inches):
         if len(inches) < nDisplays:
             g_logger.info("Exception: Number of read display diagonals was: "
-                + str(len(inches))
-                + ", but the number of displays was found to be: "
-                + str(nDisplays))
+                          + str(len(inches))
+                          + ", but the number of displays was found to be: "
+                          + str(nDisplays))
             g_logger.info("Falling back to no PPI correction.")
             self.ppimode = False
             return nDisplays * [100]
         else:
             ppiArray = []
-            for inch, res in zip(inches, resolutionArray):
+            for inch, res in zip(inches, RESOLUTION_ARRAY):
                 diagonal_px = math.sqrt(res[0]**2 + res[1]**2)
                 px_per_inch = diagonal_px / inch
                 ppiArray.append(px_per_inch)
@@ -365,14 +367,14 @@ class ProfileData(object):
             g_logger.info(
                 "Bezel px calculation: initial manual offset: {}, \
                 and bezel pixels: {}".format(self.manual_offsets,
-                                        self.bezel_px_offsets))
+                                             self.bezel_px_offsets))
         # Add these horizontal offsets to manual_offsets:
         # Avoid offsetting the leftmost anchored display i==0
         # -1 since last display doesn't have a next display.
         for i in range(len(self.bezel_px_offsets) - 1):
             self.manual_offsets[i + 1] = (self.manual_offsets[i + 1][0] +
                                           self.bezel_px_offsets[i + 1] +
-                                          self.bezel_px_offsets[i], 
+                                          self.bezel_px_offsets[i],
                                           self.manual_offsets[i + 1][1])
         if DEBUG:
             g_logger.info(
@@ -403,9 +405,9 @@ Use absolute paths for best reliabilty.".format(path)
                     else:
                         # List only images that are of supported type.
                         list_of_images += [os.path.join(path, f)
-                                            for f in os.listdir(path)
-                                            if f.endswith(g_supported_image_extensions)
-                                            ]
+                                           for f in os.listdir(path)
+                                           if f.endswith(g_supported_image_extensions)
+                                          ]
                 # Append the list of monitor_i specific files to the list of
                 # lists of images.
                 self.all_files_in_paths.append(list_of_images)
@@ -497,7 +499,7 @@ class CLIProfileData(ProfileData):
             self.manual_offsets = nDisplays * [(0, 0)]
             off_pairs_zip = zip(*[iter(offsets)]*2)
             off_pairs = [tuple(p) for p in off_pairs_zip]
-            for off, i in zip(off_pairs,range(len(self.manual_offsets))):
+            for off, i in zip(off_pairs, range(len(self.manual_offsets))):
                 self.manual_offsets[i] = off
             # print(self.manual_offsets)
             for pair in self.manual_offsets:
@@ -562,7 +564,7 @@ class TempProfileData(object):
                 for paths in self.pathsArray:
                     # paths_formatted = ";".join(paths)
                     f.write("display" + str(self.pathsArray.index(paths)) + "paths=" + paths + "\n")
-                    
+
             f.close()
             return fname
         else:
@@ -715,7 +717,7 @@ class TempProfileData(object):
             for path in path_list:
                 if os.path.isdir(path) is True:
                     supported_files = [f for f in os.listdir(path)
-                                        if f.endswith(g_supported_image_extensions)]
+                                       if f.endswith(g_supported_image_extensions)]
                     if supported_files:
                         continue
                     else:
@@ -762,9 +764,9 @@ class RepeatedTimer(object):
 
 def getDisplayData():
     # https://github.com/rr-/screeninfo
-    global nDisplays, resolutionArray, dipslayOffsetArray
-    resolutionArray = []
-    dipslayOffsetArray = []
+    global nDisplays, RESOLUTION_ARRAY, DISPLAY_OFFSET_ARRAY
+    RESOLUTION_ARRAY = []
+    DISPLAY_OFFSET_ARRAY = []
     monitors = get_monitors()
     nDisplays = len(monitors)
     for m_index in range(len(monitors)):
@@ -774,30 +776,41 @@ def getDisplayData():
         res.append(monitors[m_index].height)
         offset.append(monitors[m_index].x)
         offset.append(monitors[m_index].y)
-        resolutionArray.append(tuple(res))
-        dipslayOffsetArray.append(tuple(offset))
+        RESOLUTION_ARRAY.append(tuple(res))
+        DISPLAY_OFFSET_ARRAY.append(tuple(offset))
     # Check that the display offsets are sane, i.e. translate the values if
     # there are any negative values (Windows).
     # Top-most edge of the crop tuples.
-    leftmost_offset = min(dipslayOffsetArray, key=itemgetter(0))[0]
-    topmost_offset = min(dipslayOffsetArray, key=itemgetter(1))[1]
+    leftmost_offset = min(DISPLAY_OFFSET_ARRAY, key=itemgetter(0))[0]
+    topmost_offset = min(DISPLAY_OFFSET_ARRAY, key=itemgetter(1))[1]
     if leftmost_offset < 0 or topmost_offset < 0:
         if DEBUG:
-            g_logger.info("Negative display offset: {}".format(dipslayOffsetArray))
+            g_logger.info("Negative display offset: {}".format(DISPLAY_OFFSET_ARRAY))
         translate_offsets = []
-        for offset in dipslayOffsetArray:
+        for offset in DISPLAY_OFFSET_ARRAY:
             translate_offsets.append((offset[0] - leftmost_offset, offset[1] - topmost_offset))
-        dipslayOffsetArray = translate_offsets
+        DISPLAY_OFFSET_ARRAY = translate_offsets
         if DEBUG:
-            g_logger.info("Sanitised display offset: {}".format(dipslayOffsetArray))
+            g_logger.info("Sanitised display offset: {}".format(DISPLAY_OFFSET_ARRAY))
     if DEBUG:
         g_logger.info(
             "getDisplayData output: nDisplays = {}, {}, {}"
             .format(
-            nDisplays,
-            resolutionArray,
-            dipslayOffsetArray))
-        g_logger.info("{}, {}".format(res, offset))
+                nDisplays,
+                RESOLUTION_ARRAY,
+                DISPLAY_OFFSET_ARRAY))
+    # Sort displays left to right according to offset data
+    display_indices = list(range(len(DISPLAY_OFFSET_ARRAY)))
+    display_indices.sort(key=DISPLAY_OFFSET_ARRAY.__getitem__)
+    DISPLAY_OFFSET_ARRAY = list(map(DISPLAY_OFFSET_ARRAY.__getitem__, display_indices))
+    RESOLUTION_ARRAY = list(map(RESOLUTION_ARRAY.__getitem__, display_indices))
+    if DEBUG:
+        g_logger.info(
+            "SORTED getDisplayData output: nDisplays = {}, {}, {}"
+            .format(
+                nDisplays,
+                RESOLUTION_ARRAY,
+                DISPLAY_OFFSET_ARRAY))
 
 
 def computeCanvas_deprec(res_array):
@@ -835,13 +848,13 @@ def computeCanvas(res_array, offset_array):
     return canvasSize
 
 
-def computeResolutionArrayPPIcorrection(res_array, ppiArrayRelDensity):
-    eff_resolutionArray = []
+def computeRESOLUTION_ARRAYPPIcorrection(res_array, ppiArrayRelDensity):
+    eff_RESOLUTION_ARRAY = []
     for i in range(len(res_array)):
         effw = round(res_array[i][0] / ppiArrayRelDensity[i])
         effh = round(res_array[i][1] / ppiArrayRelDensity[i])
-        eff_resolutionArray.append((effw, effh))
-    return eff_resolutionArray
+        eff_RESOLUTION_ARRAY.append((effw, effh))
+    return eff_RESOLUTION_ARRAY
 
 
 # resize image to fill given rectangle and do a centered crop to size.
@@ -878,17 +891,17 @@ def resizeToFill(img, res):
         # (left edge, half of extra height from top,
         # right edge, bottom = top + res[1]) : force correct height
         cropTuple = (
-                    0,
-                    round(extraH/2),
-                    newSize[0],
-                    round(extraH/2) + res[1])
+            0,
+            round(extraH/2),
+            newSize[0],
+            round(extraH/2) + res[1])
         cropped_res = img.crop(cropTuple)
         if cropped_res.size == res:
             return cropped_res
         else:
             g_logger.info(
                 "Error: result image not of correct size. crp:{}, res:{}"
-                .format(cropped_res.size,res))
+                .format(cropped_res.size, res))
             return -1
     elif imgRatio >= trgtRatio:      # img not tall enough / is too wide
         resizeFactor = res[1] / imgSize[1]
@@ -906,7 +919,7 @@ def resizeToFill(img, res):
         if extraW == 0:
             # image is already at right width, no cropping needed.
             return img
-        # (half of extra from left edge, top edge, 
+        # (half of extra from left edge, top edge,
         # right = left + desired width, bottom) : force correct width
         cropTuple = (
             round(extraW/2),
@@ -919,7 +932,7 @@ def resizeToFill(img, res):
         else:
             g_logger.info(
                 "Error: result image not of correct size. crp:{}, res:{}"
-                .format(cropped_res.size,res))
+                .format(cropped_res.size, res))
             return -1
 
 
@@ -935,8 +948,9 @@ def get_all_centers(resarr_eff, manual_offsets):
     center_standard_height = get_center(resarr_eff[0])[1]
     if len(manual_offsets) < len(resarr_eff):
         g_logger.info("get_all_centers: Not enough manual offsets: \
-            {} for displays: {}" 
-            .format(len(manual_offsets),len(resarr_eff)))
+            {} for displays: {}".format(
+                len(manual_offsets),
+                len(resarr_eff)))
     else:
         for i in range(len(resarr_eff)):
             horiz_radius = get_horizontal_radius(resarr_eff[i])
@@ -964,19 +978,19 @@ def get_horizontal_radius(res):
     return round(res[0] / 2)
 
 
-def computeCropTuples(resolutionArray_eff, manual_offsets):
-    # Assume the centers of the physical displays are aligned on common 
-    # horizontal line. If this is not the case one must use the manual 
+def computeCropTuples(RESOLUTION_ARRAY_eff, manual_offsets):
+    # Assume the centers of the physical displays are aligned on common
+    # horizontal line. If this is not the case one must use the manual
     # offsets defined in the profile for adjustment (and bezel corrections).
-    # Anchor positions to the top left corner of the left most display. If 
+    # Anchor positions to the top left corner of the left most display. If
     # its size is scaled up, one will need to adjust the horizontal positions
-    # of all the displays. (This is automatically handled by using the 
+    # of all the displays. (This is automatically handled by using the
     # effective resolution array).
     # Additionally one must make sure that the highest point of the display
     # arrangement is at y=0.
     crop_tuples = []
-    centers = get_all_centers(resolutionArray_eff, manual_offsets)
-    for center, res in zip(centers, resolutionArray_eff):
+    centers = get_all_centers(RESOLUTION_ARRAY_eff, manual_offsets)
+    for center, res in zip(centers, RESOLUTION_ARRAY_eff):
         lefttop = get_lefttop_from_center(center, res)
         rightbottom = get_rightbottom_from_lefttop(lefttop, res)
         crop_tuples.append(lefttop + rightbottom)
@@ -1027,7 +1041,7 @@ def spanSingleImage(profile):
     if DEBUG:
         g_logger.info(file)
     img = Image.open(file)
-    canvasTuple = tuple(computeCanvas(resolutionArray,dipslayOffsetArray))
+    canvasTuple = tuple(computeCanvas(RESOLUTION_ARRAY, DISPLAY_OFFSET_ARRAY))
     img_resize = resizeToFill(img, canvasTuple)
     outputfile = TEMP_PATH + profile.name + "-a.png"
     if os.path.isfile(outputfile):
@@ -1049,14 +1063,14 @@ def spanSingleImagePPIcorrection(profile):
     if DEBUG:
         g_logger.info(file)
     img = Image.open(file)
-    resolutionArray_eff = computeResolutionArrayPPIcorrection(
-        resolutionArray, profile.ppiArrayRelDensity)
+    RESOLUTION_ARRAY_eff = computeRESOLUTION_ARRAYPPIcorrection(
+        RESOLUTION_ARRAY, profile.ppiArrayRelDensity)
 
     # Cropping now sections of the image to be shown, USE EFFECTIVE WORKING
     # SIZES. Also EFFECTIVE SIZE Offsets are now required.
     manual_offsets = profile.manual_offsets
     cropped_images = []
-    crop_tuples = computeCropTuples(resolutionArray_eff, manual_offsets)
+    crop_tuples = computeCropTuples(RESOLUTION_ARRAY_eff, manual_offsets)
     # larger working size needed to fill all the normalized lower density
     # displays. Takes account manual offsets that might require extra space.
     canvasTuple_eff = tuple(computeWorkingCanvas(crop_tuples))
@@ -1065,8 +1079,8 @@ def spanSingleImagePPIcorrection(profile):
     # offsets.
     img_workingsize = resizeToFill(img, canvasTuple_eff)
     # Simultaneously make crops at working size and then resize down to actual
-    # resolution from resolutionArray as needed.
-    for crop, res in zip(crop_tuples, resolutionArray):
+    # resolution from RESOLUTION_ARRAY as needed.
+    for crop, res in zip(crop_tuples, RESOLUTION_ARRAY):
         crop_img = img_workingsize.crop(crop)
         if crop_img.size == res:
             cropped_images.append(crop_img)
@@ -1075,11 +1089,11 @@ def spanSingleImagePPIcorrection(profile):
             cropped_images.append(crop_img)
     # Combine crops to a single canvas of the size of the actual desktop
     # actual combined size of the display resolutions
-    canvasTuple_fin = tuple(computeCanvas(resolutionArray,dipslayOffsetArray))
+    canvasTuple_fin = tuple(computeCanvas(RESOLUTION_ARRAY, DISPLAY_OFFSET_ARRAY))
     combinedImage = Image.new("RGB", canvasTuple_fin, color=0)
     combinedImage.load()
     for i in range(len(cropped_images)):
-        combinedImage.paste(cropped_images[i], dipslayOffsetArray[i])
+        combinedImage.paste(cropped_images[i], DISPLAY_OFFSET_ARRAY[i])
     # Saving combined image
     outputfile = TEMP_PATH + profile.name + "-a.png"
     if os.path.isfile(outputfile):
@@ -1099,14 +1113,14 @@ def setMultipleImages(profile):
     if DEBUG:
         g_logger.info(str(files))
     img_resized = []
-    for file, res in zip(files, resolutionArray):
+    for file, res in zip(files, RESOLUTION_ARRAY):
         image = Image.open(file)
         img_resized.append(resizeToFill(image, res))
-    canvasTuple = tuple(computeCanvas(resolutionArray,dipslayOffsetArray))
+    canvasTuple = tuple(computeCanvas(RESOLUTION_ARRAY, DISPLAY_OFFSET_ARRAY))
     combinedImage = Image.new("RGB", canvasTuple, color=0)
     combinedImage.load()
     for i in range(len(files)):
-        combinedImage.paste(img_resized[i], dipslayOffsetArray[i])
+        combinedImage.paste(img_resized[i], DISPLAY_OFFSET_ARRAY[i])
     outputfile = TEMP_PATH + profile.name + "-a.png"
     if os.path.isfile(outputfile):
         outputfile_old = outputfile
@@ -1176,8 +1190,8 @@ def setWallpaper_linux(outputfile):
         else:
             os.system(set_command.format(image=outputfile))
     elif desk_env in ["gnome", "gnome-wayland",
-                    "unity", "ubuntu", 
-                    "pantheon", "budgie-desktop"]:
+                      "unity", "ubuntu",
+                      "pantheon", "budgie-desktop"]:
         subprocess.run(["gsettings", "set",
                         "org.gnome.desktop.background", "picture-uri",
                         file])
@@ -1225,7 +1239,7 @@ def special_image_cropper(outputfile):
     outputname = os.path.splitext(outputfile)[0]
     img_names = []
     id = 0
-    for res, offset in zip(resolutionArray, dipslayOffsetArray):
+    for res, offset in zip(RESOLUTION_ARRAY, DISPLAY_OFFSET_ARRAY):
         left = offset[0]
         top = offset[1]
         right = left + res[0]
@@ -1291,15 +1305,15 @@ def xfce_actions(outputfile):
     img_names = special_image_cropper(outputfile)
 
     read_prop = subprocess.Popen(["xfconf-query",
-                                    "-c",
-                                    "xfce4-desktop",
-                                    "-p",
-                                    "/backdrop",
-                                    "-l"],
-                                    stdout=subprocess.PIPE)
+                                  "-c",
+                                  "xfce4-desktop",
+                                  "-p",
+                                  "/backdrop",
+                                  "-l"],
+                                 stdout=subprocess.PIPE)
     props = read_prop.stdout.read().decode("utf-8").split("\n")
     for prop in props:
-        for monitor, imgname in zip(monitors,img_names):
+        for monitor, imgname in zip(monitors, img_names):
             if monitor in prop:
                 if "last-image" in prop or "image-path" in prop:
                     os.system(
@@ -1360,8 +1374,8 @@ def quickProfileJob(profile):
     with g_wallpaper_change_lock:
         # Look for old temp image:
         files = [i for i in os.listdir(TEMP_PATH)
-                if os.path.isfile(os.path.join(TEMP_PATH,i))
-                and i.startswith(profile.name + "-")]
+                 if os.path.isfile(os.path.join(TEMP_PATH, i))
+                 and i.startswith(profile.name + "-")]
         if DEBUG:
             g_logger.info("quickswitch file lookup: {}".format(files))
         if files:
@@ -1404,7 +1418,7 @@ def readActiveProfile():
                 profname = line
                 if DEBUG:
                     g_logger.info("read profile name from 'running_profile':{}"
-                        .format(profname))
+                                  .format(profname))
                 prof_file = PROFILES_PATH + profname + ".profile"
                 if os.path.isfile(prof_file):
                     profile = ProfileData(prof_file)
@@ -1489,11 +1503,11 @@ try:
             # st_ppi = wx.StaticText(pnl, -1, "PPIs")
             st_bez = wx.StaticText(pnl, -1, "Bezels (10.1;9.5) [mm]")
             st_hk = wx.StaticText(pnl, -1, "Hotkey (control+alt+w)")
-            
+
             tc_width = 160
             self.tc_name = wx.TextCtrl(pnl, -1, size=(tc_width, -1))
-            self.ch_span = wx.Choice(pnl, -1, name="SpanChoice", size=(tc_width, -1), choices=["Single","Multi"])
-            self.ch_sort = wx.Choice(pnl, -1, name="SortChoice", size=(tc_width, -1), choices=["Shuffle","Alphabetical"])
+            self.ch_span = wx.Choice(pnl, -1, name="SpanChoice", size=(tc_width, -1), choices=["Single", "Multi"])
+            self.ch_sort = wx.Choice(pnl, -1, name="SortChoice", size=(tc_width, -1), choices=["Shuffle", "Alphabetical"])
             self.tc_delay = wx.TextCtrl(pnl, -1, size=(tc_width, -1))
             self.tc_offsets = wx.TextCtrl(pnl, -1, size=(tc_width, -1))
             self.tc_inches = wx.TextCtrl(pnl, -1, size=(tc_width, -1))
@@ -1525,7 +1539,7 @@ try:
                     (self.tc_hotkey, 0, wx.ALIGN_LEFT),
                 ]
             )
-            
+
             # Paths display
             self.pathsWidget_default = self.createPathsWidget()
             self.sizer_paths.Add(self.pathsWidget_default, 0, wx.CENTER|wx.ALL, 5)
@@ -1602,9 +1616,9 @@ try:
 
             new_paths_widget.Add(st_new_paths, 0, wx.CENTER|wx.ALL, 5)
             new_paths_widget.Add(tc_new_paths, 0, wx.CENTER|wx.ALL|wx.EXPAND, 5)
-            
+
             button_name = "browse-"+str(len(self.paths_controls)-1)
-            button_new_browse = wx.Button(self, label="Browse" , name=button_name)
+            button_new_browse = wx.Button(self, label="Browse", name=button_name)
             button_new_browse.Bind(wx.EVT_BUTTON, self.onBrowsePaths)
             new_paths_widget.Add(button_new_browse, 0, wx.CENTER|wx.ALL, 5)
 
@@ -1622,11 +1636,11 @@ try:
             show_bez = self.val_list_to_colonstr(profile.bezels)
             self.tc_bez.ChangeValue(show_bez)
             self.tc_hotkey.ChangeValue(self.show_hkbinding(profile.hkBinding))
-            
+
             # Paths displays: get number to show from profile.
-            while (len(self.paths_controls) < len(profile.pathsArray)):
+            while len(self.paths_controls) < len(profile.pathsArray):
                 self.onAddDisplay(wx.EVT_BUTTON)
-            while (len(self.paths_controls) > len(profile.pathsArray)):
+            while len(self.paths_controls) > len(profile.pathsArray):
                 self.onRemoveDisplay(wx.EVT_BUTTON)
             for text_field, paths_list in zip(self.paths_controls, profile.pathsArray):
                 text_field.ChangeValue(self.show_list_paths(paths_list))
@@ -1635,7 +1649,7 @@ try:
                 self.cb_slideshow.SetValue(True)
             else:
                 self.cb_slideshow.SetValue(False)
-            
+
             if profile.spanmode == "single":
                 self.ch_span.SetSelection(0)
             elif profile.spanmode == "multi":
@@ -1671,7 +1685,7 @@ try:
 
         def show_hkbinding(self, hktuple):
             if hktuple:
-                hkstring = "+".join(hktuple)                
+                hkstring = "+".join(hktuple)
                 return hkstring
             else:
                 return ""
@@ -1686,13 +1700,13 @@ try:
             else:
                 return ""
 
-        def onAddDisplay(self,event):
+        def onAddDisplay(self, event):
             new_disp_widget = self.createPathsWidget()
             self.sizer_paths.Add(new_disp_widget, 0, wx.CENTER|wx.ALL, 5)
             self.frame.fSizer.Layout()
             self.frame.Fit()
 
-        def onRemoveDisplay(self,event):
+        def onRemoveDisplay(self, event):
             if self.sizer_paths.GetChildren():
                 self.sizer_paths.Hide(len(self.paths_controls)-1)
                 self.sizer_paths.Remove(len(self.paths_controls)-1)
@@ -1700,7 +1714,7 @@ try:
                 self.frame.fSizer.Layout()
                 self.frame.Fit()
 
-        def onBrowsePaths(self,event):
+        def onBrowsePaths(self, event):
             dlg = BrowsePaths(None, self, event)
             dlg.ShowModal()
 
@@ -1711,7 +1725,7 @@ try:
 
         def onSelect(self, event):
             choiceObj = event.GetEventObject()
-            if choiceObj.GetName()=="ProfileChoice":
+            if choiceObj.GetName() == "ProfileChoice":
                 item = event.GetSelection()
                 if event.GetString() == "Create a new profile":
                     self.onCreateNewProfile(event)
@@ -1741,11 +1755,11 @@ try:
             # self.tc_ppis.ChangeValue(show_ppi)
             self.tc_bez.ChangeValue("")
             self.tc_hotkey.ChangeValue("")
-            
+
             # Paths displays: get number to show from profile.
-            while (len(self.paths_controls) < 1):
+            while len(self.paths_controls) < 1:
                 self.onAddDisplay(wx.EVT_BUTTON)
-            while (len(self.paths_controls) > 1):
+            while len(self.paths_controls) > 1:
                 self.onRemoveDisplay(wx.EVT_BUTTON)
             for text_field in self.paths_controls:
                 text_field.ChangeValue("")
@@ -1763,10 +1777,10 @@ try:
                 ShowMessageDialog(msg, "Error")
                 return
             # Open confirmation dialog
-            dlg = wx.MessageDialog(None, 
-                                "Do you want to delete profile:"+ profname +"?",
-                                'Confirm Delete',
-                                wx.YES_NO | wx.ICON_QUESTION)
+            dlg = wx.MessageDialog(None,
+                                   "Do you want to delete profile:"+ profname +"?",
+                                   'Confirm Delete',
+                                   wx.YES_NO | wx.ICON_QUESTION)
             result = dlg.ShowModal()
             if result == wx.ID_YES and file_exists:
                 os.remove(fname)
@@ -1839,20 +1853,20 @@ try:
             # Use the simplified CLI profile class
             getDisplayData()
             profile = CLIProfileData(testimage,
-                                    ppi,
-                                    inches,
-                                    bezels,
-                                    flat_offsets,
+                                     ppi,
+                                     inches,
+                                     bezels,
+                                     flat_offsets,
                                     )
             changeWallpaperJob(profile)
 
-        def onHelp(self,event):
+        def onHelp(self, event):
             help_frame = HelpFrame()
 
 
     class BrowsePaths(wx.Dialog):
         def __init__(self, parent, parent_self, parent_event):
-            wx.Dialog.__init__(self, parent, -1, 'Choose Image Source Directories', size=(500,700))
+            wx.Dialog.__init__(self, parent, -1, 'Choose Image Source Directories', size=(500, 700))
             self.parent_self = parent_self
             self.parent_event = parent_event
             self.paths = []
@@ -1860,10 +1874,10 @@ try:
             sizer_browse = wx.BoxSizer(wx.VERTICAL)
             sizer_textfield = wx.BoxSizer(wx.VERTICAL)
             sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
-            self.dir3 = wx.GenericDirCtrl(self, -1, 
-                # style=wx.DIRCTRL_MULTIPLE,
-                # style=0,
-                size=(450,550))
+            self.dir3 = wx.GenericDirCtrl(self, -1,
+                                          # style=wx.DIRCTRL_MULTIPLE,
+                                          # style=0,
+                                          size=(450, 550))
             sizer_browse.Add(self.dir3, 0, wx.CENTER|wx.ALL|wx.EXPAND, 5)
             self.tc_paths = wx.TextCtrl(self, -1, size=(450, -1))
             sizer_textfield.Add(self.tc_paths, 0, wx.CENTER|wx.ALL, 5)
@@ -1997,7 +2011,7 @@ try:
             self.tc_setcmd.ChangeValue(g_settings.set_command)
 
         def show_hkbinding(self, hktuple):
-            hkstring = "+".join(hktuple)                
+            hkstring = "+".join(hktuple)
             return hkstring
 
         def onSave(self, event):
@@ -2070,8 +2084,12 @@ Only required options are name and wallpaper paths. Other application
 wide settings can be changed in the Settings menu. Both are accessible
 from the system tray menu.
 
-IMPORTANT NOTE: For the wallpapers to be set correctly, you must set in
-your OS the background fitting option to 'Span'.
+IMPORTANT NOTE: For the wallpapers to be set correctly, you must set
+in your OS the background fitting option to 'Span'.
+
+NOTE: If your displays are not in a horizontal row, the pixel density
+and offset corrections unfortunately do not work. In this case leave
+the 'Diagonal inches', 'Offsets' and 'Bezels' fields empty.
 
 Description of Profile Configuration options:
 In the text field description an example is shown in parantheses and in
@@ -2225,7 +2243,7 @@ Tips:
                                     except:
                                         if DEBUG:
                                             g_logger.info("Could not unreg hotkey '{}'".format(binding))
-                            self.seen_binding = set()                                
+                            self.seen_binding = set()
 
 
                         # register general bindings
@@ -2267,12 +2285,12 @@ Tips:
                                 g_logger.info(
                                     "Registering binding: \
                                     {} for profile: {}"
-                                    .format(profile.hkBinding,profile.name))
-                            if (profile.hkBinding is not None and 
+                                    .format(profile.hkBinding, profile.name))
+                            if (profile.hkBinding is not None and
                                     profile.hkBinding not in self.seen_binding):
                                 try:
                                     self.hk2.register(profile.hkBinding, profile,
-                                        overwrite=False)
+                                                      overwrite=False)
                                     self.seen_binding.add(profile.hkBinding)
                                 except:
                                     msg = "Error: could not register hotkey {}. \
@@ -2281,8 +2299,8 @@ Tips:
                                     g_logger.info(sys.exc_info()[0])
                                     ShowMessageDialog(msg, "Error")
                             elif profile.hkBinding in self.seen_binding:
-                                msg="Could not register hotkey: '{}' for profile: '{}'.\n\
-It is already registered for another action.".format(profile.hkBinding,profile.name)
+                                msg = "Could not register hotkey: '{}' for profile: '{}'.\n\
+It is already registered for another action.".format(profile.hkBinding, profile.name)
                                 g_logger.info(msg)
                                 ShowMessageDialog(msg, "Error")
                     except:
@@ -2353,7 +2371,7 @@ It is already registered for another action.".format(profile.hkBinding,profile.n
 
         def configure_profiles(self, event):
             config_frame = ConfigFrame(self)
-        
+
         def configure_settings(self, event):
             setting_frame = SettingsFrame(self)
 
@@ -2405,7 +2423,7 @@ It is already registered for another action.".format(profile.hkBinding,profile.n
                         writeActiveProfile(profile.name)
                         if DEBUG:
                             g_logger.info("Wrote active profile: {}"
-                                        .format(profile.name))
+                                          .format(profile.name))
                         return 0
             else:
                 with self.jobLock:
@@ -2426,7 +2444,7 @@ It is already registered for another action.".format(profile.hkBinding,profile.n
                     writeActiveProfile(profile.name)
                     if DEBUG:
                         g_logger.info("Wrote active profile: {}"
-                                    .format(profile.name))
+                                      .format(profile.name))
                     return 0
 
         def next_wallpaper(self, event):
