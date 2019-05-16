@@ -215,14 +215,14 @@ Stumbling stones to keep in mind if you have issues:
 
 ### General shortcomings
 - PPI & Bezel corr. only work on a single horizontal row of displays at this time, i.e. monitors side by side.
-- The module used for display data gathering seems to have issues with some setups, detecting displays in a wrong order for example.
+- The module used for display data gathering seems to have issues with some setups, for example with Windows 10 DPI scaling.
 
 ### Linux
 - (Found in virtual machine testing) In KDE and XFCE environments image spanning can have issues if monitors are not in a horizontal row. Found with 3 virtual displays in an "L" shape.
 
 ### Windows
 - A rare issue where setting the wallpaper fails and leads to a black wallpaper. Might be related to source image properties.
-- On some (older?) system configurations your monitors can be detected in the wrong order and Windows10 DPI scaling options can interfere with the detection.
+- Windows10 DPI scaling options can interfere with resolution detection and cause issues with background handling.
 
 ### Mac OS X
 - It is not known whether this works at all. If you try it, tell me how it goes!
