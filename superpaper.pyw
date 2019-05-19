@@ -57,10 +57,10 @@ if not os.path.isdir(TEMP_PATH):
 PROFILES_PATH = PATH + "/profiles/"
 TRAY_TOOLTIP = "Superpaper"
 TRAY_ICON = PATH + "/resources/default.png"
-VERSION_STRING = "1.1.1"
-g_set_command_string = ""
-g_wallpaper_change_lock = Lock()
-g_supported_image_extensions = (".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".webp")
+VERSION_STRING = "1.1.2"
+G_SET_COMMAND_STRING = ""
+G_WALLPAPER_CHANGE_LOCK = Lock()
+G_SUPPORTED_IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".webp")
 
 if DEBUG and not LOGGING:
     g_logger.setLevel(logging.INFO)
@@ -78,12 +78,14 @@ if LOGGING:
     g_logger.addHandler(consoleHandler)
 
 def custom_exception_handler(exceptiontype, value, tb_var):
-    g_logger.exception("Uncaught exceptionn type: {}".format(str(exceptiontype)))
-    g_logger.exception("Exception: {}".format(str(value)))
+    """Log uncaught exceptions."""
+    g_logger.exception("Uncaught exceptionn type: %s", str(exceptiontype))
+    g_logger.exception("Exception: %s",str(value))
     g_logger.exception(str(tb_var))
     # g_logger.exception("Uncaught exception.")
 
-def ShowMessageDialog(message, msg_type="Info"):
+def show_message_dialog(message, msg_type="Info"):
+    """General purpose info dialog in GUI mode."""
     # Type can be 'Info', 'Error', 'Question', 'Exclamation'
     if "wx" in sys.modules:
         dial = wx.MessageDialog(None, message, msg_type, wx.OK)
@@ -102,7 +104,7 @@ class GeneralSettingsData(object):
         self.parse_settings()
 
     def parse_settings(self):
-        global DEBUG, LOGGING, g_set_command_string
+        global DEBUG, LOGGING, G_SET_COMMAND_STRING
         global g_logger, fileHandler, consoleHandler
         fname = os.path.join(PATH, "general_settings")
         if os.path.isfile(fname):
@@ -159,8 +161,8 @@ class GeneralSettingsData(object):
                             g_logger.info("hkBinding_pause: {}"
                                           .format(self.hkBinding_pause))
                     elif words[0] == "set_command":
-                        g_set_command_string = words[1].strip()
-                        self.set_command = g_set_command_string
+                        G_SET_COMMAND_STRING = words[1].strip()
+                        self.set_command = G_SET_COMMAND_STRING
                     elif words[0].strip() == "show_help_at_start":
                         show_state = words[1].strip().lower()
                         if show_state == "false":
@@ -400,13 +402,13 @@ class ProfileData(object):
                         message = "A path was not found: '{}'.\n\
 Use absolute paths for best reliabilty.".format(path)
                         g_logger.info(message)
-                        ShowMessageDialog(message, "Error")
+                        show_message_dialog(message, "Error")
                         continue
                     else:
                         # List only images that are of supported type.
                         list_of_images += [os.path.join(path, f)
                                            for f in os.listdir(path)
-                                           if f.endswith(g_supported_image_extensions)
+                                           if f.endswith(G_SUPPORTED_IMAGE_EXTENSIONS)
                                           ]
                 # Append the list of monitor_i specific files to the list of
                 # lists of images.
@@ -509,7 +511,10 @@ class CLIProfileData(ProfileData):
         self.ppiArrayRelDensity = []
         self.bezels = bezels
         self.bezel_px_offsets = []
-        self.files = files
+        #self.files = files
+        self.files = []
+        for item in files:
+            self.files.append(os.path.realpath(item))
         #
         if self.ppimode is True:
             self.computeRelativeDensities()
@@ -540,7 +545,7 @@ class TempProfileData(object):
                 f = open(fname, "w")
             except:
                 msg = "Cannot write to file {}".format(fname)
-                ShowMessageDialog(msg, "Error")
+                show_message_dialog(msg, "Error")
                 return None
             f.write("name=" + str(self.name) + "\n")
             if self.spanmode:
@@ -581,32 +586,32 @@ class TempProfileData(object):
                 os.remove(fname)
             except:
                 msg = "Cannot write to file {}".format(fname)
-                ShowMessageDialog(msg, "Error")
+                show_message_dialog(msg, "Error")
                 return False
             if self.spanmode == "single":
                 if len(self.pathsArray) > 1:
                     msg = "When spanning a single image across all monitors, only one paths field is needed."
-                    ShowMessageDialog(msg, "Error")
+                    show_message_dialog(msg, "Error")
                     return False
             if self.spanmode == "multi":
                 if len(self.pathsArray) < 2:
                     msg = "When setting a different image on every display, each display needs its own paths field."
-                    ShowMessageDialog(msg, "Error")
+                    show_message_dialog(msg, "Error")
                     return False
             if self.slideshow is True and not self.delay:
                 msg = "When using slideshow you need to enter a delay."
-                ShowMessageDialog(msg, "Info")
+                show_message_dialog(msg, "Info")
                 return False
             if self.delay:
                 try:
                     val = int(self.delay)
                     if val < 20:
                         msg = "It is advisable to set the slideshow delay to be at least 20 seconds due to the time the image processing takes."
-                        ShowMessageDialog(msg, "Info")
+                        show_message_dialog(msg, "Info")
                         return False
                 except ValueError:
                     msg = "Slideshow delay must be an integer of seconds."
-                    ShowMessageDialog(msg, "Error")
+                    show_message_dialog(msg, "Error")
                     return False
             # if self.sortmode:
                 # No test needed
@@ -615,21 +620,21 @@ class TempProfileData(object):
                     pass
                 else:
                     msg = "Display diagonals must be given in numeric values using decimal point and separated by semicolon ';'."
-                    ShowMessageDialog(msg, "Error")
+                    show_message_dialog(msg, "Error")
                     return False
             if self.manual_offsets:
                 if self.is_list_offsets(self.manual_offsets):
                     pass
                 else:
                     msg = "Display offsets must be given in width,height pixel pairs and separated by semicolon ';'."
-                    ShowMessageDialog(msg, "Error")
+                    show_message_dialog(msg, "Error")
                     return False
             if self.bezels:
                 if self.is_list_float(self.bezels):
                     if self.manual_offsets:
                         if len(self.manual_offsets.split(";")) < len(self.bezels.split(";")):
                             msg = "When using both offset and bezel corrections, take care to enter an offset for each display that you enter a bezel thickness."
-                            ShowMessageDialog(msg, "Error")
+                            show_message_dialog(msg, "Error")
                             return False
                         else:
                             pass
@@ -637,25 +642,25 @@ class TempProfileData(object):
                         pass
                 else:
                     msg = "Display bezels must be given in millimeters using decimal point and separated by semicolon ';'."
-                    ShowMessageDialog(msg, "Error")
+                    show_message_dialog(msg, "Error")
                     return False
             if self.hkBinding:
                 if self.is_valid_hotkey(self.hkBinding):
                     pass
                 else:
                     msg = "Hotkey must be given as 'mod1+mod2+mod3+key'. Valid modifiers are 'control', 'super', 'alt', 'shift'."
-                    ShowMessageDialog(msg, "Error")
+                    show_message_dialog(msg, "Error")
                     return False
             if self.pathsArray:
                 if self.is_list_valid_paths(self.pathsArray):
                     pass
                 else:
                     # msg = "Paths must be separated by a semicolon ';'."
-                    # ShowMessageDialog(msg, "Error")
+                    # show_message_dialog(msg, "Error")
                     return False
             else:
                 msg = "You must enter at least one path for images."
-                ShowMessageDialog(msg, "Error")
+                show_message_dialog(msg, "Error")
                 return False
             # Passed all tests.
             valid_profile = True
@@ -663,7 +668,7 @@ class TempProfileData(object):
         else:
             print("tmp.Save(): name is not set.")
             msg = "You must enter a name for the profile."
-            ShowMessageDialog(msg, "Error")
+            show_message_dialog(msg, "Error")
             return False
 
     def is_list_float(self, input):
@@ -680,7 +685,7 @@ class TempProfileData(object):
         list_input = input.split(";")
         # if len(list_input) < nDisplays:
         #     msg = "Enter an offset for every display, even if it is (0,0)."
-        #     ShowMessageDialog(msg, "Error")
+        #     show_message_dialog(msg, "Error")
         #     return False
         try:
             for off_pair in list_input:
@@ -706,27 +711,27 @@ class TempProfileData(object):
     def is_list_valid_paths(self, input):
         if input == [""]:
             msg = "At least one path for wallpapers must be given."
-            ShowMessageDialog(msg, "Error")
+            show_message_dialog(msg, "Error")
             return False
         if "" in input:
             msg = "Take care not to save a profile with an empty display paths field."
-            ShowMessageDialog(msg, "Error")
+            show_message_dialog(msg, "Error")
             return False
         for path_list_str in input:
             path_list = path_list_str.split(";")
             for path in path_list:
                 if os.path.isdir(path) is True:
                     supported_files = [f for f in os.listdir(path)
-                                       if f.endswith(g_supported_image_extensions)]
+                                       if f.endswith(G_SUPPORTED_IMAGE_EXTENSIONS)]
                     if supported_files:
                         continue
                     else:
                         msg = "Path '{}' does not contain supported image files.".format(path)
-                        ShowMessageDialog(msg, "Error")
+                        show_message_dialog(msg, "Error")
                         return False
                 else:
                     msg = "Path '{}' was not recognized as a directory.".format(path)
-                    ShowMessageDialog(msg, "Error")
+                    show_message_dialog(msg, "Error")
                     return False
         valid_pathsarray = True
         return valid_pathsarray
@@ -812,21 +817,6 @@ def getDisplayData():
                 RESOLUTION_ARRAY,
                 DISPLAY_OFFSET_ARRAY))
 
-
-def computeCanvas_deprec(res_array):
-    # Assuming horizontal display arrangement.
-    canvasWidth = 0
-    for res in res_array:
-        canvasWidth += res[0]
-    if len(res_array) == 1:
-        canvasHeight = res_array[0][1]
-    else:
-        # Tallest display sets the canvas height with single row.
-        canvasHeight = max(res_array, key=itemgetter(1))[1]
-    canvasSize = [canvasWidth, canvasHeight]
-    if DEBUG:
-        g_logger.info("Canvas size: {}".format(canvasSize))
-    return canvasSize
 
 def computeCanvas(res_array, offset_array):
     # Take the subtractions of right-most right - left-most left
@@ -1174,7 +1164,7 @@ def setWallpaper(outputfile):
 
 def setWallpaper_linux(outputfile):
     file = "file://" + outputfile
-    set_command = g_set_command_string
+    set_command = G_SET_COMMAND_STRING
     if DEBUG:
         g_logger.info(file)
     # subprocess.run(["gsettings", "set", "org.cinnamon.desktop.background",
@@ -1227,7 +1217,7 @@ def setWallpaper_linux(outputfile):
                 You need to set the 'set_command' option in your \
                 settings file superpaper/general_settings. Exiting."
             g_logger.info(message)
-            ShowMessageDialog(message, "Error")
+            show_message_dialog(message, "Error")
             sys.exit(1)
         else:
             os.system(set_command.format(image=outputfile))
@@ -1334,7 +1324,7 @@ def xfce_actions(outputfile):
 
 
 def changeWallpaperJob(profile):
-    with g_wallpaper_change_lock:
+    with G_WALLPAPER_CHANGE_LOCK:
         if profile.spanmode.startswith("single") and profile.ppimode is False:
             # spanSingleImage(profile)
             thrd = Thread(target=spanSingleImage, args=(profile,), daemon=True)
@@ -1349,6 +1339,7 @@ def changeWallpaperJob(profile):
             thrd.start()
         else:
             g_logger.info("Unkown profile spanmode: {}".format(profile.spanmode))
+        return thrd
 
 
 def runProfileJob(profile):
@@ -1371,7 +1362,7 @@ def runProfileJob(profile):
 
 
 def quickProfileJob(profile):
-    with g_wallpaper_change_lock:
+    with G_WALLPAPER_CHANGE_LOCK:
         # Look for old temp image:
         files = [i for i in os.listdir(TEMP_PATH)
                  if os.path.isfile(os.path.join(TEMP_PATH, i))
@@ -1399,7 +1390,7 @@ def listProfiles():
             msg = "There was an error when loading profile '{}'. Exiting.".format(files[i])
             g_logger.info(msg)
             g_logger.info(e)
-            ShowMessageDialog(msg, "Error")
+            show_message_dialog(msg, "Error")
             exit()
         if DEBUG:
             g_logger.info("Listed profile: {}".format(profile_list[i].name))
@@ -1774,7 +1765,7 @@ try:
             file_exists = os.path.isfile(fname)
             if not file_exists:
                 msg = "Selected profile is not saved."
-                ShowMessageDialog(msg, "Error")
+                show_message_dialog(msg, "Error")
                 return
             # Open confirmation dialog
             dlg = wx.MessageDialog(None,
@@ -1832,12 +1823,12 @@ try:
             if not os.path.isfile(testimage[0]):
                 print(testimage)
                 msg = "Test image not found in {}.".format(testimage)
-                ShowMessageDialog(msg, "Error")
+                show_message_dialog(msg, "Error")
             ppi = None
             inches = self.tc_inches.GetLineText(0).split(";")
             if (inches == "") or (len(inches) < nDisplays):
                 msg = "You must enter a diagonal inch value for every display, serparated by a semicolon ';'."
-                ShowMessageDialog(msg, "Error")
+                show_message_dialog(msg, "Error")
 
             # print(inches)
             inches = [float(i) for i in inches]
@@ -2259,7 +2250,7 @@ Tips:
     Check that it is formatted properly and valid keys.".format(self.g_settings.hkBinding_next)
                                 g_logger.info(msg)
                                 g_logger.info(sys.exc_info()[0])
-                                ShowMessageDialog(msg, "Error")
+                                show_message_dialog(msg, "Error")
                         if self.g_settings.hkBinding_pause not in self.seen_binding:
                             try:
                                 self.hk.register(
@@ -2272,7 +2263,7 @@ Tips:
     Check that it is formatted properly and valid keys.".format(self.g_settings.hkBinding_pause)
                                 g_logger.info(msg)
                                 g_logger.info(sys.exc_info()[0])
-                                ShowMessageDialog(msg, "Error")
+                                show_message_dialog(msg, "Error")
                         try:
                             hk.register(('control', 'super', 'shift', 'q'),
                                         callback=lambda x: self.on_exit(wx.EVT_MENU))
@@ -2297,12 +2288,12 @@ Tips:
     Check that it is formatted properly and valid keys.".format(profile.hkBinding)
                                     g_logger.info(msg)
                                     g_logger.info(sys.exc_info()[0])
-                                    ShowMessageDialog(msg, "Error")
+                                    show_message_dialog(msg, "Error")
                             elif profile.hkBinding in self.seen_binding:
                                 msg = "Could not register hotkey: '{}' for profile: '{}'.\n\
 It is already registered for another action.".format(profile.hkBinding, profile.name)
                                 g_logger.info(msg)
-                                ShowMessageDialog(msg, "Error")
+                                show_message_dialog(msg, "Error")
                     except:
                         if DEBUG:
                             g_logger.info("Coulnd't register hotkeys, exception:")
@@ -2324,7 +2315,7 @@ It is already registered for another action.".format(profile.hkBinding, profile.
             self.g_settings = GeneralSettingsData()
             self.register_hotkeys()
             msg = "New settings are applied after an application restart. New hotkeys are registered."
-            ShowMessageDialog(msg, "Info")
+            show_message_dialog(msg, "Info")
 
         def CreatePopupMenu(self):
             menu = wx.Menu()
@@ -2540,26 +2531,26 @@ def cli_logic():
     parser = argparse.ArgumentParser()
     parser.add_argument("-s", "--setimages", nargs='*',
                         help="List of images to set as wallpaper, \
-                        starting from the left most monitor. \
-                        If a single image is given, it is spanned \
-                        across all monitors.")
+starting from the left most monitor. \
+If a single image is given, it is spanned \
+across all monitors.")
     parser.add_argument("-p", "--ppi", nargs='*', type=float,
                         help="List of monitor PPIs. \
-                        Only relevant for a spanned wallpaper.")
+Only relevant for a spanned wallpaper.")
     parser.add_argument("-i", "--inches", nargs='*', type=float,
                         help="List of monitor diagonals in inches for PPIs. \
-                        Only relevant for a spanned wallpaper.")
+Only relevant for a spanned wallpaper.")
     parser.add_argument("-b", "--bezels", nargs='*', type=float,
                         help="List of monitor bezels in millimeters for \
-                        bezel correction to spanned wallpapers. \
-                        N.B. Needs either --ppi or --inches!")
+bezel correction to spanned wallpapers. \
+N.B. Needs either --ppi or --inches!")
     parser.add_argument("-o", "--offsets", nargs='*',
                         help="List of wallpaper offsets. \
-                        Should only be necessary with single spanned image.")
+Should only be necessary with single spanned image.")
     parser.add_argument("-c", "--command", nargs='*',
                         help="Custom command to set the wallpaper. \
-                            Substitute /path/to/image.jpg by '{image}'. \
-                            Must be in quotes.")
+Substitute /path/to/image.jpg by '{image}'. \
+Must be in quotes.")
     parser.add_argument("-d", "--debug", action="store_true",
                         help="Run the full application with debugging g_logger.infos.")
     args = parser.parse_args()
@@ -2579,34 +2570,34 @@ def cli_logic():
         g_logger.info(args.offsets)
         g_logger.info(args.command)
         g_logger.info(args.debug)
-    if args.debug and not args.setimages:
+    if args.debug and len(sys.argv) == 2:
         tray_loop()
     else:
         if not args.setimages:
             g_logger.info("Exception: You must pass image(s) to set as \
-                wallpaper with '-s' or '--setimages'. Exiting.")
+wallpaper with '-s' or '--setimages'. Exiting.")
             exit()
         else:
             for file in args.setimages:
                 if not os.path.isfile(file):
                     g_logger.error("Exception: One of the passed images was not \
-                        a file: ({fname}). Exiting.".format(fname=file))
+a file: ({fname}). Exiting.".format(fname=file))
                     exit()
         if args.bezels and not (args.ppi or args.inches):
             g_logger.info("The bezel correction feature needs display PPIs, \
-                    provide these with --inches or --ppi.")
+provide these with --inches or --ppi.")
         if args.offsets and len(args.offsets) % 2 != 0:
             g_logger.error("Exception: Number of offset pixels not even. If passing manual \
-                offsets, give width and height offset for each display, even if \
-                not actually offsetting every display. Exiting.")
+offsets, give width and height offset for each display, even if \
+not actually offsetting every display. Exiting.")
             exit()
         if args.command:
             if len(args.command) > 1:
                 g_logger.error("Exception: Remember to put the custom command in quotes. \
-                Exiting.")
+Exiting.")
                 exit()
-            global g_set_command_string
-            g_set_command_string = args.command[0]
+            global G_SET_COMMAND_STRING
+            G_SET_COMMAND_STRING = args.command[0]
 
         getDisplayData()
         profile = CLIProfileData(args.setimages,
@@ -2615,14 +2606,23 @@ def cli_logic():
                                  args.bezels,
                                  args.offsets,
                                 )
-        changeWallpaperJob(profile)
+        job_thread = changeWallpaperJob(profile)
+        job_thread.join()
 
 
 def tray_loop():
     if not os.path.isdir(PROFILES_PATH):
         os.mkdir(PROFILES_PATH)
-    app = App(False)
-    app.MainLoop()
+    if "wx" in sys.modules:
+        app = App(False)
+        app.MainLoop()
+    else:
+        print("ERROR: Module 'wx' import has failed. Is it installed? \
+GUI unavailable, exiting.")
+        g_logger.error("ERROR: Module 'wx' import has failed. Is it installed? \
+GUI unavailable, exiting.")
+        exit()
+
 
 # MAIN
 
