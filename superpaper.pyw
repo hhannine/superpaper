@@ -1205,17 +1205,21 @@ def setWallpaper_linux(outputfile):
                 subprocess.run("pcmanfm-qt", "-w", outputfile)
             except:
                 g_logger.info("Exception: failure to find either command \
-                    'pcmanfm' or 'pcmanfm-qt'. Exiting.")
+'pcmanfm' or 'pcmanfm-qt'. Exiting.")
                 sys.exit(1)
     elif desk_env in ["/usr/share/xsessions/plasma"]:
         kdeplasma_actions(outputfile)
     elif "i3" in desk_env or desk_env in ["/usr/share/xsessions/bspwm"]:
         subprocess.run(["feh", "--bg-scale", "--no-xinerama", outputfile])
+    elif desk_env == "":
+        g_logger.info("DESKTOP_SESSION variable is empty, \
+attempting to use feh to set the wallpaper.")
+        subprocess.run(["feh", "--bg-scale", "--no-xinerama", outputfile])
     else:
         if set_command == "":
             message = "Your DE could not be detected to set the wallpaper. \
-                You need to set the 'set_command' option in your \
-                settings file superpaper/general_settings. Exiting."
+You need to set the 'set_command' option in your \
+settings file superpaper/general_settings. Exiting."
             g_logger.info(message)
             show_message_dialog(message, "Error")
             sys.exit(1)
