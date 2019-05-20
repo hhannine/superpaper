@@ -6,13 +6,13 @@ Superpaper is an advanced multi monitor wallpaper manager
 for **Linux** and **Windows** operating systems, with partial and untested support for **Mac OS X**.
 
 Supported Linux desktop environments / window managers are:
-- BSPWM
+- BSPWM (needs feh)
 - Budgie
 - Cinnamon
 - Gnome
-- i3 (via feh)
+- i3 (needs feh)
 - KDE*
-- LXDE
+- LXDE & LXQt
 - Mate
 - Pantheon
 - XFCE*
@@ -46,7 +46,12 @@ For PPI correction Superpaper assumes that your displays' physical center points
 using the manual offset.
 
 In the above banner photo you can see the PPI and bezel corrections in action. The left one is a 27" 4K display, and the right one is a 25" 1440p display.
-					  
+
+## Support
+If you find Superpaper useful please consider supporting its development: [Support via PayPal][paypal-superpaper].
+
+[paypal-superpaper]: https://www.paypal.me/superpaper/5
+
 ## Installation
 
 ### A. Portable releases
@@ -227,12 +232,6 @@ Stumbling stones to keep in mind if you have issues:
 ### Mac OS X
 - It is not known whether this works at all. If you try it, tell me how it goes!
 - The library implementing global hotkeys does not support Mac OS X at this time unfortunately.
-
-
-## Support
-If you find Superpaper useful please consider supporting its development: [Support via PayPal][paypal-superpaper].
-
-[paypal-superpaper]: https://www.paypal.me/superpaper/5
 
 
 ## License
