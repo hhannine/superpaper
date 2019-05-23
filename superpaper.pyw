@@ -1174,57 +1174,58 @@ def setWallpaper_linux(outputfile):
     if DEBUG:
         g_logger.info("DESKTOP_SESSION is: '{env}'".format(env=desk_env))
 
-    if set_command != "":
-        if set_command == "feh":
+    if desk_env:
+        if set_command != "":
+            if set_command == "feh":
+                subprocess.run(["feh", "--bg-scale", "--no-xinerama", outputfile])
+            else:
+                os.system(set_command.format(image=outputfile))
+        elif desk_env in ["gnome", "gnome-wayland",
+                        "unity", "ubuntu",
+                        "pantheon", "budgie-desktop"]:
+            subprocess.run(["gsettings", "set",
+                            "org.gnome.desktop.background", "picture-uri",
+                            file])
+        elif desk_env in ["cinnamon"]:
+            subprocess.run(["gsettings", "set",
+                            "org.cinnamon.desktop.background", "picture-uri",
+                            file])
+        elif desk_env in ["mate"]:
+            subprocess.run(["gsettings",
+                            "set",
+                            "org.mate.background",
+                            "picture-filename",
+                            outputfile])
+        elif desk_env in ["xfce", "xubuntu"]:
+            xfce_actions(outputfile)
+        elif desk_env in ["lubuntu", "Lubuntu"]:
+            try:
+                subprocess.run("pcmanfm", "-w", outputfile)
+            except:
+                try:
+                    subprocess.run("pcmanfm-qt", "-w", outputfile)
+                except:
+                    g_logger.info("Exception: failure to find either command \
+'pcmanfm' or 'pcmanfm-qt'. Exiting.")
+                    sys.exit(1)
+        elif desk_env in ["/usr/share/xsessions/plasma"]:
+            kdeplasma_actions(outputfile)
+        elif "i3" in desk_env or desk_env in ["/usr/share/xsessions/bspwm"]:
             subprocess.run(["feh", "--bg-scale", "--no-xinerama", outputfile])
         else:
-            os.system(set_command.format(image=outputfile))
-    elif desk_env in ["gnome", "gnome-wayland",
-                      "unity", "ubuntu",
-                      "pantheon", "budgie-desktop"]:
-        subprocess.run(["gsettings", "set",
-                        "org.gnome.desktop.background", "picture-uri",
-                        file])
-    elif desk_env in ["cinnamon"]:
-        subprocess.run(["gsettings", "set",
-                        "org.cinnamon.desktop.background", "picture-uri",
-                        file])
-    elif desk_env in ["mate"]:
-        subprocess.run(["gsettings",
-                        "set",
-                        "org.mate.background",
-                        "picture-filename",
-                        outputfile])
-    elif desk_env in ["xfce", "xubuntu"]:
-        xfce_actions(outputfile)
-    elif desk_env in ["lubuntu", "Lubuntu"]:
-        try:
-            subprocess.run("pcmanfm", "-w", outputfile)
-        except:
-            try:
-                subprocess.run("pcmanfm-qt", "-w", outputfile)
-            except:
-                g_logger.info("Exception: failure to find either command \
-'pcmanfm' or 'pcmanfm-qt'. Exiting.")
+            if set_command == "":
+                message = "Your DE could not be detected to set the wallpaper. \
+You need to set the 'set_command' option in your \
+settings file superpaper/general_settings. Exiting."
+                g_logger.info(message)
+                show_message_dialog(message, "Error")
                 sys.exit(1)
-    elif desk_env in ["/usr/share/xsessions/plasma"]:
-        kdeplasma_actions(outputfile)
-    elif "i3" in desk_env or desk_env in ["/usr/share/xsessions/bspwm"]:
-        subprocess.run(["feh", "--bg-scale", "--no-xinerama", outputfile])
-    elif desk_env == "":
+            else:
+                os.system(set_command.format(image=outputfile))
+    else:
         g_logger.info("DESKTOP_SESSION variable is empty, \
 attempting to use feh to set the wallpaper.")
         subprocess.run(["feh", "--bg-scale", "--no-xinerama", outputfile])
-    else:
-        if set_command == "":
-            message = "Your DE could not be detected to set the wallpaper. \
-You need to set the 'set_command' option in your \
-settings file superpaper/general_settings. Exiting."
-            g_logger.info(message)
-            show_message_dialog(message, "Error")
-            sys.exit(1)
-        else:
-            os.system(set_command.format(image=outputfile))
 
 
 def special_image_cropper(outputfile):
