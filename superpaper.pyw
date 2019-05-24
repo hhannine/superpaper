@@ -18,7 +18,7 @@ from screeninfo import get_monitors
 try:
     import wx
     import wx.adv
-except BaseException:
+except ImportError:
     pass
 if platform.system() == "Windows":
     import ctypes
@@ -80,7 +80,7 @@ if LOGGING:
 def custom_exception_handler(exceptiontype, value, tb_var):
     """Log uncaught exceptions."""
     g_logger.exception("Uncaught exceptionn type: %s", str(exceptiontype))
-    g_logger.exception("Exception: %s",str(value))
+    g_logger.exception("Exception: %s", str(value))
     g_logger.exception(str(tb_var))
     # g_logger.exception("Uncaught exception.")
 
@@ -124,8 +124,7 @@ class GeneralSettingsData(object):
                             # Install exception handler
                             sys.excepthook = custom_exception_handler
                             fileHandler = logging.FileHandler(
-                                "{0}/{1}.log"
-                                .format(PATH, "log"),
+                                "{0}/{1}.log".format(PATH, "log"),
                                 mode="w")
                             g_logger.addHandler(fileHandler)
                             consoleHandler = logging.StreamHandler()
@@ -138,28 +137,19 @@ class GeneralSettingsData(object):
                         else:
                             self.use_hotkeys = False
                         if DEBUG:
-                            g_logger.info("use_hotkeys: {}"
-                                          .format(self.use_hotkeys))
+                            g_logger.info("use_hotkeys: %s", self.use_hotkeys)
                     elif words[0] == "next wallpaper hotkey":
-                        try:
-                            binding_strings = words[1].strip().split("+")
-                        except:
-                            pass
+                        binding_strings = words[1].strip().split("+")
                         if binding_strings:
                             self.hkBinding_next = tuple(binding_strings)
                         if DEBUG:
-                            g_logger.info("hkBinding_next: {}"
-                                          .format(self.hkBinding_next))
+                            g_logger.info("hkBinding_next: %s", self.hkBinding_next)
                     elif words[0] == "pause wallpaper hotkey":
-                        try:
-                            binding_strings = words[1].strip().split("+")
-                        except:
-                            pass
+                        binding_strings = words[1].strip().split("+")
                         if binding_strings:
                             self.hkBinding_pause = tuple(binding_strings)
                         if DEBUG:
-                            g_logger.info("hkBinding_pause: {}"
-                                          .format(self.hkBinding_pause))
+                            g_logger.info("hkBinding_pause: %s", self.hkBinding_pause)
                     elif words[0] == "set_command":
                         G_SET_COMMAND_STRING = words[1].strip()
                         self.set_command = G_SET_COMMAND_STRING
@@ -170,8 +160,8 @@ class GeneralSettingsData(object):
                         else:
                             pass
                     else:
-                        g_logger.info("Exception: Unkown general setting: {}"
-                                      .format(words[0]))
+                        g_logger.info("Exception: Unkown general setting: %s",
+                                      words[0])
             finally:
                 f.close()
         else:
@@ -261,8 +251,8 @@ class ProfileData(object):
                     elif wrd1 == "multi":
                         self.spanmode = wrd1
                     else:
-                        g_logger.info("Exception: unknown spanmode: {} \
-                                in profile: {}".format(words[1], self.name))
+                        g_logger.info("Exception: unknown spanmode: %s \
+                                in profile: %s", words[1], self.name)
                 elif words[0] == "slideshow":
                     wrd1 = words[1].strip().lower()
                     if wrd1 == "true":
@@ -271,9 +261,9 @@ class ProfileData(object):
                         self.slideshow = False
                 elif words[0] == "delay":
                     self.delayArray = []
-                    delayStrings = words[1].strip().split(";")
-                    for str in delayStrings:
-                        self.delayArray.append(int(str))
+                    delay_strings = words[1].strip().split(";")
+                    for delstr in delay_strings:
+                        self.delayArray.append(int(delstr))
                 elif words[0] == "sortmode":
                     wrd1 = words[1].strip().lower()
                     if wrd1 == "shuffle":
@@ -281,8 +271,8 @@ class ProfileData(object):
                     elif wrd1 == "sort":
                         self.sortmode = wrd1
                     else:
-                        g_logger.info("Exception: unknown sortmode: {} \
-                                in profile: {}".format(words[1], self.name))
+                        g_logger.info("Exception: unknown sortmode: %s \
+                                in profile: %s", words[1], self.name)
                 elif words[0] == "offsets":
                     # Use PPI mode algorithm to do cuts.
                     # Defaults assume uniform pixel density
@@ -292,24 +282,24 @@ class ProfileData(object):
                     self.manual_offsets_useronly = []
                     # w1,h1;w2,h2;...
                     offsetStrings = words[1].strip().split(";")
-                    for str in offsetStrings:
-                        res_str = str.split(",")
+                    for offstr in offsetStrings:
+                        res_str = offstr.split(",")
                         self.manual_offsets.append((int(res_str[0]),
                                                     int(res_str[1])))
                         self.manual_offsets_useronly.append((int(res_str[0]),
                                                              int(res_str[1])))
                 elif words[0] == "bezels":
                     bezelMillimeter_Strings = words[1].strip().split(";")
-                    for str in bezelMillimeter_Strings:
-                        self.bezels.append(float(str))
+                    for bezstr in bezelMillimeter_Strings:
+                        self.bezels.append(float(bezstr))
                 elif words[0] == "ppi":
                     self.ppimode = True
                     # overwrite initialized arrays.
                     self.ppiArray = []
                     self.ppiArrayRelDensity = []
                     ppiStrings = words[1].strip().split(";")
-                    for str in ppiStrings:
-                        self.ppiArray.append(int(str))
+                    for ppistr in ppiStrings:
+                        self.ppiArray.append(int(ppistr))
                 elif words[0] == "diagonal_inches":
                     self.ppimode = True
                     # overwrite initialized arrays.
@@ -317,29 +307,30 @@ class ProfileData(object):
                     self.ppiArrayRelDensity = []
                     inchStrings = words[1].strip().split(";")
                     self.inches = []
-                    for str in inchStrings:
-                        self.inches.append(float(str))
+                    for inchstr in inchStrings:
+                        self.inches.append(float(inchstr))
                     self.ppiArray = self.computePPIs(self.inches)
                 elif words[0] == "hotkey":
                     binding_strings = words[1].strip().split("+")
                     self.hkBinding = tuple(binding_strings)
                     if DEBUG:
-                        g_logger.info("hkBinding:{}".format(self.hkBinding))
+                        g_logger.info("hkBinding: %s", self.hkBinding)
                 elif words[0].startswith("display"):
                     paths = words[1].strip().split(";")
                     paths = list(filter(None, paths))  # drop empty strings
                     self.pathsArray.append(paths)
                 else:
-                    g_logger.info("Unknown setting line in config: {}".format(line))
+                    g_logger.info("Unknown setting line in config: %s", line)
         finally:
             f.close()
 
     def computePPIs(self, inches):
         if len(inches) < nDisplays:
-            g_logger.info("Exception: Number of read display diagonals was: "
-                          + str(len(inches))
-                          + ", but the number of displays was found to be: "
-                          + str(nDisplays))
+            g_logger.info("Exception: Number of read display diagonals was: \
+                          %s , but the number of displays was found to be: %s",
+                          str(len(inches)),
+                          str(nDisplays)
+                          )
             g_logger.info("Falling back to no PPI correction.")
             self.ppimode = False
             return nDisplays * [100]
@@ -350,7 +341,7 @@ class ProfileData(object):
                 px_per_inch = diagonal_px / inch
                 ppiArray.append(px_per_inch)
             if DEBUG:
-                g_logger.info("Computed PPIs: {}".format(ppiArray))
+                g_logger.info("Computed PPIs: %s", ppiArray)
             return ppiArray
 
     def computeRelativeDensities(self):
@@ -358,7 +349,7 @@ class ProfileData(object):
         for ppi in self.ppiArray:
             self.ppiArrayRelDensity.append((1 / max_density) * float(ppi))
         if DEBUG:
-            g_logger.info("relative pixel densities: {}".format(self.ppiArrayRelDensity))
+            g_logger.info("relative pixel densities: %s", self.ppiArrayRelDensity)
 
     def computeBezelPixelOffsets(self):
         inch_per_mm = 1.0 / 25.4
@@ -367,9 +358,10 @@ class ProfileData(object):
                 round(float(ppi) * inch_per_mm * bez_mm))
         if DEBUG:
             g_logger.info(
-                "Bezel px calculation: initial manual offset: {}, \
-                and bezel pixels: {}".format(self.manual_offsets,
-                                             self.bezel_px_offsets))
+                "Bezel px calculation: initial manual offset: %s, \
+                and bezel pixels: %s",
+                self.manual_offsets,
+                self.bezel_px_offsets)
         # Add these horizontal offsets to manual_offsets:
         # Avoid offsetting the leftmost anchored display i==0
         # -1 since last display doesn't have a next display.
@@ -380,8 +372,8 @@ class ProfileData(object):
                                           self.manual_offsets[i + 1][1])
         if DEBUG:
             g_logger.info(
-                "Bezel px calculation: resulting combined manual offset: {}"
-                .format(self.manual_offsets))
+                "Bezel px calculation: resulting combined manual offset: %s",
+                self.manual_offsets)
 
     def NextWallpaperFiles(self):
         return self.file_handler.Next_Wallpaper_Files()
@@ -422,8 +414,8 @@ Use absolute paths for best reliabilty.".format(path)
 
         def Next_Wallpaper_Files(self):
             files = []
-            for iter in self.iterators:
-                next_image = iter.__next__()
+            for iterable in self.iterators:
+                next_image = iterable.__next__()
                 if os.path.isfile(next_image):
                     files.append(next_image)
                 else:
@@ -460,18 +452,18 @@ Use absolute paths for best reliabilty.".format(path)
             def ArrangeList(self):
                 if self.sortmode == "shuffle":
                     if DEBUG and VERBOSE:
-                        g_logger.info("Shuffling files: {}".format(self.files))
+                        g_logger.info("Shuffling files: %s", self.files)
                     random.shuffle(self.files)
                     if DEBUG and VERBOSE:
-                        g_logger.info("Shuffled files: {}".format(self.files))
+                        g_logger.info("Shuffled files: %s", self.files)
                 elif self.sortmode == "alphabetical":
                     self.files.sort()
                     if DEBUG and VERBOSE:
-                        g_logger.info("Sorted files: {}".format(self.files))
+                        g_logger.info("Sorted files: %s", self.files)
                 else:
                     g_logger.info(
-                        "ImageList.ArrangeList: unknown sortmode: {}"
-                        .format(self.sortmode))
+                        "ImageList.ArrangeList: unknown sortmode: %s",
+                        self.sortmode)
 
 
 class CLIProfileData(ProfileData):
@@ -543,7 +535,7 @@ class TempProfileData(object):
             fname = PROFILES_PATH + self.name + ".profile"
             try:
                 f = open(fname, "w")
-            except:
+            except IOError:
                 msg = "Cannot write to file {}".format(fname)
                 show_message_dialog(msg, "Error")
                 return None
@@ -584,7 +576,7 @@ class TempProfileData(object):
                 f = open(fname, "w")
                 f.close()
                 os.remove(fname)
-            except:
+            except IOError:
                 msg = "Cannot write to file {}".format(fname)
                 show_message_dialog(msg, "Error")
                 return False
@@ -1181,8 +1173,8 @@ def setWallpaper_linux(outputfile):
             else:
                 os.system(set_command.format(image=outputfile))
         elif desk_env in ["gnome", "gnome-wayland",
-                        "unity", "ubuntu",
-                        "pantheon", "budgie-desktop"]:
+                          "unity", "ubuntu",
+                          "pantheon", "budgie-desktop"]:
             subprocess.run(["gsettings", "set",
                             "org.gnome.desktop.background", "picture-uri",
                             file])
