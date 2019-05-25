@@ -38,7 +38,7 @@ DISPLAY_OFFSET_ARRAY = []
 DEBUG = False
 VERBOSE = False
 LOGGING = False
-g_logger = logging.getLogger()
+G_LOGGER = logging.getLogger("default")
 nDisplays = 0
 canvasSize = [0, 0]
 # Set path to binary / script
@@ -63,26 +63,26 @@ G_WALLPAPER_CHANGE_LOCK = Lock()
 G_SUPPORTED_IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".webp")
 
 if DEBUG and not LOGGING:
-    g_logger.setLevel(logging.INFO)
+    G_LOGGER.setLevel(logging.INFO)
     consoleHandler = logging.StreamHandler()
-    g_logger.addHandler(consoleHandler)
+    G_LOGGER.addHandler(consoleHandler)
 
 if LOGGING:
     DEBUG = True
     # sys.stdout = open(PATH + "/log.txt", "w")
-    g_logger.setLevel(logging.INFO)
+    G_LOGGER.setLevel(logging.INFO)
     fileHandler = logging.FileHandler("{0}/{1}.log".format(PATH, "log"),
                                       mode="w")
-    g_logger.addHandler(fileHandler)
+    G_LOGGER.addHandler(fileHandler)
     consoleHandler = logging.StreamHandler()
-    g_logger.addHandler(consoleHandler)
+    G_LOGGER.addHandler(consoleHandler)
 
 def custom_exception_handler(exceptiontype, value, tb_var):
     """Log uncaught exceptions."""
-    g_logger.exception("Uncaught exceptionn type: %s", str(exceptiontype))
-    g_logger.exception("Exception: %s", str(value))
-    g_logger.exception(str(tb_var))
-    # g_logger.exception("Uncaught exception.")
+    G_LOGGER.exception("Uncaught exceptionn type: %s", str(exceptiontype))
+    G_LOGGER.exception("Exception: %s", str(value))
+    G_LOGGER.exception(str(tb_var))
+    # G_LOGGER.exception("Uncaught exception.")
 
 def show_message_dialog(message, msg_type="Info"):
     """General purpose info dialog in GUI mode."""
@@ -105,7 +105,7 @@ class GeneralSettingsData(object):
 
     def parse_settings(self):
         global DEBUG, LOGGING, G_SET_COMMAND_STRING
-        global g_logger, fileHandler, consoleHandler
+        global G_LOGGER, fileHandler, consoleHandler
         fname = os.path.join(PATH, "general_settings")
         if os.path.isfile(fname):
             f = open(fname, "r")
@@ -119,17 +119,17 @@ class GeneralSettingsData(object):
                             self.logging = True
                             LOGGING = True
                             DEBUG = True
-                            g_logger = logging.getLogger()
-                            g_logger.setLevel(logging.INFO)
+                            G_LOGGER = logging.getLogger("default")
+                            G_LOGGER.setLevel(logging.INFO)
                             # Install exception handler
                             sys.excepthook = custom_exception_handler
                             fileHandler = logging.FileHandler(
                                 "{0}/{1}.log".format(PATH, "log"),
                                 mode="w")
-                            g_logger.addHandler(fileHandler)
+                            G_LOGGER.addHandler(fileHandler)
                             consoleHandler = logging.StreamHandler()
-                            g_logger.addHandler(consoleHandler)
-                            g_logger.info("Enabled logging to file.")
+                            G_LOGGER.addHandler(consoleHandler)
+                            G_LOGGER.info("Enabled logging to file.")
                     elif words[0] == "use hotkeys":
                         wrds1 = words[1].strip().lower()
                         if wrds1 == "true":
@@ -137,19 +137,19 @@ class GeneralSettingsData(object):
                         else:
                             self.use_hotkeys = False
                         if DEBUG:
-                            g_logger.info("use_hotkeys: %s", self.use_hotkeys)
+                            G_LOGGER.info("use_hotkeys: %s", self.use_hotkeys)
                     elif words[0] == "next wallpaper hotkey":
                         binding_strings = words[1].strip().split("+")
                         if binding_strings:
                             self.hkBinding_next = tuple(binding_strings)
                         if DEBUG:
-                            g_logger.info("hkBinding_next: %s", self.hkBinding_next)
+                            G_LOGGER.info("hkBinding_next: %s", self.hkBinding_next)
                     elif words[0] == "pause wallpaper hotkey":
                         binding_strings = words[1].strip().split("+")
                         if binding_strings:
                             self.hkBinding_pause = tuple(binding_strings)
                         if DEBUG:
-                            g_logger.info("hkBinding_pause: %s", self.hkBinding_pause)
+                            G_LOGGER.info("hkBinding_pause: %s", self.hkBinding_pause)
                     elif words[0] == "set_command":
                         G_SET_COMMAND_STRING = words[1].strip()
                         self.set_command = G_SET_COMMAND_STRING
@@ -160,7 +160,7 @@ class GeneralSettingsData(object):
                         else:
                             pass
                     else:
-                        g_logger.info("Exception: Unkown general setting: %s",
+                        G_LOGGER.info("Exception: Unkown general setting: %s",
                                       words[0])
             finally:
                 f.close()
@@ -251,7 +251,7 @@ class ProfileData(object):
                     elif wrd1 == "multi":
                         self.spanmode = wrd1
                     else:
-                        g_logger.info("Exception: unknown spanmode: %s \
+                        G_LOGGER.info("Exception: unknown spanmode: %s \
                                 in profile: %s", words[1], self.name)
                 elif words[0] == "slideshow":
                     wrd1 = words[1].strip().lower()
@@ -271,7 +271,7 @@ class ProfileData(object):
                     elif wrd1 == "sort":
                         self.sortmode = wrd1
                     else:
-                        g_logger.info("Exception: unknown sortmode: %s \
+                        G_LOGGER.info("Exception: unknown sortmode: %s \
                                 in profile: %s", words[1], self.name)
                 elif words[0] == "offsets":
                     # Use PPI mode algorithm to do cuts.
@@ -314,24 +314,24 @@ class ProfileData(object):
                     binding_strings = words[1].strip().split("+")
                     self.hkBinding = tuple(binding_strings)
                     if DEBUG:
-                        g_logger.info("hkBinding: %s", self.hkBinding)
+                        G_LOGGER.info("hkBinding: %s", self.hkBinding)
                 elif words[0].startswith("display"):
                     paths = words[1].strip().split(";")
                     paths = list(filter(None, paths))  # drop empty strings
                     self.pathsArray.append(paths)
                 else:
-                    g_logger.info("Unknown setting line in config: %s", line)
+                    G_LOGGER.info("Unknown setting line in config: %s", line)
         finally:
             f.close()
 
     def computePPIs(self, inches):
         if len(inches) < nDisplays:
-            g_logger.info("Exception: Number of read display diagonals was: \
+            G_LOGGER.info("Exception: Number of read display diagonals was: \
                           %s , but the number of displays was found to be: %s",
                           str(len(inches)),
                           str(nDisplays)
                           )
-            g_logger.info("Falling back to no PPI correction.")
+            G_LOGGER.info("Falling back to no PPI correction.")
             self.ppimode = False
             return nDisplays * [100]
         else:
@@ -341,7 +341,7 @@ class ProfileData(object):
                 px_per_inch = diagonal_px / inch
                 ppiArray.append(px_per_inch)
             if DEBUG:
-                g_logger.info("Computed PPIs: %s", ppiArray)
+                G_LOGGER.info("Computed PPIs: %s", ppiArray)
             return ppiArray
 
     def computeRelativeDensities(self):
@@ -349,7 +349,7 @@ class ProfileData(object):
         for ppi in self.ppiArray:
             self.ppiArrayRelDensity.append((1 / max_density) * float(ppi))
         if DEBUG:
-            g_logger.info("relative pixel densities: %s", self.ppiArrayRelDensity)
+            G_LOGGER.info("relative pixel densities: %s", self.ppiArrayRelDensity)
 
     def computeBezelPixelOffsets(self):
         inch_per_mm = 1.0 / 25.4
@@ -357,7 +357,7 @@ class ProfileData(object):
             self.bezel_px_offsets.append(
                 round(float(ppi) * inch_per_mm * bez_mm))
         if DEBUG:
-            g_logger.info(
+            G_LOGGER.info(
                 "Bezel px calculation: initial manual offset: %s, \
                 and bezel pixels: %s",
                 self.manual_offsets,
@@ -371,7 +371,7 @@ class ProfileData(object):
                                           self.bezel_px_offsets[i],
                                           self.manual_offsets[i + 1][1])
         if DEBUG:
-            g_logger.info(
+            G_LOGGER.info(
                 "Bezel px calculation: resulting combined manual offset: %s",
                 self.manual_offsets)
 
@@ -393,7 +393,7 @@ class ProfileData(object):
                     if not os.path.exists(path):
                         message = "A path was not found: '{}'.\n\
 Use absolute paths for best reliabilty.".format(path)
-                        g_logger.info(message)
+                        G_LOGGER.info(message)
                         show_message_dialog(message, "Error")
                         continue
                     else:
@@ -421,7 +421,7 @@ Use absolute paths for best reliabilty.".format(path)
                 else:
                     # reload all files by initializing
                     if DEBUG:
-                        g_logger.info("Ran into an invalid file, reinitializing..")
+                        G_LOGGER.info("Ran into an invalid file, reinitializing..")
                     self.__init__(self.pathsArray, self.sortmode)
                     files = self.Next_Wallpaper_Files()
                     break
@@ -452,16 +452,16 @@ Use absolute paths for best reliabilty.".format(path)
             def ArrangeList(self):
                 if self.sortmode == "shuffle":
                     if DEBUG and VERBOSE:
-                        g_logger.info("Shuffling files: %s", self.files)
+                        G_LOGGER.info("Shuffling files: %s", self.files)
                     random.shuffle(self.files)
                     if DEBUG and VERBOSE:
-                        g_logger.info("Shuffled files: %s", self.files)
+                        G_LOGGER.info("Shuffled files: %s", self.files)
                 elif self.sortmode == "alphabetical":
                     self.files.sort()
                     if DEBUG and VERBOSE:
-                        g_logger.info("Sorted files: %s", self.files)
+                        G_LOGGER.info("Sorted files: %s", self.files)
                 else:
-                    g_logger.info(
+                    G_LOGGER.info(
                         "ImageList.ArrangeList: unknown sortmode: %s",
                         self.sortmode)
 
@@ -782,15 +782,15 @@ def getDisplayData():
     topmost_offset = min(DISPLAY_OFFSET_ARRAY, key=itemgetter(1))[1]
     if leftmost_offset < 0 or topmost_offset < 0:
         if DEBUG:
-            g_logger.info("Negative display offset: {}".format(DISPLAY_OFFSET_ARRAY))
+            G_LOGGER.info("Negative display offset: {}".format(DISPLAY_OFFSET_ARRAY))
         translate_offsets = []
         for offset in DISPLAY_OFFSET_ARRAY:
             translate_offsets.append((offset[0] - leftmost_offset, offset[1] - topmost_offset))
         DISPLAY_OFFSET_ARRAY = translate_offsets
         if DEBUG:
-            g_logger.info("Sanitised display offset: {}".format(DISPLAY_OFFSET_ARRAY))
+            G_LOGGER.info("Sanitised display offset: {}".format(DISPLAY_OFFSET_ARRAY))
     if DEBUG:
-        g_logger.info(
+        G_LOGGER.info(
             "getDisplayData output: nDisplays = {}, {}, {}"
             .format(
                 nDisplays,
@@ -802,7 +802,7 @@ def getDisplayData():
     DISPLAY_OFFSET_ARRAY = list(map(DISPLAY_OFFSET_ARRAY.__getitem__, display_indices))
     RESOLUTION_ARRAY = list(map(RESOLUTION_ARRAY.__getitem__, display_indices))
     if DEBUG:
-        g_logger.info(
+        G_LOGGER.info(
             "SORTED getDisplayData output: nDisplays = {}, {}, {}"
             .format(
                 nDisplays,
@@ -826,7 +826,7 @@ def computeCanvas(res_array, offset_array):
     bottommost = max(bottom_edges)
     canvasSize = [rightmost - leftmost, bottommost - topmost]
     if DEBUG:
-        g_logger.info("Canvas size: {}".format(canvasSize))
+        G_LOGGER.info("Canvas size: {}".format(canvasSize))
     return canvasSize
 
 
@@ -863,7 +863,7 @@ def resizeToFill(img, res):
         # crop vertically to target height
         extraH = newSize[1] - res[1]
         if extraH < 0:
-            g_logger.info(
+            G_LOGGER.info(
                 "Error with cropping vertically, resized image \
                 wasn't taller than target size.")
             return -1
@@ -881,7 +881,7 @@ def resizeToFill(img, res):
         if cropped_res.size == res:
             return cropped_res
         else:
-            g_logger.info(
+            G_LOGGER.info(
                 "Error: result image not of correct size. crp:{}, res:{}"
                 .format(cropped_res.size, res))
             return -1
@@ -894,7 +894,7 @@ def resizeToFill(img, res):
         # crop horizontally to target width
         extraW = newSize[0] - res[0]
         if extraW < 0:
-            g_logger.info(
+            G_LOGGER.info(
                 "Error with cropping horizontally, resized image \
                 wasn't wider than target size.")
             return -1
@@ -912,7 +912,7 @@ def resizeToFill(img, res):
         if cropped_res.size == res:
             return cropped_res
         else:
-            g_logger.info(
+            G_LOGGER.info(
                 "Error: result image not of correct size. crp:{}, res:{}"
                 .format(cropped_res.size, res))
             return -1
@@ -929,7 +929,7 @@ def get_all_centers(resarr_eff, manual_offsets):
     # from the top.
     center_standard_height = get_center(resarr_eff[0])[1]
     if len(manual_offsets) < len(resarr_eff):
-        g_logger.info("get_all_centers: Not enough manual offsets: \
+        G_LOGGER.info("get_all_centers: Not enough manual offsets: \
             {} for displays: {}".format(
                 len(manual_offsets),
                 len(resarr_eff)))
@@ -944,7 +944,7 @@ def get_all_centers(resarr_eff, manual_offsets):
             centers.append(center_with_respect_to_AnchorLeftTop)
             sum_widths += resarr_eff[i][0]
     if DEBUG:
-        g_logger.info("centers: {}".format(centers))
+        G_LOGGER.info("centers: {}".format(centers))
     return centers
 
 
@@ -984,13 +984,13 @@ def computeCropTuples(RESOLUTION_ARRAY_eff, manual_offsets):
     topmost = min(crop_tuples, key=itemgetter(1))[1]
     if leftmost is 0 and topmost is 0:
         if DEBUG:
-            g_logger.info("crop_tuples: {}".format(crop_tuples))
+            G_LOGGER.info("crop_tuples: {}".format(crop_tuples))
         return crop_tuples  # [(left, up, right, bottom),...]
     else:
         crop_tuples_translated = translate_crops(
             crop_tuples, (leftmost, topmost))
         if DEBUG:
-            g_logger.info("crop_tuples_translated: {}".format(crop_tuples_translated))
+            G_LOGGER.info("crop_tuples_translated: {}".format(crop_tuples_translated))
         return crop_tuples_translated  # [(left, up, right, bottom),...]
 
 
@@ -1021,7 +1021,7 @@ def computeWorkingCanvas(crop_tuples):
 def spanSingleImage(profile):
     file = profile.NextWallpaperFiles()[0]
     if DEBUG:
-        g_logger.info(file)
+        G_LOGGER.info(file)
     img = Image.open(file)
     canvasTuple = tuple(computeCanvas(RESOLUTION_ARRAY, DISPLAY_OFFSET_ARRAY))
     img_resize = resizeToFill(img, canvasTuple)
@@ -1043,7 +1043,7 @@ def spanSingleImage(profile):
 def spanSingleImagePPIcorrection(profile):
     file = profile.NextWallpaperFiles()[0]
     if DEBUG:
-        g_logger.info(file)
+        G_LOGGER.info(file)
     img = Image.open(file)
     RESOLUTION_ARRAY_eff = computeRESOLUTION_ARRAYPPIcorrection(
         RESOLUTION_ARRAY, profile.ppiArrayRelDensity)
@@ -1093,7 +1093,7 @@ def spanSingleImagePPIcorrection(profile):
 def setMultipleImages(profile):
     files = profile.NextWallpaperFiles()
     if DEBUG:
-        g_logger.info(str(files))
+        G_LOGGER.info(str(files))
     img_resized = []
     for file, res in zip(files, RESOLUTION_ARRAY):
         image = Image.open(file)
@@ -1151,20 +1151,20 @@ def setWallpaper(outputfile):
                     END"""
         subprocess.Popen(SCRIPT % outputfile, shell=True)
     else:
-        g_logger.info("Unknown platform.system(): {}".format(pltform))
+        G_LOGGER.info("Unknown platform.system(): {}".format(pltform))
 
 
 def setWallpaper_linux(outputfile):
     file = "file://" + outputfile
     set_command = G_SET_COMMAND_STRING
     if DEBUG:
-        g_logger.info(file)
+        G_LOGGER.info(file)
     # subprocess.run(["gsettings", "set", "org.cinnamon.desktop.background",
     # "picture-uri", file])  # Old working command for backup
 
     desk_env = os.environ.get("DESKTOP_SESSION")
     if DEBUG:
-        g_logger.info("DESKTOP_SESSION is: '{env}'".format(env=desk_env))
+        G_LOGGER.info("DESKTOP_SESSION is: '{env}'".format(env=desk_env))
 
     if desk_env:
         if set_command != "":
@@ -1197,7 +1197,7 @@ def setWallpaper_linux(outputfile):
                 try:
                     subprocess.run("pcmanfm-qt", "-w", outputfile)
                 except:
-                    g_logger.info("Exception: failure to find either command \
+                    G_LOGGER.info("Exception: failure to find either command \
 'pcmanfm' or 'pcmanfm-qt'. Exiting.")
                     sys.exit(1)
         elif desk_env in ["/usr/share/xsessions/plasma"]:
@@ -1209,13 +1209,13 @@ def setWallpaper_linux(outputfile):
                 message = "Your DE could not be detected to set the wallpaper. \
 You need to set the 'set_command' option in your \
 settings file superpaper/general_settings. Exiting."
-                g_logger.info(message)
+                G_LOGGER.info(message)
                 show_message_dialog(message, "Error")
                 sys.exit(1)
             else:
                 os.system(set_command.format(image=outputfile))
     else:
-        g_logger.info("DESKTOP_SESSION variable is empty, \
+        G_LOGGER.info("DESKTOP_SESSION variable is empty, \
 attempting to use feh to set the wallpaper.")
         subprocess.run(["feh", "--bg-scale", "--no-xinerama", outputfile])
 
@@ -1335,7 +1335,7 @@ def changeWallpaperJob(profile):
             thrd = Thread(target=setMultipleImages, args=(profile,), daemon=True)
             thrd.start()
         else:
-            g_logger.info("Unkown profile spanmode: {}".format(profile.spanmode))
+            G_LOGGER.info("Unkown profile spanmode: {}".format(profile.spanmode))
         return thrd
 
 
@@ -1343,15 +1343,15 @@ def runProfileJob(profile):
     repeating_timer = None
     getDisplayData()  # Check here so new profile has fresh data.
     if DEBUG:
-        g_logger.info("running profile job with profile: {}".format(profile.name))
+        G_LOGGER.info("running profile job with profile: {}".format(profile.name))
 
     if not profile.slideshow:
         if DEBUG:
-            g_logger.info("Running a one-off wallpaper change.")
+            G_LOGGER.info("Running a one-off wallpaper change.")
         changeWallpaperJob(profile)
     elif profile.slideshow:
         if DEBUG:
-            g_logger.info("Running wallpaper slideshow.")
+            G_LOGGER.info("Running wallpaper slideshow.")
         changeWallpaperJob(profile)
         repeating_timer = RepeatedTimer(
             profile.delayArray[0], changeWallpaperJob, profile)
@@ -1365,7 +1365,7 @@ def quickProfileJob(profile):
                  if os.path.isfile(os.path.join(TEMP_PATH, i))
                  and i.startswith(profile.name + "-")]
         if DEBUG:
-            g_logger.info("quickswitch file lookup: {}".format(files))
+            G_LOGGER.info("quickswitch file lookup: {}".format(files))
         if files:
             # setWallpaper(os.path.join(TEMP_PATH, files[0]))
             thrd = Thread(target=setWallpaper, args=(os.path.join(TEMP_PATH, files[0]),), daemon=True)
@@ -1373,7 +1373,7 @@ def quickProfileJob(profile):
         else:
             pass
             if DEBUG:
-                g_logger.info("Old file for quickswitch was not found. {}".format(files))
+                G_LOGGER.info("Old file for quickswitch was not found. {}".format(files))
 
 
 # Profile and data handling
@@ -1385,12 +1385,12 @@ def listProfiles():
             profile_list.append(ProfileData(PROFILES_PATH + files[i]))
         except Exception as e:
             msg = "There was an error when loading profile '{}'. Exiting.".format(files[i])
-            g_logger.info(msg)
-            g_logger.info(e)
+            G_LOGGER.info(msg)
+            G_LOGGER.info(e)
             show_message_dialog(msg, "Error")
             exit()
         if DEBUG:
-            g_logger.info("Listed profile: {}".format(profile_list[i].name))
+            G_LOGGER.info("Listed profile: {}".format(profile_list[i].name))
     return profile_list
 
 
@@ -1405,14 +1405,14 @@ def readActiveProfile():
                 line.rstrip("\r\n")
                 profname = line
                 if DEBUG:
-                    g_logger.info("read profile name from 'running_profile':{}"
+                    G_LOGGER.info("read profile name from 'running_profile':{}"
                                   .format(profname))
                 prof_file = PROFILES_PATH + profname + ".profile"
                 if os.path.isfile(prof_file):
                     profile = ProfileData(prof_file)
                 else:
                     profile = None
-                    g_logger.info("Exception: Previously run profile configuration \
+                    G_LOGGER.info("Exception: Previously run profile configuration \
                         file not found. Is the filename same as the \
                         profile name: {pname}?".format(pname=profname))
         finally:
@@ -1790,17 +1790,17 @@ try:
             for text_field in self.paths_controls:
                 tmp_profile.pathsArray.append(text_field.GetLineText(0))
 
-            g_logger.info(tmp_profile.name)
-            g_logger.info(tmp_profile.spanmode)
-            g_logger.info(tmp_profile.slideshow)
-            g_logger.info(tmp_profile.delay)
-            g_logger.info(tmp_profile.sortmode)
-            # g_logger.info(tmp_profile.ppiArray)
-            g_logger.info(tmp_profile.inches)
-            g_logger.info(tmp_profile.manual_offsets)
-            g_logger.info(tmp_profile.bezels)
-            g_logger.info(tmp_profile.hkBinding)
-            g_logger.info(tmp_profile.pathsArray)
+            G_LOGGER.info(tmp_profile.name)
+            G_LOGGER.info(tmp_profile.spanmode)
+            G_LOGGER.info(tmp_profile.slideshow)
+            G_LOGGER.info(tmp_profile.delay)
+            G_LOGGER.info(tmp_profile.sortmode)
+            # G_LOGGER.info(tmp_profile.ppiArray)
+            G_LOGGER.info(tmp_profile.inches)
+            G_LOGGER.info(tmp_profile.manual_offsets)
+            G_LOGGER.info(tmp_profile.bezels)
+            G_LOGGER.info(tmp_profile.hkBinding)
+            G_LOGGER.info(tmp_profile.pathsArray)
 
             if tmp_profile.TestSave():
                 saved_file = tmp_profile.Save()
@@ -1811,12 +1811,13 @@ try:
                 self.choiceProfile.SetSelection(self.choiceProfile.FindString(tmp_profile.name))
                 return saved_file
             else:
-                g_logger.info("TestSave failed.")
+                G_LOGGER.info("TestSave failed.")
                 return None
 
         def onTestImage(self, event):
+            """Align test"""
             # Use the settings currently written out in the fields!
-            testimage = [PATH + "/resources/test.png"]
+            testimage = [os.path.join(PATH, "resources/test.png")]
             if not os.path.isfile(testimage[0]):
                 print(testimage)
                 msg = "Test image not found in {}.".format(testimage)
@@ -2161,16 +2162,16 @@ Tips:
             self.pause_item = None
             self.is_paused = False
             if DEBUG:
-                g_logger.info("START Listing profiles for menu.")
+                G_LOGGER.info("START Listing profiles for menu.")
             self.list_of_profiles = listProfiles()
             if DEBUG:
-                g_logger.info("END Listing profiles for menu.")
+                G_LOGGER.info("END Listing profiles for menu.")
             # Should now return an object if a previous profile was written or
             # None if no previous data was found
             self.active_profile = readActiveProfile()
             self.start_prev_profile(self.active_profile)
             # if self.active_profile is None:
-            #     g_logger.info("Starting up the first profile found.")
+            #     G_LOGGER.info("Starting up the first profile found.")
             #     self.start_profile(wx.EVT_MENU, self.list_of_profiles[0])
 
             # self.hk = None
@@ -2185,7 +2186,7 @@ Tips:
                         check_queue_interval=0.05)
                     self.seen_binding = set()
                 except Exception as e:
-                    g_logger.info(
+                    G_LOGGER.info(
                         "WARNING: Could not import keyboard hotkey hook library, \
     hotkeys will not work. Exception: {}".format(e))
                 self.register_hotkeys()
@@ -2201,7 +2202,7 @@ Tips:
                     # import keyboard # https://github.com/boppreh/keyboard
                     from system_hotkey import SystemHotkey
                 except Exception as e:
-                    g_logger.info(
+                    G_LOGGER.info(
                         "WARNING: Could not import keyboard hotkey hook library, \
     hotkeys will not work. Exception: {}".format(e))
                 if "system_hotkey" in sys.modules:
@@ -2222,15 +2223,15 @@ Tips:
                                 try:
                                     self.hk.unregister(binding)
                                     if DEBUG:
-                                        g_logger.info("Unreg hotkey {}".format(binding))
+                                        G_LOGGER.info("Unreg hotkey {}".format(binding))
                                 except:
                                     try:
                                         self.hk2.unregister(binding)
                                         if DEBUG:
-                                            g_logger.info("Unreg hotkey {}".format(binding))
+                                            G_LOGGER.info("Unreg hotkey {}".format(binding))
                                     except:
                                         if DEBUG:
-                                            g_logger.info("Could not unreg hotkey '{}'".format(binding))
+                                            G_LOGGER.info("Could not unreg hotkey '{}'".format(binding))
                             self.seen_binding = set()
 
 
@@ -2245,8 +2246,8 @@ Tips:
                             except:
                                 msg = "Error: could not register hotkey {}. \
     Check that it is formatted properly and valid keys.".format(self.g_settings.hkBinding_next)
-                                g_logger.info(msg)
-                                g_logger.info(sys.exc_info()[0])
+                                G_LOGGER.info(msg)
+                                G_LOGGER.info(sys.exc_info()[0])
                                 show_message_dialog(msg, "Error")
                         if self.g_settings.hkBinding_pause not in self.seen_binding:
                             try:
@@ -2258,8 +2259,8 @@ Tips:
                             except:
                                 msg = "Error: could not register hotkey {}. \
     Check that it is formatted properly and valid keys.".format(self.g_settings.hkBinding_pause)
-                                g_logger.info(msg)
-                                g_logger.info(sys.exc_info()[0])
+                                G_LOGGER.info(msg)
+                                G_LOGGER.info(sys.exc_info()[0])
                                 show_message_dialog(msg, "Error")
                         try:
                             hk.register(('control', 'super', 'shift', 'q'),
@@ -2270,7 +2271,7 @@ Tips:
                         self.list_of_profiles = listProfiles()
                         for profile in self.list_of_profiles:
                             if DEBUG:
-                                g_logger.info(
+                                G_LOGGER.info(
                                     "Registering binding: \
                                     {} for profile: {}"
                                     .format(profile.hkBinding, profile.name))
@@ -2283,24 +2284,24 @@ Tips:
                                 except:
                                     msg = "Error: could not register hotkey {}. \
     Check that it is formatted properly and valid keys.".format(profile.hkBinding)
-                                    g_logger.info(msg)
-                                    g_logger.info(sys.exc_info()[0])
+                                    G_LOGGER.info(msg)
+                                    G_LOGGER.info(sys.exc_info()[0])
                                     show_message_dialog(msg, "Error")
                             elif profile.hkBinding in self.seen_binding:
                                 msg = "Could not register hotkey: '{}' for profile: '{}'.\n\
 It is already registered for another action.".format(profile.hkBinding, profile.name)
-                                g_logger.info(msg)
+                                G_LOGGER.info(msg)
                                 show_message_dialog(msg, "Error")
                     except:
                         if DEBUG:
-                            g_logger.info("Coulnd't register hotkeys, exception:")
-                            g_logger.info(sys.exc_info()[0])
+                            G_LOGGER.info("Coulnd't register hotkeys, exception:")
+                            G_LOGGER.info(sys.exc_info()[0])
 
 
 
         def profile_consumer(self, event, hotkey, profile):
             if DEBUG:
-                g_logger.info("Profile object is: {}".format(profile))
+                G_LOGGER.info("Profile object is: {}".format(profile))
             self.start_profile(wx.EVT_MENU, profile[0][0])
 
         def read_general_settings(self):
@@ -2338,7 +2339,7 @@ It is already registered for another action.".format(profile.hkBinding, profile.
             self.SetIcon(icon, TRAY_TOOLTIP)
 
         def on_left_down(self, *event):
-            g_logger.info('Tray icon was left-clicked.')
+            G_LOGGER.info('Tray icon was left-clicked.')
 
         def open_config(self, event):
             if platform.system() == "Windows":
@@ -2369,23 +2370,23 @@ It is already registered for another action.".format(profile.hkBinding, profile.
         def start_prev_profile(self, profile):
             with self.jobLock:
                 if profile is None:
-                    g_logger.info("No previous profile was found.")
+                    G_LOGGER.info("No previous profile was found.")
                 else:
                     self.repeating_timer = runProfileJob(profile)
 
         def start_profile(self, event, profile):
             if DEBUG:
-                g_logger.info("Start profile: {}".format(profile.name))
+                G_LOGGER.info("Start profile: {}".format(profile.name))
             if profile is None:
-                g_logger.info(
+                G_LOGGER.info(
                     "start_profile: profile is None. \
                     Do you have any profiles in /profiles?")
             elif self.active_profile is not None:
                 if DEBUG:
-                    g_logger.info(
+                    G_LOGGER.info(
                         "Check if the starting profile is already running: {}"
                         .format(profile.name))
-                    g_logger.info(
+                    G_LOGGER.info(
                         "name check: {}, {}"
                         .format(profile.name,
                                 self.active_profile.name))
@@ -2398,19 +2399,19 @@ It is already registered for another action.".format(profile.hkBinding, profile.
                                 self.repeating_timer.is_running):
                             self.repeating_timer.stop()
                         if DEBUG:
-                            g_logger.info(
+                            G_LOGGER.info(
                                 "Running quick profile job with profile: {}"
                                 .format(profile.name))
                         quickProfileJob(profile)
                         if DEBUG:
-                            g_logger.info(
+                            G_LOGGER.info(
                                 "Starting timed profile job with profile: {}"
                                 .format(profile.name))
                         self.repeating_timer = runProfileJob(profile)
                         self.active_profile = profile
                         writeActiveProfile(profile.name)
                         if DEBUG:
-                            g_logger.info("Wrote active profile: {}"
+                            G_LOGGER.info("Wrote active profile: {}"
                                           .format(profile.name))
                         return 0
             else:
@@ -2419,19 +2420,19 @@ It is already registered for another action.".format(profile.hkBinding, profile.
                             and self.repeating_timer.is_running):
                         self.repeating_timer.stop()
                     if DEBUG:
-                        g_logger.info(
+                        G_LOGGER.info(
                             "Running quick profile job with profile: {}"
                             .format(profile.name))
                     quickProfileJob(profile)
                     if DEBUG:
-                        g_logger.info(
+                        G_LOGGER.info(
                             "Starting timed profile job with profile: {}"
                             .format(profile.name))
                     self.repeating_timer = runProfileJob(profile)
                     self.active_profile = profile
                     writeActiveProfile(profile.name)
                     if DEBUG:
-                        g_logger.info("Wrote active profile: {}"
+                        G_LOGGER.info("Wrote active profile: {}"
                                       .format(profile.name))
                     return 0
 
@@ -2457,15 +2458,15 @@ It is already registered for another action.".format(profile.hkBinding, profile.
                 self.repeating_timer.stop()
                 self.is_paused = True
                 if DEBUG:
-                    g_logger.info("Paused timer")
+                    G_LOGGER.info("Paused timer")
             elif (self.repeating_timer is not None
                   and not self.repeating_timer.is_running):
                 self.repeating_timer.start()
                 self.is_paused = False
                 if DEBUG:
-                    g_logger.info("Resumed timer")
+                    G_LOGGER.info("Resumed timer")
             else:
-                g_logger.info("Current profile isn't using a timer.")
+                G_LOGGER.info("Current profile isn't using a timer.")
 
         def on_about(self, event):
             # Credit for AboutDiaglog example to Jan Bodnar of
@@ -2520,8 +2521,8 @@ It is already registered for another action.".format(profile.hkBinding, profile.
             return True
 except Exception as e:
     if DEBUG:
-        g_logger.info("Failed to define tray applet classes. Is wxPython installed?")
-        g_logger.info(e)
+        G_LOGGER.info("Failed to define tray applet classes. Is wxPython installed?")
+        G_LOGGER.info(e)
 
 
 def cli_logic():
@@ -2549,48 +2550,48 @@ Should only be necessary with single spanned image.")
 Substitute /path/to/image.jpg by '{image}'. \
 Must be in quotes.")
     parser.add_argument("-d", "--debug", action="store_true",
-                        help="Run the full application with debugging g_logger.infos.")
+                        help="Run the full application with debugging G_LOGGER.infos.")
     args = parser.parse_args()
 
     if args.debug:
         global DEBUG
         DEBUG = True
-        g_logger.setLevel(logging.INFO)
+        G_LOGGER.setLevel(logging.INFO)
         # Install exception handler
         # sys.excepthook = custom_exception_handler
         consoleHandler = logging.StreamHandler()
-        g_logger.addHandler(consoleHandler)
-        g_logger.info(args.setimages)
-        g_logger.info(args.ppi)
-        g_logger.info(args.inches)
-        g_logger.info(args.bezels)
-        g_logger.info(args.offsets)
-        g_logger.info(args.command)
-        g_logger.info(args.debug)
+        G_LOGGER.addHandler(consoleHandler)
+        G_LOGGER.info(args.setimages)
+        G_LOGGER.info(args.ppi)
+        G_LOGGER.info(args.inches)
+        G_LOGGER.info(args.bezels)
+        G_LOGGER.info(args.offsets)
+        G_LOGGER.info(args.command)
+        G_LOGGER.info(args.debug)
     if args.debug and len(sys.argv) == 2:
         tray_loop()
     else:
         if not args.setimages:
-            g_logger.info("Exception: You must pass image(s) to set as \
+            G_LOGGER.info("Exception: You must pass image(s) to set as \
 wallpaper with '-s' or '--setimages'. Exiting.")
             exit()
         else:
             for file in args.setimages:
                 if not os.path.isfile(file):
-                    g_logger.error("Exception: One of the passed images was not \
+                    G_LOGGER.error("Exception: One of the passed images was not \
 a file: ({fname}). Exiting.".format(fname=file))
                     exit()
         if args.bezels and not (args.ppi or args.inches):
-            g_logger.info("The bezel correction feature needs display PPIs, \
+            G_LOGGER.info("The bezel correction feature needs display PPIs, \
 provide these with --inches or --ppi.")
         if args.offsets and len(args.offsets) % 2 != 0:
-            g_logger.error("Exception: Number of offset pixels not even. If passing manual \
+            G_LOGGER.error("Exception: Number of offset pixels not even. If passing manual \
 offsets, give width and height offset for each display, even if \
 not actually offsetting every display. Exiting.")
             exit()
         if args.command:
             if len(args.command) > 1:
-                g_logger.error("Exception: Remember to put the custom command in quotes. \
+                G_LOGGER.error("Exception: Remember to put the custom command in quotes. \
 Exiting.")
                 exit()
             global G_SET_COMMAND_STRING
@@ -2616,7 +2617,7 @@ def tray_loop():
     else:
         print("ERROR: Module 'wx' import has failed. Is it installed? \
 GUI unavailable, exiting.")
-        g_logger.error("ERROR: Module 'wx' import has failed. Is it installed? \
+        G_LOGGER.error("ERROR: Module 'wx' import has failed. Is it installed? \
 GUI unavailable, exiting.")
         exit()
 
