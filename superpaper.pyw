@@ -1181,7 +1181,12 @@ def setWallpaper_linux(outputfile):
             if set_command == "feh":
                 subprocess.run(["feh", "--bg-scale", "--no-xinerama", outputfile])
             else:
-                os.system(set_command.format(image=outputfile))
+                command_string_list = set_command.split()
+                formatted_command = []
+                for term in command_string_list:
+                    formatted_command.append(term.format(image=outputfile))
+                G_LOGGER.info("Formatted custom command is: '%s'", formatted_command)
+                subprocess.run(formatted_command)
         elif desk_env in ["gnome", "gnome-wayland",
                           "unity", "ubuntu",
                           "pantheon", "budgie-desktop"]:
