@@ -39,8 +39,8 @@ DEBUG = False
 VERBOSE = False
 LOGGING = False
 G_LOGGER = logging.getLogger("default")
-nDisplays = 0
-canvasSize = [0, 0]
+NUM_DISPLAYS = 0
+
 # Set path to binary / script
 if getattr(sys, 'frozen', False):
     # If the application is run as a bundle, the pyInstaller bootloader
@@ -64,18 +64,18 @@ G_SUPPORTED_IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff"
 
 if DEBUG and not LOGGING:
     G_LOGGER.setLevel(logging.INFO)
-    consoleHandler = logging.StreamHandler()
-    G_LOGGER.addHandler(consoleHandler)
+    CONSOLE_HANDLER = logging.StreamHandler()
+    G_LOGGER.addHandler(CONSOLE_HANDLER)
 
 if LOGGING:
     DEBUG = True
     # sys.stdout = open(PATH + "/log.txt", "w")
     G_LOGGER.setLevel(logging.INFO)
-    fileHandler = logging.FileHandler("{0}/{1}.log".format(PATH, "log"),
-                                      mode="w")
-    G_LOGGER.addHandler(fileHandler)
-    consoleHandler = logging.StreamHandler()
-    G_LOGGER.addHandler(consoleHandler)
+    FILE_HANDLER = logging.FileHandler("{0}/{1}.log".format(PATH, "log"),
+                                       mode="w")
+    G_LOGGER.addHandler(FILE_HANDLER)
+    CONSOLE_HANDLER = logging.StreamHandler()
+    G_LOGGER.addHandler(CONSOLE_HANDLER)
 
 def custom_exception_handler(exceptiontype, value, tb_var):
     """Log uncaught exceptions."""
@@ -105,7 +105,7 @@ class GeneralSettingsData(object):
 
     def parse_settings(self):
         global DEBUG, LOGGING, G_SET_COMMAND_STRING
-        global G_LOGGER, fileHandler, consoleHandler
+        global G_LOGGER, FILE_HANDLER, CONSOLE_HANDLER
         fname = os.path.join(PATH, "general_settings")
         if os.path.isfile(fname):
             f = open(fname, "r")
@@ -123,12 +123,12 @@ class GeneralSettingsData(object):
                             G_LOGGER.setLevel(logging.INFO)
                             # Install exception handler
                             sys.excepthook = custom_exception_handler
-                            fileHandler = logging.FileHandler(
+                            FILE_HANDLER = logging.FileHandler(
                                 "{0}/{1}.log".format(PATH, "log"),
                                 mode="w")
-                            G_LOGGER.addHandler(fileHandler)
-                            consoleHandler = logging.StreamHandler()
-                            G_LOGGER.addHandler(consoleHandler)
+                            G_LOGGER.addHandler(FILE_HANDLER)
+                            CONSOLE_HANDLER = logging.StreamHandler()
+                            G_LOGGER.addHandler(CONSOLE_HANDLER)
                             G_LOGGER.info("Enabled logging to file.")
                     elif words[0] == "use hotkeys":
                         wrds1 = words[1].strip().lower()
@@ -219,10 +219,10 @@ class ProfileData(object):
         self.delayArray = [600]
         self.sortmode = "shuffle"  # shuffle ( random , sorted? )
         self.ppimode = False
-        self.ppiArray = nDisplays * [100]
+        self.ppiArray = NUM_DISPLAYS * [100]
         self.ppiArrayRelDensity = []
         self.inches = []
-        self.manual_offsets = nDisplays * [(0, 0)]
+        self.manual_offsets = NUM_DISPLAYS * [(0, 0)]
         self.manual_offsets_useronly = []
         self.bezels = []
         self.bezel_px_offsets = []
@@ -325,15 +325,15 @@ class ProfileData(object):
             f.close()
 
     def computePPIs(self, inches):
-        if len(inches) < nDisplays:
+        if len(inches) < NUM_DISPLAYS:
             G_LOGGER.info("Exception: Number of read display diagonals was: \
                           %s , but the number of displays was found to be: %s",
                           str(len(inches)),
-                          str(nDisplays)
+                          str(NUM_DISPLAYS)
                           )
             G_LOGGER.info("Falling back to no PPI correction.")
             self.ppimode = False
-            return nDisplays * [100]
+            return NUM_DISPLAYS * [100]
         else:
             ppiArray = []
             for inch, res in zip(inches, RESOLUTION_ARRAY):
@@ -479,7 +479,7 @@ class CLIProfileData(ProfileData):
         self.ppimode = None
         if ppiarr is None and inches is None:
             self.ppimode = False
-            self.ppiArray = nDisplays * [100]
+            self.ppiArray = NUM_DISPLAYS * [100]
         else:
             self.ppimode = True
             if inches:
@@ -488,9 +488,9 @@ class CLIProfileData(ProfileData):
                 self.ppiArray = ppiarr
 
         if offsets is None:
-            self.manual_offsets = nDisplays * [(0, 0)]
+            self.manual_offsets = NUM_DISPLAYS * [(0, 0)]
         else:
-            self.manual_offsets = nDisplays * [(0, 0)]
+            self.manual_offsets = NUM_DISPLAYS * [(0, 0)]
             off_pairs_zip = zip(*[iter(offsets)]*2)
             off_pairs = [tuple(p) for p in off_pairs_zip]
             for off, i in zip(off_pairs, range(len(self.manual_offsets))):
@@ -582,12 +582,14 @@ class TempProfileData(object):
                 return False
             if self.spanmode == "single":
                 if len(self.pathsArray) > 1:
-                    msg = "When spanning a single image across all monitors, only one paths field is needed."
+                    msg = "When spanning a single image across all monitors, \
+only one paths field is needed."
                     show_message_dialog(msg, "Error")
                     return False
             if self.spanmode == "multi":
                 if len(self.pathsArray) < 2:
-                    msg = "When setting a different image on every display, each display needs its own paths field."
+                    msg = "When setting a different image on every display, \
+each display needs its own paths field."
                     show_message_dialog(msg, "Error")
                     return False
             if self.slideshow is True and not self.delay:
@@ -598,7 +600,8 @@ class TempProfileData(object):
                 try:
                     val = int(self.delay)
                     if val < 20:
-                        msg = "It is advisable to set the slideshow delay to be at least 20 seconds due to the time the image processing takes."
+                        msg = "It is advisable to set the slideshow delay to \
+be at least 20 seconds due to the time the image processing takes."
                         show_message_dialog(msg, "Info")
                         return False
                 except ValueError:
@@ -611,21 +614,25 @@ class TempProfileData(object):
                 if self.is_list_float(self.inches):
                     pass
                 else:
-                    msg = "Display diagonals must be given in numeric values using decimal point and separated by semicolon ';'."
+                    msg = "Display diagonals must be given in numeric values \
+using decimal point and separated by semicolon ';'."
                     show_message_dialog(msg, "Error")
                     return False
             if self.manual_offsets:
                 if self.is_list_offsets(self.manual_offsets):
                     pass
                 else:
-                    msg = "Display offsets must be given in width,height pixel pairs and separated by semicolon ';'."
+                    msg = "Display offsets must be given in width,height pixel \
+pairs and separated by semicolon ';'."
                     show_message_dialog(msg, "Error")
                     return False
             if self.bezels:
                 if self.is_list_float(self.bezels):
                     if self.manual_offsets:
                         if len(self.manual_offsets.split(";")) < len(self.bezels.split(";")):
-                            msg = "When using both offset and bezel corrections, take care to enter an offset for each display that you enter a bezel thickness."
+                            msg = "When using both offset and bezel \
+corrections, take care to enter an offset for each display that you \
+enter a bezel thickness."
                             show_message_dialog(msg, "Error")
                             return False
                         else:
@@ -633,14 +640,16 @@ class TempProfileData(object):
                     else:
                         pass
                 else:
-                    msg = "Display bezels must be given in millimeters using decimal point and separated by semicolon ';'."
+                    msg = "Display bezels must be given in millimeters using \
+decimal point and separated by semicolon ';'."
                     show_message_dialog(msg, "Error")
                     return False
             if self.hkBinding:
                 if self.is_valid_hotkey(self.hkBinding):
                     pass
                 else:
-                    msg = "Hotkey must be given as 'mod1+mod2+mod3+key'. Valid modifiers are 'control', 'super', 'alt', 'shift'."
+                    msg = "Hotkey must be given as 'mod1+mod2+mod3+key'. \
+Valid modifiers are 'control', 'super', 'alt', 'shift'."
                     show_message_dialog(msg, "Error")
                     return False
             if self.pathsArray:
@@ -663,19 +672,20 @@ class TempProfileData(object):
             show_message_dialog(msg, "Error")
             return False
 
-    def is_list_float(self, input):
+    def is_list_float(self, input_string):
         is_floats = True
-        list_input = input.split(";")
+        list_input = input_string.split(";")
         for item in list_input:
             try:
                 val = float(item)
             except ValueError:
+                G_LOGGER.info("float type check failed for: '%s'", val)
                 return False
         return is_floats
 
-    def is_list_offsets(self, input):
-        list_input = input.split(";")
-        # if len(list_input) < nDisplays:
+    def is_list_offsets(self, input_string):
+        list_input = input_string.split(";")
+        # if len(list_input) < NUM_DISPLAYS:
         #     msg = "Enter an offset for every display, even if it is (0,0)."
         #     show_message_dialog(msg, "Error")
         #     return False
@@ -688,28 +698,30 @@ class TempProfileData(object):
                     val_w = int(offset[0])
                     val_h = int(offset[1])
                 except ValueError:
+                    G_LOGGER.info("int type check failed for: '%s' or '%s",
+                                  val_w, val_h)
                     return False
-        except:
+        except TypeError:
             return False
         # Passed tests.
         return True
 
-    def is_valid_hotkey(self, input):
+    def is_valid_hotkey(self, input_string):
         # Validity is hard to properly verify here.
         # Instead do it when registering hotkeys at startup.
-        is_hk = True
-        return is_hk
+        input_string = ""
+        return True
 
-    def is_list_valid_paths(self, input):
-        if input == [""]:
+    def is_list_valid_paths(self, input_list):
+        if input_list == [""]:
             msg = "At least one path for wallpapers must be given."
             show_message_dialog(msg, "Error")
             return False
-        if "" in input:
+        if "" in input_list:
             msg = "Take care not to save a profile with an empty display paths field."
             show_message_dialog(msg, "Error")
             return False
-        for path_list_str in input:
+        for path_list_str in input_list:
             path_list = path_list_str.split(";")
             for path in path_list:
                 if os.path.isdir(path) is True:
@@ -761,11 +773,11 @@ class RepeatedTimer(object):
 
 def getDisplayData():
     # https://github.com/rr-/screeninfo
-    global nDisplays, RESOLUTION_ARRAY, DISPLAY_OFFSET_ARRAY
+    global NUM_DISPLAYS, RESOLUTION_ARRAY, DISPLAY_OFFSET_ARRAY
     RESOLUTION_ARRAY = []
     DISPLAY_OFFSET_ARRAY = []
     monitors = get_monitors()
-    nDisplays = len(monitors)
+    NUM_DISPLAYS = len(monitors)
     for m_index in range(len(monitors)):
         res = []
         offset = []
@@ -782,20 +794,19 @@ def getDisplayData():
     topmost_offset = min(DISPLAY_OFFSET_ARRAY, key=itemgetter(1))[1]
     if leftmost_offset < 0 or topmost_offset < 0:
         if DEBUG:
-            G_LOGGER.info("Negative display offset: {}".format(DISPLAY_OFFSET_ARRAY))
+            G_LOGGER.info("Negative display offset: %s", DISPLAY_OFFSET_ARRAY)
         translate_offsets = []
         for offset in DISPLAY_OFFSET_ARRAY:
             translate_offsets.append((offset[0] - leftmost_offset, offset[1] - topmost_offset))
         DISPLAY_OFFSET_ARRAY = translate_offsets
         if DEBUG:
-            G_LOGGER.info("Sanitised display offset: {}".format(DISPLAY_OFFSET_ARRAY))
+            G_LOGGER.info("Sanitised display offset: %s", DISPLAY_OFFSET_ARRAY)
     if DEBUG:
         G_LOGGER.info(
-            "getDisplayData output: nDisplays = {}, {}, {}"
-            .format(
-                nDisplays,
-                RESOLUTION_ARRAY,
-                DISPLAY_OFFSET_ARRAY))
+            "getDisplayData output: NUM_DISPLAYS = %s, %s, %s",
+            NUM_DISPLAYS,
+            RESOLUTION_ARRAY,
+            DISPLAY_OFFSET_ARRAY)
     # Sort displays left to right according to offset data
     display_indices = list(range(len(DISPLAY_OFFSET_ARRAY)))
     display_indices.sort(key=DISPLAY_OFFSET_ARRAY.__getitem__)
@@ -803,11 +814,10 @@ def getDisplayData():
     RESOLUTION_ARRAY = list(map(RESOLUTION_ARRAY.__getitem__, display_indices))
     if DEBUG:
         G_LOGGER.info(
-            "SORTED getDisplayData output: nDisplays = {}, {}, {}"
-            .format(
-                nDisplays,
-                RESOLUTION_ARRAY,
-                DISPLAY_OFFSET_ARRAY))
+            "SORTED getDisplayData output: NUM_DISPLAYS = %s, %s, %s",
+            NUM_DISPLAYS,
+            RESOLUTION_ARRAY,
+            DISPLAY_OFFSET_ARRAY)
 
 
 def computeCanvas(res_array, offset_array):
@@ -824,10 +834,10 @@ def computeCanvas(res_array, offset_array):
     rightmost = max(right_edges)
     # Bottom-most edge.
     bottommost = max(bottom_edges)
-    canvasSize = [rightmost - leftmost, bottommost - topmost]
+    canvas_size = [rightmost - leftmost, bottommost - topmost]
     if DEBUG:
-        G_LOGGER.info("Canvas size: {}".format(canvasSize))
-    return canvasSize
+        G_LOGGER.info("Canvas size: %s", canvas_size)
+    return canvas_size
 
 
 def computeRESOLUTION_ARRAYPPIcorrection(res_array, ppiArrayRelDensity):
@@ -1014,8 +1024,8 @@ def computeWorkingCanvas(crop_tuples):
     rightmost = max(crop_tuples, key=itemgetter(2))[2]
     # Bottom-most edge of the crop tuples.
     bottommost = max(crop_tuples, key=itemgetter(3))[3]
-    canvasSize = [rightmost - leftmost, bottommost - topmost]
-    return canvasSize
+    canvas_size = [rightmost - leftmost, bottommost - topmost]
+    return canvas_size
 
 
 def spanSingleImage(profile):
@@ -1287,7 +1297,7 @@ d.writeConfig("Image", "file://{filename}")
 
 def xfce_actions(outputfile):
     monitors = []
-    for m in range(nDisplays):
+    for m in range(NUM_DISPLAYS):
         monitors.append("monitor" + str(m))
     img_names = special_image_cropper(outputfile)
 
@@ -1365,15 +1375,18 @@ def quickProfileJob(profile):
                  if os.path.isfile(os.path.join(TEMP_PATH, i))
                  and i.startswith(profile.name + "-")]
         if DEBUG:
-            G_LOGGER.info("quickswitch file lookup: {}".format(files))
+            G_LOGGER.info("quickswitch file lookup: %s", files)
         if files:
             # setWallpaper(os.path.join(TEMP_PATH, files[0]))
-            thrd = Thread(target=setWallpaper, args=(os.path.join(TEMP_PATH, files[0]),), daemon=True)
+            thrd = Thread(target=setWallpaper,
+                          args=(os.path.join(TEMP_PATH, files[0]),),
+                          daemon=True)
             thrd.start()
         else:
             pass
             if DEBUG:
-                G_LOGGER.info("Old file for quickswitch was not found. {}".format(files))
+                G_LOGGER.info("Old file for quickswitch was not found. %s",
+                              files)
 
 
 # Profile and data handling
@@ -1405,8 +1418,8 @@ def readActiveProfile():
                 line.rstrip("\r\n")
                 profname = line
                 if DEBUG:
-                    G_LOGGER.info("read profile name from 'running_profile':{}"
-                                  .format(profname))
+                    G_LOGGER.info("read profile name from 'running_profile': %s",
+                                  profname)
                 prof_file = PROFILES_PATH + profname + ".profile"
                 if os.path.isfile(prof_file):
                     profile = ProfileData(prof_file)
@@ -1414,7 +1427,7 @@ def readActiveProfile():
                     profile = None
                     G_LOGGER.info("Exception: Previously run profile configuration \
                         file not found. Is the filename same as the \
-                        profile name: {pname}?".format(pname=profname))
+                        profile name: %s?", profname)
         finally:
             f.close()
     else:
@@ -1476,7 +1489,6 @@ try:
             for p in self.list_of_profiles:
                 self.profnames.append(p.name)
             self.profnames.append("Create a new profile")
-            # self.choiceProfile = wx.Choice(self, -1, name="ProfileChoice", size=(200, -1), choices=self.profnames)
             self.choiceProfile = wx.Choice(self, -1, name="ProfileChoice", choices=self.profnames)
             self.choiceProfile.Bind(wx.EVT_CHOICE, self.onSelect)
             self.sizer_grid_options = wx.GridSizer(5, 4, 5, 5)
@@ -1494,8 +1506,12 @@ try:
 
             tc_width = 160
             self.tc_name = wx.TextCtrl(pnl, -1, size=(tc_width, -1))
-            self.ch_span = wx.Choice(pnl, -1, name="SpanChoice", size=(tc_width, -1), choices=["Single", "Multi"])
-            self.ch_sort = wx.Choice(pnl, -1, name="SortChoice", size=(tc_width, -1), choices=["Shuffle", "Alphabetical"])
+            self.ch_span = wx.Choice(pnl, -1, name="SpanChoice",
+                                     size=(tc_width, -1),
+                                     choices=["Single", "Multi"])
+            self.ch_sort = wx.Choice(pnl, -1, name="SortChoice",
+                                     size=(tc_width, -1),
+                                     choices=["Shuffle", "Alphabetical"])
             self.tc_delay = wx.TextCtrl(pnl, -1, size=(tc_width, -1))
             self.tc_offsets = wx.TextCtrl(pnl, -1, size=(tc_width, -1))
             self.tc_inches = wx.TextCtrl(pnl, -1, size=(tc_width, -1))
@@ -1539,7 +1555,7 @@ try:
             self.button_delete = wx.Button(self, label="Delete")
             self.button_save = wx.Button(self, label="Save")
             # self.button_settings = wx.Button(self, label="Settings")
-            self.button_testimage = wx.Button(self, label="Align Test")  # internally called 'testimage'
+            self.button_testimage = wx.Button(self, label="Align Test")  # internally called 'testimage' TODO clean up
             self.button_help = wx.Button(self, label="Help")
             self.button_close = wx.Button(self, label="Close")
 
@@ -1598,7 +1614,8 @@ try:
 
         def createPathsWidget(self):
             new_paths_widget = wx.BoxSizer(wx.HORIZONTAL)
-            st_new_paths = wx.StaticText(self, -1, "display" + str(len(self.paths_controls)+1) + "paths")
+            static_text = "display" + str(len(self.paths_controls)+1) + "paths"
+            st_new_paths = wx.StaticText(self, -1, static_text)
             tc_new_paths = wx.TextCtrl(self, -1, size=(500, -1))
             self.paths_controls.append(tc_new_paths)
 
@@ -1824,8 +1841,9 @@ try:
                 show_message_dialog(msg, "Error")
             ppi = None
             inches = self.tc_inches.GetLineText(0).split(";")
-            if (inches == "") or (len(inches) < nDisplays):
-                msg = "You must enter a diagonal inch value for every display, serparated by a semicolon ';'."
+            if (inches == "") or (len(inches) < NUM_DISPLAYS):
+                msg = "You must enter a diagonal inch value for every \
+display, serparated by a semicolon ';'."
                 show_message_dialog(msg, "Error")
 
             # print(inches)
@@ -2223,15 +2241,18 @@ Tips:
                                 try:
                                     self.hk.unregister(binding)
                                     if DEBUG:
-                                        G_LOGGER.info("Unreg hotkey {}".format(binding))
+                                        G_LOGGER.info("Unreg hotkey %s",
+                                                      binding)
                                 except:
                                     try:
                                         self.hk2.unregister(binding)
                                         if DEBUG:
-                                            G_LOGGER.info("Unreg hotkey {}".format(binding))
+                                            G_LOGGER.info("Unreg hotkey %s",
+                                                          binding)
                                     except:
                                         if DEBUG:
-                                            G_LOGGER.info("Could not unreg hotkey '{}'".format(binding))
+                                            G_LOGGER.info("Could not unreg hotkey '%s'",
+                                                          binding)
                             self.seen_binding = set()
 
 
@@ -2312,7 +2333,8 @@ It is already registered for another action.".format(profile.hkBinding, profile.
             # self.__init__(self.frame)
             self.g_settings = GeneralSettingsData()
             self.register_hotkeys()
-            msg = "New settings are applied after an application restart. New hotkeys are registered."
+            msg = "New settings are applied after an application restart. \
+New hotkeys are registered."
             show_message_dialog(msg, "Info")
 
         def CreatePopupMenu(self):
@@ -2559,8 +2581,8 @@ Must be in quotes.")
         G_LOGGER.setLevel(logging.INFO)
         # Install exception handler
         # sys.excepthook = custom_exception_handler
-        consoleHandler = logging.StreamHandler()
-        G_LOGGER.addHandler(consoleHandler)
+        CONSOLE_HANDLER = logging.StreamHandler()
+        G_LOGGER.addHandler(CONSOLE_HANDLER)
         G_LOGGER.info(args.setimages)
         G_LOGGER.info(args.ppi)
         G_LOGGER.info(args.inches)
