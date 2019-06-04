@@ -94,25 +94,27 @@ def show_message_dialog(message, msg_type="Info"):
         pass
 
 class GeneralSettingsData(object):
+    """Object to store and save application wide settings."""
+
     def __init__(self):
         self.logging = False
         self.use_hotkeys = True
-        self.hkBinding_next = None
-        self.hkBinding_pause = None
+        self.hk_binding_next = None
+        self.hk_binding_pause = None
         self.set_command = ""
         self.show_help = True
         self.parse_settings()
 
     def parse_settings(self):
+        """Parse general_settings file. Create it if it doesn't exists."""
         global DEBUG, LOGGING, G_SET_COMMAND_STRING
         global G_LOGGER, FILE_HANDLER, CONSOLE_HANDLER
         fname = os.path.join(PATH, "general_settings")
         if os.path.isfile(fname):
-            f = open(fname, "r")
+            general_settings_file = open(fname, "r")
             try:
-                for line in f:
-                    line.strip()
-                    words = line.split("=")
+                for line in general_settings_file:
+                    words = line.strip().split("=")
                     if words[0] == "logging":
                         wrds1 = words[1].strip().lower()
                         if wrds1 == "true":
@@ -141,15 +143,15 @@ class GeneralSettingsData(object):
                     elif words[0] == "next wallpaper hotkey":
                         binding_strings = words[1].strip().split("+")
                         if binding_strings:
-                            self.hkBinding_next = tuple(binding_strings)
+                            self.hk_binding_next = tuple(binding_strings)
                         if DEBUG:
-                            G_LOGGER.info("hkBinding_next: %s", self.hkBinding_next)
+                            G_LOGGER.info("hk_binding_next: %s", self.hk_binding_next)
                     elif words[0] == "pause wallpaper hotkey":
                         binding_strings = words[1].strip().split("+")
                         if binding_strings:
-                            self.hkBinding_pause = tuple(binding_strings)
+                            self.hk_binding_pause = tuple(binding_strings)
                         if DEBUG:
-                            G_LOGGER.info("hkBinding_pause: %s", self.hkBinding_pause)
+                            G_LOGGER.info("hk_binding_pause: %s", self.hk_binding_pause)
                     elif words[0] == "set_command":
                         G_SET_COMMAND_STRING = words[1].strip()
                         self.set_command = G_SET_COMMAND_STRING
@@ -163,49 +165,50 @@ class GeneralSettingsData(object):
                         G_LOGGER.info("Exception: Unkown general setting: %s",
                                       words[0])
             finally:
-                f.close()
+                general_settings_file.close()
         else:
             # if file does not exist, create it and write default values.
-            f = open(fname, "x")
-            f.write("logging=false\n")
-            f.write("use hotkeys=true\n")
-            f.write("next wallpaper hotkey=control+super+w\n")
-            self.hkBinding_next = ("control", "super", "w")
-            f.write("pause wallpaper hotkey=control+super+shift+p\n")
-            self.hkBinding_pause = ("control", "super", "shift", "p")
-            f.write("set_command=")
-            f.close()
+            general_settings_file = open(fname, "x")
+            general_settings_file.write("logging=false\n")
+            general_settings_file.write("use hotkeys=true\n")
+            general_settings_file.write("next wallpaper hotkey=control+super+w\n")
+            self.hk_binding_next = ("control", "super", "w")
+            general_settings_file.write("pause wallpaper hotkey=control+super+shift+p\n")
+            self.hk_binding_pause = ("control", "super", "shift", "p")
+            general_settings_file.write("set_command=")
+            general_settings_file.close()
 
-    def Save(self):
+    def save_settings(self):
+        """Save the current state of the general settings object."""
+
         fname = os.path.join(PATH, "general_settings")
-        f = open(fname, "w")
+        general_settings_file = open(fname, "w")
 
         if self.logging:
-            f.write("logging=true\n")
+            general_settings_file.write("logging=true\n")
         else:
-            f.write("logging=false\n")
+            general_settings_file.write("logging=false\n")
 
         if self.use_hotkeys:
-            f.write("use hotkeys=true\n")
+            general_settings_file.write("use hotkeys=true\n")
         else:
-            f.write("use hotkeys=false\n")
+            general_settings_file.write("use hotkeys=false\n")
 
-        if self.hkBinding_next:
-            hk_string = "+".join(self.hkBinding_next)
-            f.write("next wallpaper hotkey={}\n".format(hk_string))
+        if self.hk_binding_next:
+            hk_string = "+".join(self.hk_binding_next)
+            general_settings_file.write("next wallpaper hotkey={}\n".format(hk_string))
 
-        if self.hkBinding_pause:
-            hk_string_p = "+".join(self.hkBinding_pause)
-            f.write("pause wallpaper hotkey={}\n".format(hk_string_p))
+        if self.hk_binding_pause:
+            hk_string_p = "+".join(self.hk_binding_pause)
+            general_settings_file.write("pause wallpaper hotkey={}\n".format(hk_string_p))
 
         if self.show_help:
-            f.write("show_help_at_start=true\n")
+            general_settings_file.write("show_help_at_start=true\n")
         else:
-            f.write("show_help_at_start=false\n")
+            general_settings_file.write("show_help_at_start=false\n")
 
-        f.write("set_command={}".format(self.set_command))
-
-        f.close()
+        general_settings_file.write("set_command={}".format(self.set_command))
+        general_settings_file.close()
 
 
 
@@ -216,7 +219,7 @@ class ProfileData(object):
         self.name = "default_profile"
         self.spanmode = "single"  # single / multi
         self.slideshow = True
-        self.delayArray = [600]
+        self.delay_list = [600]
         self.sortmode = "shuffle"  # shuffle ( random , sorted? )
         self.ppimode = False
         self.ppiArray = NUM_DISPLAYS * [100]
@@ -229,17 +232,18 @@ class ProfileData(object):
         self.hkBinding = None
         self.pathsArray = []
 
-        self.parseProfile(file)
+        self.parse_profile(file)
         if self.ppimode is True:
-            self.computeRelativeDensities()
+            self.compute_relative_densities()
             if self.bezels:
-                self.computeBezelPixelOffsets()
+                self.compute_bezel_px_offsets()
         self.file_handler = self.Filehandler(self.pathsArray, self.sortmode)
 
-    def parseProfile(self, file):
-        f = open(file, "r")
+    def parse_profile(self, file):
+        """Read wallpaper profile settings from file."""
+        profile_file = open(file, "r")
         try:
-            for line in f:
+            for line in profile_file:
                 line.strip()
                 words = line.split("=")
                 if words[0] == "name":
@@ -260,10 +264,10 @@ class ProfileData(object):
                     else:
                         self.slideshow = False
                 elif words[0] == "delay":
-                    self.delayArray = []
+                    self.delay_list = []
                     delay_strings = words[1].strip().split(";")
                     for delstr in delay_strings:
-                        self.delayArray.append(int(delstr))
+                        self.delay_list.append(int(delstr))
                 elif words[0] == "sortmode":
                     wrd1 = words[1].strip().lower()
                     if wrd1 == "shuffle":
@@ -281,33 +285,33 @@ class ProfileData(object):
                     self.manual_offsets = []
                     self.manual_offsets_useronly = []
                     # w1,h1;w2,h2;...
-                    offsetStrings = words[1].strip().split(";")
-                    for offstr in offsetStrings:
+                    offset_strings = words[1].strip().split(";")
+                    for offstr in offset_strings:
                         res_str = offstr.split(",")
                         self.manual_offsets.append((int(res_str[0]),
                                                     int(res_str[1])))
                         self.manual_offsets_useronly.append((int(res_str[0]),
                                                              int(res_str[1])))
                 elif words[0] == "bezels":
-                    bezelMillimeter_Strings = words[1].strip().split(";")
-                    for bezstr in bezelMillimeter_Strings:
+                    bez_mm_strings = words[1].strip().split(";")
+                    for bezstr in bez_mm_strings:
                         self.bezels.append(float(bezstr))
                 elif words[0] == "ppi":
                     self.ppimode = True
                     # overwrite initialized arrays.
                     self.ppiArray = []
                     self.ppiArrayRelDensity = []
-                    ppiStrings = words[1].strip().split(";")
-                    for ppistr in ppiStrings:
+                    ppi_strings = words[1].strip().split(";")
+                    for ppistr in ppi_strings:
                         self.ppiArray.append(int(ppistr))
                 elif words[0] == "diagonal_inches":
                     self.ppimode = True
                     # overwrite initialized arrays.
                     self.ppiArray = []
                     self.ppiArrayRelDensity = []
-                    inchStrings = words[1].strip().split(";")
+                    inch_strings = words[1].strip().split(";")
                     self.inches = []
-                    for inchstr in inchStrings:
+                    for inchstr in inch_strings:
                         self.inches.append(float(inchstr))
                     self.ppiArray = self.computePPIs(self.inches)
                 elif words[0] == "hotkey":
@@ -322,7 +326,7 @@ class ProfileData(object):
                 else:
                     G_LOGGER.info("Unknown setting line in config: %s", line)
         finally:
-            f.close()
+            profile_file.close()
 
     def computePPIs(self, inches):
         if len(inches) < NUM_DISPLAYS:
@@ -344,14 +348,14 @@ class ProfileData(object):
                 G_LOGGER.info("Computed PPIs: %s", ppiArray)
             return ppiArray
 
-    def computeRelativeDensities(self):
+    def compute_relative_densities(self):
         max_density = max(self.ppiArray)
         for ppi in self.ppiArray:
             self.ppiArrayRelDensity.append((1 / max_density) * float(ppi))
         if DEBUG:
             G_LOGGER.info("relative pixel densities: %s", self.ppiArrayRelDensity)
 
-    def computeBezelPixelOffsets(self):
+    def compute_bezel_px_offsets(self):
         inch_per_mm = 1.0 / 25.4
         for bez_mm, ppi in zip(self.bezels, self.ppiArray):
             self.bezel_px_offsets.append(
@@ -376,7 +380,7 @@ class ProfileData(object):
                 self.manual_offsets)
 
     def NextWallpaperFiles(self):
-        return self.file_handler.Next_Wallpaper_Files()
+        return self.file_handler.next_wallpaper_files()
 
     class Filehandler(object):
         def __init__(self, pathsArray, sortmode):
@@ -412,7 +416,7 @@ Use absolute paths for best reliabilty.".format(path)
                         diplay_image_list,
                         self.sortmode))
 
-        def Next_Wallpaper_Files(self):
+        def next_wallpaper_files(self):
             files = []
             for iterable in self.iterators:
                 next_image = iterable.__next__()
@@ -423,7 +427,7 @@ Use absolute paths for best reliabilty.".format(path)
                     if DEBUG:
                         G_LOGGER.info("Ran into an invalid file, reinitializing..")
                     self.__init__(self.pathsArray, self.sortmode)
-                    files = self.Next_Wallpaper_Files()
+                    files = self.next_wallpaper_files()
                     break
             return files
 
@@ -432,7 +436,7 @@ Use absolute paths for best reliabilty.".format(path)
                 self.counter = 0
                 self.files = filelist
                 self.sortmode = sortmode
-                self.ArrangeList()
+                self.arrange_list()
 
             def __iter__(self):
                 return self
@@ -444,12 +448,12 @@ Use absolute paths for best reliabilty.".format(path)
                     return image
                 else:
                     self.counter = 0
-                    self.ArrangeList()
+                    self.arrange_list()
                     image = self.files[self.counter]
                     self.counter += 1
                     return image
 
-            def ArrangeList(self):
+            def arrange_list(self):
                 if self.sortmode == "shuffle":
                     if DEBUG and VERBOSE:
                         G_LOGGER.info("Shuffling files: %s", self.files)
@@ -462,7 +466,7 @@ Use absolute paths for best reliabilty.".format(path)
                         G_LOGGER.info("Sorted files: %s", self.files)
                 else:
                     G_LOGGER.info(
-                        "ImageList.ArrangeList: unknown sortmode: %s",
+                        "ImageList.arrange_list: unknown sortmode: %s",
                         self.sortmode)
 
 
@@ -509,9 +513,9 @@ class CLIProfileData(ProfileData):
             self.files.append(os.path.realpath(item))
         #
         if self.ppimode is True:
-            self.computeRelativeDensities()
+            self.compute_relative_densities()
             if self.bezels:
-                self.computeBezelPixelOffsets()
+                self.compute_bezel_px_offsets()
 
     def NextWallpaperFiles(self):
         return self.files
@@ -534,47 +538,47 @@ class TempProfileData(object):
         if self.name is not None:
             fname = PROFILES_PATH + self.name + ".profile"
             try:
-                f = open(fname, "w")
+                tpfile = open(fname, "w")
             except IOError:
                 msg = "Cannot write to file {}".format(fname)
                 show_message_dialog(msg, "Error")
                 return None
-            f.write("name=" + str(self.name) + "\n")
+            tpfile.write("name=" + str(self.name) + "\n")
             if self.spanmode:
-                f.write("spanmode=" + str(self.spanmode) + "\n")
+                tpfile.write("spanmode=" + str(self.spanmode) + "\n")
             if self.slideshow is not None:
-                f.write("slideshow=" + str(self.slideshow) + "\n")
+                tpfile.write("slideshow=" + str(self.slideshow) + "\n")
             if self.delay:
-                f.write("delay=" + str(self.delay) + "\n")
+                tpfile.write("delay=" + str(self.delay) + "\n")
             if self.sortmode:
-                f.write("sortmode=" + str(self.sortmode) + "\n")
+                tpfile.write("sortmode=" + str(self.sortmode) + "\n")
             # f.write("ppi=" + str(self.ppiArray) + "\n")
             if self.inches:
-                f.write("diagonal_inches=" + str(self.inches) + "\n")
+                tpfile.write("diagonal_inches=" + str(self.inches) + "\n")
             if self.manual_offsets:
-                f.write("offsets=" + str(self.manual_offsets) + "\n")
+                tpfile.write("offsets=" + str(self.manual_offsets) + "\n")
             if self.bezels:
-                f.write("bezels=" + str(self.bezels) + "\n")
+                tpfile.write("bezels=" + str(self.bezels) + "\n")
             if self.hkBinding:
-                f.write("hotkey=" + str(self.hkBinding) + "\n")
+                tpfile.write("hotkey=" + str(self.hkBinding) + "\n")
             if self.pathsArray:
                 for paths in self.pathsArray:
-                    # paths_formatted = ";".join(paths)
-                    f.write("display" + str(self.pathsArray.index(paths)) + "paths=" + paths + "\n")
+                    tpfile.write("display" + str(self.pathsArray.index(paths))
+                                 + "paths=" + paths + "\n")
 
-            f.close()
+            tpfile.close()
             return fname
         else:
             print("tmp.Save(): name is not set.")
             return None
 
-    def TestSave(self):
+    def test_save(self):
         valid_profile = False
         if self.name is not None and self.name.strip() is not "":
             fname = PROFILES_PATH + self.name + ".deleteme"
             try:
-                f = open(fname, "w")
-                f.close()
+                testfile = open(fname, "w")
+                testfile.close()
                 os.remove(fname)
             except IOError:
                 msg = "Cannot write to file {}".format(fname)
@@ -709,7 +713,7 @@ Valid modifiers are 'control', 'super', 'alt', 'shift'."
     def is_valid_hotkey(self, input_string):
         # Validity is hard to properly verify here.
         # Instead do it when registering hotkeys at startup.
-        input_string = ""
+        input_string = "" + input_string
         return True
 
     def is_list_valid_paths(self, input_list):
@@ -771,7 +775,7 @@ class RepeatedTimer(object):
         self.is_running = False
 
 
-def getDisplayData():
+def get_display_data():
     # https://github.com/rr-/screeninfo
     global NUM_DISPLAYS, RESOLUTION_ARRAY, DISPLAY_OFFSET_ARRAY
     RESOLUTION_ARRAY = []
@@ -803,7 +807,7 @@ def getDisplayData():
             G_LOGGER.info("Sanitised display offset: %s", DISPLAY_OFFSET_ARRAY)
     if DEBUG:
         G_LOGGER.info(
-            "getDisplayData output: NUM_DISPLAYS = %s, %s, %s",
+            "get_display_data output: NUM_DISPLAYS = %s, %s, %s",
             NUM_DISPLAYS,
             RESOLUTION_ARRAY,
             DISPLAY_OFFSET_ARRAY)
@@ -814,13 +818,13 @@ def getDisplayData():
     RESOLUTION_ARRAY = list(map(RESOLUTION_ARRAY.__getitem__, display_indices))
     if DEBUG:
         G_LOGGER.info(
-            "SORTED getDisplayData output: NUM_DISPLAYS = %s, %s, %s",
+            "SORTED get_display_data output: NUM_DISPLAYS = %s, %s, %s",
             NUM_DISPLAYS,
             RESOLUTION_ARRAY,
             DISPLAY_OFFSET_ARRAY)
 
 
-def computeCanvas(res_array, offset_array):
+def compute_canvas(res_array, offset_array):
     # Take the subtractions of right-most right - left-most left
     # and bottom-most bottom - top-most top (=0).
     leftmost = 0
@@ -840,38 +844,35 @@ def computeCanvas(res_array, offset_array):
     return canvas_size
 
 
-def computeRESOLUTION_ARRAYPPIcorrection(res_array, ppiArrayRelDensity):
-    eff_RESOLUTION_ARRAY = []
+def compute_ppi_corrected_res_array(res_array, ppi_list_rel_density):
+    """Return ppi density normalized sizes of the real resolutions."""
+    eff_res_array = []
     for i in range(len(res_array)):
-        effw = round(res_array[i][0] / ppiArrayRelDensity[i])
-        effh = round(res_array[i][1] / ppiArrayRelDensity[i])
-        eff_RESOLUTION_ARRAY.append((effw, effh))
-    return eff_RESOLUTION_ARRAY
+        effw = round(res_array[i][0] / ppi_list_rel_density[i])
+        effh = round(res_array[i][1] / ppi_list_rel_density[i])
+        eff_res_array.append((effw, effh))
+    return eff_res_array
 
 
 # resize image to fill given rectangle and do a centered crop to size.
 # Return output image.
-def resizeToFill(img, res):
-    imgSize = img.size  # returns image (width,height)
-    if imgSize == res:
+def resize_to_fill(img, res):
+    image_size = img.size  # returns image (width,height)
+    if image_size == res:
         # input image is already of the correct size, no action needed.
         return img
-    imgRatio = imgSize[0] / imgSize[1]
-    trgtRatio = res[0] / res[1]
+    image_ratio = image_size[0] / image_size[1]
+    target_ratio = res[0] / res[1]
     # resize along the shorter edge to get an image that is at least of the
     # target size on the shorter edge.
-    if imgRatio < trgtRatio:      # img not wide enough / is too tall
-        resizeFactor = res[0] / imgSize[0]
-        newSize = (
-            round(
-                resizeFactor *
-                imgSize[0]),
-            round(
-                resizeFactor *
-                imgSize[1]))
-        img = img.resize(newSize, resample=Image.LANCZOS)
+    if image_ratio < target_ratio:      # img not wide enough / is too tall
+        resize_multiplier = res[0] / image_size[0]
+        new_size = (
+            round(resize_multiplier * image_size[0]),
+            round(resize_multiplier * image_size[1]))
+        img = img.resize(new_size, resample=Image.LANCZOS)
         # crop vertically to target height
-        extraH = newSize[1] - res[1]
+        extraH = new_size[1] - res[1]
         if extraH < 0:
             G_LOGGER.info(
                 "Error with cropping vertically, resized image \
@@ -885,24 +886,24 @@ def resizeToFill(img, res):
         cropTuple = (
             0,
             round(extraH/2),
-            newSize[0],
+            new_size[0],
             round(extraH/2) + res[1])
         cropped_res = img.crop(cropTuple)
         if cropped_res.size == res:
             return cropped_res
         else:
             G_LOGGER.info(
-                "Error: result image not of correct size. crp:{}, res:{}"
-                .format(cropped_res.size, res))
+                "Error: result image not of correct size. crp:%s, res:%s",
+                cropped_res.size, res)
             return -1
-    elif imgRatio >= trgtRatio:      # img not tall enough / is too wide
-        resizeFactor = res[1] / imgSize[1]
-        newSize = (
-            round(resizeFactor * imgSize[0]),
-            round(resizeFactor * imgSize[1]))
-        img = img.resize(newSize, resample=Image.LANCZOS)
+    elif image_ratio >= target_ratio:      # img not tall enough / is too wide
+        resize_multiplier = res[1] / image_size[1]
+        new_size = (
+            round(resize_multiplier * image_size[0]),
+            round(resize_multiplier * image_size[1]))
+        img = img.resize(new_size, resample=Image.LANCZOS)
         # crop horizontally to target width
-        extraW = newSize[0] - res[0]
+        extraW = new_size[0] - res[0]
         if extraW < 0:
             G_LOGGER.info(
                 "Error with cropping horizontally, resized image \
@@ -917,14 +918,14 @@ def resizeToFill(img, res):
             round(extraW/2),
             0,
             round(extraW/2) + res[0],
-            newSize[1])
+            new_size[1])
         cropped_res = img.crop(cropTuple)
         if cropped_res.size == res:
             return cropped_res
         else:
             G_LOGGER.info(
-                "Error: result image not of correct size. crp:{}, res:{}"
-                .format(cropped_res.size, res))
+                "Error: result image not of correct size. crp:%s, res:%s",
+                cropped_res.size, res)
             return -1
 
 
@@ -940,25 +941,26 @@ def get_all_centers(resarr_eff, manual_offsets):
     center_standard_height = get_center(resarr_eff[0])[1]
     if len(manual_offsets) < len(resarr_eff):
         G_LOGGER.info("get_all_centers: Not enough manual offsets: \
-            {} for displays: {}".format(
-                len(manual_offsets),
-                len(resarr_eff)))
+                      %s for displays: %s",
+                      len(manual_offsets),
+                      len(resarr_eff))
     else:
         for i in range(len(resarr_eff)):
             horiz_radius = get_horizontal_radius(resarr_eff[i])
             # here take the center height to be the same for all the displays
             # unless modified with the manual offset
-            center_with_respect_to_AnchorLeftTop = (
+            center_pos_from_anchor_left_top = (
                 sum_widths + manual_offsets[i][0] + horiz_radius,
                 center_standard_height + manual_offsets[i][1])
-            centers.append(center_with_respect_to_AnchorLeftTop)
+            centers.append(center_pos_from_anchor_left_top)
             sum_widths += resarr_eff[i][0]
     if DEBUG:
-        G_LOGGER.info("centers: {}".format(centers))
+        G_LOGGER.info("centers: %s", centers)
     return centers
 
 
 def get_lefttop_from_center(center, res):
+    """Compute top left coordinate of a rectangle from its center."""
     return (center[0] - round(res[0] / 2), center[1] - round(res[1] / 2))
 
 
@@ -1033,8 +1035,8 @@ def spanSingleImage(profile):
     if DEBUG:
         G_LOGGER.info(file)
     img = Image.open(file)
-    canvasTuple = tuple(computeCanvas(RESOLUTION_ARRAY, DISPLAY_OFFSET_ARRAY))
-    img_resize = resizeToFill(img, canvasTuple)
+    canvasTuple = tuple(compute_canvas(RESOLUTION_ARRAY, DISPLAY_OFFSET_ARRAY))
+    img_resize = resize_to_fill(img, canvasTuple)
     outputfile = TEMP_PATH + profile.name + "-a.png"
     if os.path.isfile(outputfile):
         outputfile_old = outputfile
@@ -1055,7 +1057,7 @@ def spanSingleImagePPIcorrection(profile):
     if DEBUG:
         G_LOGGER.info(file)
     img = Image.open(file)
-    RESOLUTION_ARRAY_eff = computeRESOLUTION_ARRAYPPIcorrection(
+    RESOLUTION_ARRAY_eff = compute_ppi_corrected_res_array(
         RESOLUTION_ARRAY, profile.ppiArrayRelDensity)
 
     # Cropping now sections of the image to be shown, USE EFFECTIVE WORKING
@@ -1069,7 +1071,7 @@ def spanSingleImagePPIcorrection(profile):
     # Image is now the height of the eff tallest display + possible manual
     # offsets and the width of the combined eff widths + possible manual
     # offsets.
-    img_workingsize = resizeToFill(img, canvasTuple_eff)
+    img_workingsize = resize_to_fill(img, canvasTuple_eff)
     # Simultaneously make crops at working size and then resize down to actual
     # resolution from RESOLUTION_ARRAY as needed.
     for crop, res in zip(crop_tuples, RESOLUTION_ARRAY):
@@ -1081,7 +1083,7 @@ def spanSingleImagePPIcorrection(profile):
             cropped_images.append(crop_img)
     # Combine crops to a single canvas of the size of the actual desktop
     # actual combined size of the display resolutions
-    canvasTuple_fin = tuple(computeCanvas(RESOLUTION_ARRAY, DISPLAY_OFFSET_ARRAY))
+    canvasTuple_fin = tuple(compute_canvas(RESOLUTION_ARRAY, DISPLAY_OFFSET_ARRAY))
     combinedImage = Image.new("RGB", canvasTuple_fin, color=0)
     combinedImage.load()
     for i in range(len(cropped_images)):
@@ -1107,8 +1109,8 @@ def setMultipleImages(profile):
     img_resized = []
     for file, res in zip(files, RESOLUTION_ARRAY):
         image = Image.open(file)
-        img_resized.append(resizeToFill(image, res))
-    canvasTuple = tuple(computeCanvas(RESOLUTION_ARRAY, DISPLAY_OFFSET_ARRAY))
+        img_resized.append(resize_to_fill(image, res))
+    canvasTuple = tuple(compute_canvas(RESOLUTION_ARRAY, DISPLAY_OFFSET_ARRAY))
     combinedImage = Image.new("RGB", canvasTuple, color=0)
     combinedImage.load()
     for i in range(len(files)):
@@ -1356,7 +1358,7 @@ def changeWallpaperJob(profile):
 
 def runProfileJob(profile):
     repeating_timer = None
-    getDisplayData()  # Check here so new profile has fresh data.
+    get_display_data()  # Check here so new profile has fresh data.
     if DEBUG:
         G_LOGGER.info("running profile job with profile: {}".format(profile.name))
 
@@ -1369,7 +1371,7 @@ def runProfileJob(profile):
             G_LOGGER.info("Running wallpaper slideshow.")
         changeWallpaperJob(profile)
         repeating_timer = RepeatedTimer(
-            profile.delayArray[0], changeWallpaperJob, profile)
+            profile.delay_list[0], changeWallpaperJob, profile)
     return repeating_timer
 
 
@@ -1637,7 +1639,7 @@ try:
         # Profile setting displaying functions.
         def populateFields(self, profile):
             self.tc_name.ChangeValue(profile.name)
-            self.tc_delay.ChangeValue(str(profile.delayArray[0]))
+            self.tc_delay.ChangeValue(str(profile.delay_list[0]))
             self.tc_offsets.ChangeValue(self.show_offset(profile.manual_offsets_useronly))
             show_inch = self.val_list_to_colonstr(profile.inches)
             self.tc_inches.ChangeValue(show_inch)
@@ -1824,7 +1826,7 @@ try:
             G_LOGGER.info(tmp_profile.hkBinding)
             G_LOGGER.info(tmp_profile.pathsArray)
 
-            if tmp_profile.TestSave():
+            if tmp_profile.test_save():
                 saved_file = tmp_profile.Save()
                 self.update_choiceprofile()
                 self.parent_tray_obj.reload_profiles(event)
@@ -1833,7 +1835,7 @@ try:
                 self.choiceProfile.SetSelection(self.choiceProfile.FindString(tmp_profile.name))
                 return saved_file
             else:
-                G_LOGGER.info("TestSave failed.")
+                G_LOGGER.info("test_save failed.")
                 return None
 
         def onTestImage(self, event):
@@ -1863,7 +1865,7 @@ display, serparated by a semicolon ';'."
                     flat_offsets.append(pix)
             # print("flat_offsets= ", flat_offsets)
             # Use the simplified CLI profile class
-            getDisplayData()
+            get_display_data()
             profile = CLIProfileData(testimage,
                                      ppi,
                                      inches,
@@ -2018,8 +2020,8 @@ display, serparated by a semicolon ';'."
             g_settings = GeneralSettingsData()
             self.cb_logging.SetValue(g_settings.logging)
             self.cb_usehotkeys.SetValue(g_settings.use_hotkeys)
-            self.tc_hk_next.ChangeValue(self.show_hkbinding(g_settings.hkBinding_next))
-            self.tc_hk_pause.ChangeValue(self.show_hkbinding(g_settings.hkBinding_pause))
+            self.tc_hk_next.ChangeValue(self.show_hkbinding(g_settings.hk_binding_next))
+            self.tc_hk_pause.ChangeValue(self.show_hkbinding(g_settings.hk_binding_pause))
             self.tc_setcmd.ChangeValue(g_settings.set_command)
 
         def show_hkbinding(self, hktuple):
@@ -2158,14 +2160,14 @@ Tips:
                 current_settings = GeneralSettingsData()
                 if current_settings.show_help is False:
                     current_settings.show_help = True
-                    current_settings.Save()
+                    current_settings.save_settings()
             else:
                 # Save that the help at start is not wanted.
                 current_settings = GeneralSettingsData()
                 show_help = current_settings.show_help
                 if show_help:
                     current_settings.show_help = False
-                    current_settings.Save()
+                    current_settings.save_settings()
             self.frame.Close(True)
 
 
@@ -2180,7 +2182,7 @@ Tips:
             self.Bind(wx.adv.EVT_TASKBAR_LEFT_DOWN, self.on_left_down)
             # profile initialization
             self.jobLock = Lock()
-            getDisplayData()
+            get_display_data()
             self.repeating_timer = None
             self.pause_item = None
             self.is_paused = False
@@ -2262,29 +2264,29 @@ Tips:
 
 
                         # register general bindings
-                        if self.g_settings.hkBinding_next not in self.seen_binding:
+                        if self.g_settings.hk_binding_next not in self.seen_binding:
                             try:
                                 self.hk.register(
-                                    self.g_settings.hkBinding_next,
+                                    self.g_settings.hk_binding_next,
                                     callback=lambda x: self.next_wallpaper(wx.EVT_MENU),
                                     overwrite=False)
-                                self.seen_binding.add(self.g_settings.hkBinding_next)
+                                self.seen_binding.add(self.g_settings.hk_binding_next)
                             except:
                                 msg = "Error: could not register hotkey {}. \
-    Check that it is formatted properly and valid keys.".format(self.g_settings.hkBinding_next)
+    Check that it is formatted properly and valid keys.".format(self.g_settings.hk_binding_next)
                                 G_LOGGER.info(msg)
                                 G_LOGGER.info(sys.exc_info()[0])
                                 show_message_dialog(msg, "Error")
-                        if self.g_settings.hkBinding_pause not in self.seen_binding:
+                        if self.g_settings.hk_binding_pause not in self.seen_binding:
                             try:
                                 self.hk.register(
-                                    self.g_settings.hkBinding_pause,
+                                    self.g_settings.hk_binding_pause,
                                     callback=lambda x: self.pause_timer(wx.EVT_MENU),
                                     overwrite=False)
-                                self.seen_binding.add(self.g_settings.hkBinding_pause)
+                                self.seen_binding.add(self.g_settings.hk_binding_pause)
                             except:
                                 msg = "Error: could not register hotkey {}. \
-    Check that it is formatted properly and valid keys.".format(self.g_settings.hkBinding_pause)
+    Check that it is formatted properly and valid keys.".format(self.g_settings.hk_binding_pause)
                                 G_LOGGER.info(msg)
                                 G_LOGGER.info(sys.exc_info()[0])
                                 show_message_dialog(msg, "Error")
@@ -2624,7 +2626,7 @@ Exiting.")
             global G_SET_COMMAND_STRING
             G_SET_COMMAND_STRING = args.command[0]
 
-        getDisplayData()
+        get_display_data()
         profile = CLIProfileData(args.setimages,
                                  args.ppi,
                                  args.inches,
