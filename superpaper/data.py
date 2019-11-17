@@ -14,7 +14,7 @@ import sp_logging
 from message_dialog import show_message_dialog
 import wallpaper_processing as wpproc
 import sp_paths
-from sp_paths import (PATH, PROFILES_PATH)
+from sp_paths import (PATH, CONFIG_PATH, PROFILES_PATH, TEMP_PATH)
 
 
 
@@ -25,7 +25,7 @@ def list_profiles():
     profile_list = []
     for i in range(len(files)):
         try:
-            profile_list.append(ProfileData(sp_paths.PROFILES_PATH + files[i]))
+            profile_list.append(ProfileData(os.path.join(sp_paths.PROFILES_PATH, files[i])))
         except Exception as exep:  # TODO implement proper error catching for ProfileData init
             msg = "There was an error when loading profile '{}'. Exiting.".format(files[i])
             sp_logging.G_LOGGER.info(msg)
@@ -38,7 +38,7 @@ def list_profiles():
 
 def read_active_profile():
     """Reads last active profile from file at startup."""
-    fname = sp_paths.TEMP_PATH + "running_profile"
+    fname = os.path.join(sp_paths.TEMP_PATH, "running_profile")
     profname = ""
     profile = None
     if os.path.isfile(fname):
@@ -50,7 +50,7 @@ def read_active_profile():
                 if sp_logging.DEBUG:
                     sp_logging.G_LOGGER.info("read profile name from 'running_profile': %s",
                                              profname)
-                prof_file = sp_paths.PROFILES_PATH + profname + ".profile"
+                prof_file = os.path.join(sp_paths.PROFILES_PATH, profname + ".profile")
                 if os.path.isfile(prof_file):
                     profile = ProfileData(prof_file)
                 else:
@@ -68,7 +68,7 @@ def read_active_profile():
 
 def write_active_profile(profname):
     """Writes active profile name to file after profile has changed."""
-    fname = sp_paths.TEMP_PATH + "running_profile"
+    fname = os.path.join(sp_paths.TEMP_PATH, "running_profile")
     rp_file = open(fname, "w")
     rp_file.write(profname)
     rp_file.close()
@@ -89,7 +89,7 @@ class GeneralSettingsData(object):
 
     def parse_settings(self):
         """Parse general_settings file. Create it if it doesn't exists."""
-        fname = os.path.join(PATH, "general_settings")
+        fname = os.path.join(CONFIG_PATH, "general_settings")
         if os.path.isfile(fname):
             general_settings_file = open(fname, "r")
             try:
@@ -106,7 +106,7 @@ class GeneralSettingsData(object):
                             # Install exception handler
                             sys.excepthook = sp_logging.custom_exception_handler
                             sp_logging.FILE_HANDLER = logging.FileHandler(
-                                "{0}/{1}.log".format(PATH, "log"),
+                                os.path.join(TEMP_PATH, "log"),
                                 mode="w")
                             sp_logging.G_LOGGER.addHandler(sp_logging.FILE_HANDLER)
                             sp_logging.CONSOLE_HANDLER = logging.StreamHandler()
@@ -161,7 +161,7 @@ class GeneralSettingsData(object):
     def save_settings(self):
         """Save the current state of the general settings object."""
 
-        fname = os.path.join(PATH, "general_settings")
+        fname = os.path.join(CONFIG_PATH, "general_settings")
         general_settings_file = open(fname, "w")
 
         if self.logging:
@@ -581,7 +581,7 @@ class TempProfileData(object):
     def save(self):
         """Saves the TempProfile into a file."""
         if self.name is not None:
-            fname = PROFILES_PATH + self.name + ".profile"
+            fname = os.path.join(PROFILES_PATH, self.name + ".profile")
             try:
                 tpfile = open(fname, "w")
             except IOError:
@@ -620,7 +620,7 @@ class TempProfileData(object):
         """Tests whether the user input for profile settings is valid."""
         valid_profile = False
         if self.name is not None and self.name.strip() is not "":
-            fname = PROFILES_PATH + self.name + ".deleteme"
+            fname = os.path.join(PROFILES_PATH, self.name + ".deleteme")
             try:
                 testfile = open(fname, "w")
                 testfile.close()

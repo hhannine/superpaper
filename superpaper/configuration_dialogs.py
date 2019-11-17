@@ -7,7 +7,7 @@ import sp_logging
 from data import GeneralSettingsData, ProfileData, TempProfileData, CLIProfileData, list_profiles
 from message_dialog import show_message_dialog
 from wallpaper_processing import NUM_DISPLAYS, get_display_data, change_wallpaper_job
-from sp_paths import PATH, PROFILES_PATH
+from sp_paths import PATH, CONFIG_PATH, PROFILES_PATH
 
 try:
     import wx
@@ -606,7 +606,7 @@ class SettingsPanel(wx.Panel):
         current_settings = GeneralSettingsData()
         show_help = current_settings.show_help
 
-        fname = os.path.join(PATH, "general_settings")
+        fname = os.path.join(CONFIG_PATH, "general_settings")
         general_settings_file = open(fname, "w")
         if self.cb_logging.GetValue():
             general_settings_file.write("logging=true\n")

@@ -31,7 +31,7 @@ except ImportError as import_e:
 
 # Constants
 TRAY_TOOLTIP = "Superpaper"
-TRAY_ICON = sp_paths.PATH + "/resources/default.png"
+TRAY_ICON = os.path.join(sp_paths.PATH, "resources/default.png")
 
 
 

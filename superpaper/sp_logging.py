@@ -1,8 +1,9 @@
 """Logging tools for Superpaper."""
 
 import logging
+import os
 
-import sp_paths
+from sp_paths import TEMP_PATH
 
 DEBUG = False
 VERBOSE = False
@@ -16,7 +17,7 @@ if DEBUG and not LOGGING:
 elif LOGGING:
     DEBUG = True
     G_LOGGER.setLevel(logging.INFO)
-    FILE_HANDLER = logging.FileHandler("{0}/{1}.log".format(sp_paths.PATH, "log"),
+    FILE_HANDLER = logging.FileHandler(os.path.join(TEMP_PATH, "log"),
                                        mode="w")
     G_LOGGER.addHandler(FILE_HANDLER)
     CONSOLE_HANDLER = logging.StreamHandler()
