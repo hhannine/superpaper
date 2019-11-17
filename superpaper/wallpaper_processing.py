@@ -353,12 +353,12 @@ def span_single_image_simple(profile):
     img = Image.open(file)
     canvas_tuple = tuple(compute_canvas(RESOLUTION_ARRAY, DISPLAY_OFFSET_ARRAY))
     img_resize = resize_to_fill(img, canvas_tuple)
-    outputfile = TEMP_PATH + profile.name + "-a.png"
+    outputfile = os.path.join(TEMP_PATH, profile.name + "-a.png")
     if os.path.isfile(outputfile):
         outputfile_old = outputfile
-        outputfile = TEMP_PATH + profile.name + "-b.png"
+        outputfile = os.path.join(TEMP_PATH, profile.name + "-b.png")
     else:
-        outputfile_old = TEMP_PATH + profile.name + "-b.png"
+        outputfile_old = os.path.join(TEMP_PATH, profile.name + "-b.png")
     img_resize.save(outputfile, "PNG")
     set_wallpaper(outputfile)
     if os.path.exists(outputfile_old):
@@ -410,12 +410,12 @@ def span_single_image_advanced(profile):
     for i in range(len(cropped_images)):
         combined_image.paste(cropped_images[i], DISPLAY_OFFSET_ARRAY[i])
     # Saving combined image
-    outputfile = TEMP_PATH + profile.name + "-a.png"
+    outputfile = os.path.join(TEMP_PATH, profile.name + "-a.png")
     if os.path.isfile(outputfile):
         outputfile_old = outputfile
-        outputfile = TEMP_PATH + profile.name + "-b.png"
+        outputfile = os.path.join(TEMP_PATH, profile.name + "-b.png")
     else:
-        outputfile_old = TEMP_PATH + profile.name + "-b.png"
+        outputfile_old = os.path.join(TEMP_PATH, profile.name + "-b.png")
     combined_image.save(outputfile, "PNG")
     set_wallpaper(outputfile)
     if os.path.exists(outputfile_old):
@@ -443,12 +443,12 @@ def set_multi_image_wallpaper(profile):
     combined_image.load()
     for i in range(len(files)):
         combined_image.paste(img_resized[i], DISPLAY_OFFSET_ARRAY[i])
-    outputfile = TEMP_PATH + profile.name + "-a.png"
+    outputfile = os.path.join(TEMP_PATH, profile.name + "-a.png")
     if os.path.isfile(outputfile):
         outputfile_old = outputfile
-        outputfile = TEMP_PATH + profile.name + "-b.png"
+        outputfile = os.path.join(TEMP_PATH, profile.name + "-b.png")
     else:
-        outputfile_old = TEMP_PATH + profile.name + "-b.png"
+        outputfile_old = os.path.join(TEMP_PATH, profile.name + "-b.png")
     combined_image.save(outputfile, "PNG")
     set_wallpaper(outputfile)
     if os.path.exists(outputfile_old):
