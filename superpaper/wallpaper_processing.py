@@ -25,7 +25,7 @@ if platform.system() == "Windows":
     import ctypes
 elif platform.system() == "Linux":
     # KDE has special needs
-    if os.environ.get("DESKTOP_SESSION") == "/usr/share/xsessions/plasma":
+    if os.environ.get("DESKTOP_SESSION") in ["/usr/share/xsessions/plasma", "plasma"]:
         import dbus
 
 
@@ -565,7 +565,7 @@ def set_wallpaper_linux(outputfile):
                     sp_logging.G_LOGGER.info("Exception: failure to find either command \
 'pcmanfm' or 'pcmanfm-qt'. Exiting.")
                     sys.exit(1)
-        elif desk_env in ["/usr/share/xsessions/plasma"]:
+        elif desk_env in ["/usr/share/xsessions/plasma", "plasma"]:
             kdeplasma_actions(outputfile)
         elif "i3" in desk_env or desk_env in ["/usr/share/xsessions/bspwm"]:
             subprocess.run(["feh", "--bg-scale", "--no-xinerama", outputfile])
