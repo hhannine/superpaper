@@ -643,7 +643,7 @@ def remove_old_temp_files(outputfile):
     """
     opbase = os.path.basename(outputfile)
     opname = os.path.splitext(opbase)[0]
-    print(opname)
+    # print(opname)
     oldfileid = ""
     if "-a" in opname:
         newfileid = "-a"
@@ -660,7 +660,9 @@ def remove_old_temp_files(outputfile):
         profilename = opname.replace(newfileid, "").strip()
         match_string = profilename + oldfileid + "-crop"
         match_string = match_string.strip()
-        print("Matching images with: '{}'".format(match_string))
+        if sp_logging.DEBUG:
+            sp_logging.G_LOGGER.info("Removing images matching with: '%s'",
+                                     match_string)
         for temp_file in os.listdir(TEMP_PATH):
             if match_string in temp_file:
                 # print(temp_file)
@@ -691,10 +693,12 @@ d.writeConfig("Image", "file://{filename}")
     if outputfile:
         img_names = special_image_cropper(outputfile)
     elif not outputfile and image_piece_list:
-        print("KDE: Using image piece list!")
+        if sp_logging.DEBUG:
+            sp_logging.G_LOGGER.info("KDE: Using image piece list!")
         img_names = image_piece_list
     else:
-        print("Huge error! KDE actions called without arguments!")
+        if sp_logging.DEBUG:
+            sp_logging.G_LOGGER.info("Error! KDE actions called without arguments!")
 
     sessionb = dbus.SessionBus()
     plasma_interface = dbus.Interface(
@@ -721,10 +725,19 @@ def xfce_actions(outputfile, image_piece_list = None):
     monitor. This means that the composed image must be cut into
     correct pieces that then are set to their respective displays.
     """
+    if outputfile:
+        img_names = special_image_cropper(outputfile)
+    elif not outputfile and image_piece_list:
+        if sp_logging.DEBUG:
+            sp_logging.G_LOGGER.info("XFCE: Using image piece list!")
+        img_names = image_piece_list
+    else:
+        if sp_logging.DEBUG:
+            sp_logging.G_LOGGER.info("Error! XFCE actions called without arguments!")
+
     monitors = []
     for mon_index in range(NUM_DISPLAYS):
         monitors.append("monitor" + str(mon_index))
-    img_names = special_image_cropper(outputfile)
 
     read_prop = subprocess.Popen(["xfconf-query",
                                   "-c",
@@ -752,7 +765,8 @@ def xfce_actions(outputfile, image_piece_list = None):
                         + prop
                         + " -s 'true'")
     # Delete old images after new ones are set
-    remove_old_temp_files(outputfile)
+    if outputfile:
+        remove_old_temp_files(outputfile)
 
 
 def change_wallpaper_job(profile):
@@ -810,10 +824,11 @@ def quick_profile_job(profile):
         if files:
             image_pieces = [os.path.join(TEMP_PATH, i) for i in files
                             if "-crop-" in i]
-            image_pieces.sort()
-            print("image pieces: ", image_pieces)
             if use_image_pieces() and image_pieces:
-                print("use pieces, ", image_pieces)
+                image_pieces.sort()
+                if sp_logging.DEBUG:
+                    sp_logging.G_LOGGER.info("Use wallpaper crop pieces: %s",
+                                             image_pieces)
                 thrd = Thread(target=set_wallpaper_piecewise,
                             args=(image_pieces ,),
                             daemon=True)
