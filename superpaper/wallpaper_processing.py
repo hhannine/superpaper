@@ -584,6 +584,29 @@ settings file superpaper/general_settings. Exiting."
 attempting to use feh to set the wallpaper.")
         subprocess.run(["feh", "--bg-scale", "--no-xinerama", outputfile])
 
+def set_wallpaper_piecewise(image_piece_list):
+    """
+    Wallpaper setter that takes already cropped images and sets them
+    directly to corresponding monitors on systems where wallpapers
+    are set on a monitor by monitor basis.
+
+    This is used when the quick wallpaper change conditions are met,
+    see quick_profile_job method, to improve performance on these
+    systems.
+
+    Currently supported such systems are KDE Plasma and XFCE.
+    """
+    pltform = platform.system()
+    if pltform == "Linux":
+        desk_env = os.environ.get("DESKTOP_SESSION")
+        if desk_env in ["/usr/share/xsessions/plasma", "plasma"]:
+            kdeplasma_actions(None, image_piece_list)
+        elif desk_env in ["xfce", "xubuntu"]:
+            # xfce_actions(image_piece_list)
+            print("todo xfce quick change.")
+    else:
+        pass
+
 
 def special_image_cropper(outputfile):
     """
@@ -620,27 +643,37 @@ def remove_old_temp_files(outputfile):
     """
     opbase = os.path.basename(outputfile)
     opname = os.path.splitext(opbase)[0]
-    # print(opname)
+    print(opname)
     oldfileid = ""
     if "-a" in opname:
+        newfileid = "-a"
         oldfileid = "-b"
         # print(oldfileid)
     elif "-b" in opname:
+        newfileid = "-b"
         oldfileid = "-a"
         # print(oldfileid)
     else:
         pass
     if oldfileid:
         # Must take care than only temps of current profile are deleted.
-        match_string = oldfileid + "-crop"
+        profilename = opname.replace(newfileid, "").strip()
+        match_string = profilename + oldfileid + "-crop"
+        match_string = match_string.strip()
+        print("Matching images with: '{}'".format(match_string))
         for temp_file in os.listdir(TEMP_PATH):
             if match_string in temp_file:
                 # print(temp_file)
                 os.remove(os.path.join(TEMP_PATH, temp_file))
 
-def kdeplasma_actions(outputfile):
+def kdeplasma_actions(outputfile, image_piece_list = None):
     """
     Sets the multi monitor wallpaper on KDE.
+
+    Arguments are path to an image and an optional image piece
+    list when one can set the wallpaper from existing cropped
+    images. IF image pieces are to be used, call this method
+    with outputfile == None.
 
     This is needed since KDE uses its own scripting language to
     set the desktop background which sets a single image on every
@@ -655,7 +688,13 @@ d.wallpaperPlugin = "org.kde.image";
 d.currentConfigGroup = Array("Wallpaper", "org.kde.image", "General");
 d.writeConfig("Image", "file://{filename}")
 """
-    img_names = special_image_cropper(outputfile)
+    if outputfile:
+        img_names = special_image_cropper(outputfile)
+    elif not outputfile and image_piece_list:
+        print("KDE: Using image piece list!")
+        img_names = image_piece_list
+    else:
+        print("Huge error! KDE actions called without arguments!")
 
     sessionb = dbus.SessionBus()
     plasma_interface = dbus.Interface(
@@ -665,13 +704,15 @@ d.writeConfig("Image", "file://{filename}")
         dbus_interface="org.kde.PlasmaShell")
     for fname, idx in zip(img_names, range(len(img_names))):
         plasma_interface.evaluateScript(
-            script.format(index=idx, filename=fname))
+            script.format(index=idx, filename=fname)
+        )
 
     # Delete old images after new ones are set
-    remove_old_temp_files(outputfile)
+    if outputfile:
+        remove_old_temp_files(outputfile)
 
 
-def xfce_actions(outputfile):
+def xfce_actions(outputfile, image_piece_list = None):
     """
     Sets the multi monitor wallpaper on XFCE.
 
@@ -767,11 +808,39 @@ def quick_profile_job(profile):
         if sp_logging.DEBUG:
             sp_logging.G_LOGGER.info("quickswitch file lookup: %s", files)
         if files:
-            thrd = Thread(target=set_wallpaper,
-                          args=(os.path.join(TEMP_PATH, files[0]),),
-                          daemon=True)
-            thrd.start()
+            image_pieces = [os.path.join(TEMP_PATH, i) for i in files
+                            if "-crop-" in i]
+            image_pieces.sort()
+            print("image pieces: ", image_pieces)
+            if use_image_pieces() and image_pieces:
+                print("use pieces, ", image_pieces)
+                thrd = Thread(target=set_wallpaper_piecewise,
+                            args=(image_pieces ,),
+                            daemon=True)
+                thrd.start()
+            else:
+                thrd = Thread(target=set_wallpaper,
+                            args=(os.path.join(TEMP_PATH, files[0]),),
+                            daemon=True)
+                thrd.start()
         else:
             if sp_logging.DEBUG:
                 sp_logging.G_LOGGER.info("Old file for quickswitch was not found. %s",
                               files)
+
+def use_image_pieces():
+    """Determine if it improves perfomance to use existing image pieces.
+    
+    Systems that use image pieces are: KDE, XFCE.
+    """
+    pltform = platform.system()
+    if pltform == "Linux":
+        desk_env = os.environ.get("DESKTOP_SESSION")
+        if desk_env in ["/usr/share/xsessions/plasma", "plasma"]:
+            return True
+        elif desk_env in ["xfce", "xubuntu"]:
+            return True
+        else:
+            return False
+    else:
+        return False
