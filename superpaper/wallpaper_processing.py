@@ -657,7 +657,7 @@ def remove_old_temp_files(outputfile):
         pass
     if oldfileid:
         # Must take care than only temps of current profile are deleted.
-        profilename = opname.replace(newfileid, "").strip()
+        profilename = opname.strip()[:-2]
         match_string = profilename + oldfileid + "-crop"
         match_string = match_string.strip()
         if sp_logging.DEBUG:
