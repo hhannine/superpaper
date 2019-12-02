@@ -682,13 +682,41 @@ def kdeplasma_actions(outputfile, image_piece_list = None):
     monitor. This means that the composed image must be cut into
     correct pieces that then are set to their respective displays.
     """
+
     script = """
-var listDesktops = desktops();
-print(listDesktops);
-d = listDesktops[{index}];
-d.wallpaperPlugin = "org.kde.image";
-d.currentConfigGroup = Array("Wallpaper", "org.kde.image", "General");
-d.writeConfig("Image", "file://{filename}")
+// make an array of all desktops with a valid screen
+var desktopArray = [];
+for(var desktopIndex in desktops()) {{
+    var desktop = desktops()[desktopIndex];
+    if(desktop.screen != -1) {{
+        desktopArray.push(desktop);
+    }}
+}}
+
+// sort the array based on the (horizontal) desktop position
+var i = 1;
+while(i < desktopArray.length) {{
+    var j = i;
+    while(j > 0 && screenGeometry(desktopArray[j-1].screen).left > screenGeometry(desktopArray[j].screen).left) {{
+        var temp = desktopArray[j];
+        desktopArray[j] = desktopArray[j-1];
+        desktopArray[j-1] = temp;
+        j = j-1;
+    }}
+    i = i+1;
+}}
+
+var imageFileArray = Array({imagelist});
+
+// set the desired wallpaper
+var k = 0;
+while(k < desktopArray.length) {{
+    var desktop = desktopArray[k];
+    desktop.wallpaperPlugin = "org.kde.image";
+    desktop.currentConfigGroup = Array("Wallpaper", "org.kde.image", "General");
+    desktop.writeConfig("Image", imageFileArray[k]);
+    k = k+1;
+}}
 """
     if outputfile:
         img_names = special_image_cropper(outputfile)
@@ -700,16 +728,21 @@ d.writeConfig("Image", "file://{filename}")
         if sp_logging.DEBUG:
             sp_logging.G_LOGGER.info("Error! KDE actions called without arguments!")
 
+    filess_img_names = []
+    for fname in img_names:
+        filess_img_names.append("file://" + fname)
+    filess_img_names_str = ', '.join('"' + item + '"' for item in filess_img_names)
+    # print(script.format(imagelist=filess_img_names_str))
+
     sessionb = dbus.SessionBus()
     plasma_interface = dbus.Interface(
         sessionb.get_object(
             "org.kde.plasmashell",
             "/PlasmaShell"),
         dbus_interface="org.kde.PlasmaShell")
-    for fname, idx in zip(img_names, range(len(img_names))):
-        plasma_interface.evaluateScript(
-            script.format(index=idx, filename=fname)
-        )
+    plasma_interface.evaluateScript(
+        script.format(imagelist=filess_img_names_str)
+    )
 
     # Delete old images after new ones are set
     if outputfile:
