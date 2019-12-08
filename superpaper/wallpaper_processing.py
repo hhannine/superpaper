@@ -17,9 +17,9 @@ from threading import Lock, Thread, Timer
 from PIL import Image
 from screeninfo import get_monitors
 
-import sp_logging
-from message_dialog import show_message_dialog
-from sp_paths import TEMP_PATH
+import superpaper.sp_logging as sp_logging
+from superpaper.message_dialog import show_message_dialog
+from superpaper.sp_paths import TEMP_PATH
 
 if platform.system() == "Windows":
     import ctypes

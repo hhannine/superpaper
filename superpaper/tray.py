@@ -7,14 +7,14 @@ import subprocess
 import sys
 from threading import Lock
 
-from __version__ import __version__
-import sp_logging
-import sp_paths
-from configuration_dialogs import ConfigFrame, SettingsFrame, HelpFrame
-from message_dialog import show_message_dialog
-from data import (GeneralSettingsData,
+from superpaper.__version__ import __version__
+import superpaper.sp_logging as sp_logging
+import superpaper.sp_paths as sp_paths
+from superpaper.configuration_dialogs import ConfigFrame, SettingsFrame, HelpFrame
+from superpaper.message_dialog import show_message_dialog
+from superpaper.data import (GeneralSettingsData,
                   list_profiles, read_active_profile, write_active_profile)
-from wallpaper_processing import (get_display_data,
+from superpaper.wallpaper_processing import (get_display_data,
                                   run_profile_job, quick_profile_job,
                                   change_wallpaper_job
                                   )
@@ -31,7 +31,7 @@ except ImportError as import_e:
 
 # Constants
 TRAY_TOOLTIP = "Superpaper"
-TRAY_ICON = os.path.join(sp_paths.PATH, "resources/default.png")
+TRAY_ICON = os.path.join(sp_paths.PATH, "superpaper/resources/superpaper.png")
 
 
 

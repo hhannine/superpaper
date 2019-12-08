@@ -3,7 +3,7 @@
 import logging
 import os
 
-from sp_paths import TEMP_PATH
+from superpaper.sp_paths import TEMP_PATH
 
 DEBUG = False
 VERBOSE = False

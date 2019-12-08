@@ -3,11 +3,11 @@ GUI dialogs for Superpaper.
 """
 import os
 
-import sp_logging
-from data import GeneralSettingsData, ProfileData, TempProfileData, CLIProfileData, list_profiles
-from message_dialog import show_message_dialog
-from wallpaper_processing import NUM_DISPLAYS, get_display_data, change_wallpaper_job
-from sp_paths import PATH, CONFIG_PATH, PROFILES_PATH
+import superpaper.sp_logging as sp_logging
+from superpaper.data import GeneralSettingsData, ProfileData, TempProfileData, CLIProfileData, list_profiles
+from superpaper.message_dialog import show_message_dialog
+from superpaper.wallpaper_processing import NUM_DISPLAYS, get_display_data, change_wallpaper_job
+from superpaper.sp_paths import PATH, CONFIG_PATH, PROFILES_PATH
 
 try:
     import wx

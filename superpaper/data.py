@@ -10,11 +10,11 @@ import os
 import random
 import sys
 
-import sp_logging
-from message_dialog import show_message_dialog
-import wallpaper_processing as wpproc
-import sp_paths
-from sp_paths import (PATH, CONFIG_PATH, PROFILES_PATH, TEMP_PATH)
+import superpaper.sp_logging as sp_logging
+from superpaper.message_dialog import show_message_dialog
+import superpaper.wallpaper_processing as wpproc
+import superpaper.sp_paths as sp_paths
+from superpaper.sp_paths import (PATH, CONFIG_PATH, PROFILES_PATH, TEMP_PATH)
 
 
 

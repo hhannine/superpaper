@@ -4,11 +4,11 @@ import logging
 import os
 import sys
 
-import sp_logging
-from data import CLIProfileData
-import wallpaper_processing as wpproc
-from wallpaper_processing import get_display_data, change_wallpaper_job
-from tray import tray_loop
+import superpaper.sp_logging as sp_logging
+from superpaper.data import CLIProfileData
+import superpaper.wallpaper_processing as wpproc
+from superpaper.wallpaper_processing import get_display_data, change_wallpaper_job
+from superpaper.tray import tray_loop
 
 
 def cli_logic():

@@ -10,8 +10,8 @@ __author__ = "Henri Hänninen"
 
 import sys
 
-from cli import cli_logic
-from tray import tray_loop
+from superpaper.cli import cli_logic
+from superpaper.tray import tray_loop
 
 
 def main():
