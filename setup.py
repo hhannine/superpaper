@@ -15,43 +15,6 @@ def read_version():
     print("Version not found, exitting install.")
     sys.exit(1)
 
-def establish_config_dir():
-    """Sets up config path for settings and profiles.
-
-    On Linux systems use XDG_CONFIG_HOME standard, i.e.
-    $HOME/.config/superpaper by default.
-    On Windows and Mac use executable portable path for now.
-    """
-    if platform.system() == "Linux":
-        config_path = xdg_path_setup("XDG_CONFIG_HOME",
-                                     os.path.join(os.path.expanduser("~"),
-                                                  ".config")
-                                    )
-        return config_path
-    else:
-        print("This setup.py has been designed for Linux only. Apologies for any inconvenience.")
-        sys.exit(1)
-
-def xdg_path_setup(xdg_var, fallback_path):
-    """Sets up superpaper folders in the appropriate XDG paths:
-
-    XDG_CONFIG_HOME, or fallback ~/.config/superpaper
-    XDG_CACHE_HOME, or fallback ~/.cache/superpaper
-    """
-
-    xdg_home = os.environ.get(xdg_var)
-    if xdg_home and os.path.isdir(xdg_home):
-        xdg_path = os.path.join(xdg_home, "superpaper")
-    else:
-        xdg_path = os.path.join(fallback_path, "superpaper")
-    # Check that the path exists and otherwise make it.
-    if os.path.isdir(xdg_path):
-        return xdg_path
-    else:
-        # default path didn't exist
-        os.mkdir(xdg_path)
-        return xdg_path
-
 
 def test_import(packaname, humanname):
     try:
@@ -91,6 +54,7 @@ if __name__ == "__main__":
         keywords="dual-monitor multi-monitor wallpaper background manager",
         license="MIT",
 
+        # python_requires="~=3.5",
         install_requires=[
             "Pillow>=6.0.0",
             "screeninfo>=0.6.1",
@@ -99,15 +63,12 @@ if __name__ == "__main__":
         entry_points={
             "console_scripts": ["superpaper = superpaper.superpaper:main"]
         },      # On windows create a 'gui_scripts' entry
-        # include_package_data=True,
         package_data={
-            "superpaper": ["resources/superpaper.png"]
+            "superpaper": ["resources/superpaper.png", "profiles/example.profile", "profiles/example_multi.profile"]
         },
         data_files=[
             ("share/applications", ["superpaper/resources/superpaper.desktop"]),
             ("share/icons/hicolor/256x256/apps", ["superpaper/resources/superpaper.png"]),
-            # ("resources", ["resources/superpaper.png"]),
-            (os.path.join(establish_config_dir(),"profiles"), ["profiles/example.profile", "profiles/example_multi.profile"])
         ]
 
     )

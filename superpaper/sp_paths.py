@@ -2,6 +2,7 @@
 
 import os
 import platform
+import shutil
 import sys
 
 # Set path to binary / script
@@ -9,6 +10,7 @@ if getattr(sys, 'frozen', False):
     PATH = os.path.dirname(os.path.dirname(os.path.realpath(sys.executable)))
 else:
     PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+print(PATH)
 
 def setup_config_path():
     """Sets up config path for settings and profiles.
@@ -84,4 +86,10 @@ print(CONFIG_PATH)
 PROFILES_PATH = os.path.join(CONFIG_PATH, "profiles")
 print(PROFILES_PATH)
 if not os.path.isdir(PROFILES_PATH):
+    # Profiles folder didn't exist, so create it and copy example
+    # profiles in there assuming it's a first time run.
     os.mkdir(PROFILES_PATH)
+    example_src = os.path.join(PATH, "superpaper/profiles")
+    if os.path.isdir(example_src):
+        for example_file in os.listdir(example_src):
+            shutil.copy(os.path.join(example_src, example_file), PROFILES_PATH)
