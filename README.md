@@ -133,8 +133,8 @@ Accepted values and their explanations are:
 - offsets
 	- horizontal,vertical pixel offsets with offsets of different monitors separated by ";"
 - bezels
-	- List of monitor bezel thicknesses in millimeters, floats are accepted, values separated by ";". 
-	- Measure at the edges where monitor sides meet. A possible gap can be included in the values given.
+	- List of adjacent monitor bezel pairs' thicknesses in millimeters, i.e. "bezel+gap+bezel", floats are accepted, values separated by ";". 
+	- Measure adjacent bezels and add them together with a possible gap to get a combined thickness. One value for 2 monitors, two values for 3 and so on.
 - diagonal_inches
 	- List of monitor diagonals in inches. Used for computing display pixel densities (PPI).
 - hotkey

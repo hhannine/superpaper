@@ -707,7 +707,9 @@ brackets the expected units of numerical values.
 
 "Bezels":   Bezel correction for "Single" spanmode wallpaper. Use this
                 if you want the image to continue behind the bezels,
-                like a scenery does behind a window frame.
+                like a scenery does behind a window frame. The expected
+                values are the combined widths in millimeters of the
+                two adjacent monitor bezels including a possible gap.
 
 "Hotkey":   An optional key combination to apply/start the profile.
                 Supports up to 3 modifiers and a key. Valid modifiers
