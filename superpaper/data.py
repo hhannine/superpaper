@@ -366,9 +366,6 @@ class ProfileData(object):
         if self.ppi_array:
             max_density = max(self.ppi_array)
         else:
-            print("Can't pick a max from empty list.")
-            print("ppi_array:", self.ppi_array)
-            print("RES_ARR", wpproc.RESOLUTION_ARRAY)
             sp_logging.G_LOGGER("Couldn't compute relative densities: %s, %s", self.name, self.file)
             return 1
         for ppi in self.ppi_array:
@@ -379,24 +376,49 @@ class ProfileData(object):
 
     def compute_bezel_px_offsets(self):
         """Computes bezel sizes in pixels based on display PPIs."""
+        if self.ppi_array:
+            max_ppi = max(self.ppi_array)
+        else:
+            sp_logging.G_LOGGER("Couldn't compute relative densities: %s, %s", self.name, self.file)
+            return 1
+        
+        bez_px_offs=[0]   # never offset 1st disp, anchor to it.
         inch_per_mm = 1.0 / 25.4
-        for bez_mm, ppi in zip(self.bezels, self.ppi_array):
-            self.bezel_px_offsets.append(
-                round(float(ppi) * inch_per_mm * bez_mm))
+        for bez_mm in self.bezels:
+            bez_px_offs.append(
+                round(float(max_ppi) * inch_per_mm * bez_mm)
+            )
         if sp_logging.DEBUG:
             sp_logging.G_LOGGER.info(
                 "Bezel px calculation: initial manual offset: %s, \
                 and bezel pixels: %s",
                 self.manual_offsets,
-                self.bezel_px_offsets)
+                bez_px_offs)
+        if len(bez_px_offs) < wpproc.NUM_DISPLAYS:
+            if sp_logging.DEBUG:
+                sp_logging.G_LOGGER.info(
+                    "Bezel px calculation: Too few bezel mm values given! "
+                    "Appending zeros."
+                )
+            while (len(bez_px_offs) < wpproc.NUM_DISPLAYS):
+                bez_px_offs.append(0)
+        elif len(bez_px_offs) > wpproc.NUM_DISPLAYS:
+            if sp_logging.DEBUG:
+                sp_logging.G_LOGGER.info(
+                    "Bezel px calculation: Got more bezel mm values than expected!"
+                )
+            # Currently ignore list tail if there are too many bezel values
         # Add these horizontal offsets to manual_offsets:
         # Avoid offsetting the leftmost anchored display i==0
-        # -1 since last display doesn't have a next display.
-        for i in range(len(self.bezel_px_offsets) - 1):
-            self.manual_offsets[i + 1] = (self.manual_offsets[i + 1][0] +
-                                          self.bezel_px_offsets[i + 1] +
-                                          self.bezel_px_offsets[i],
-                                          self.manual_offsets[i + 1][1])
+        for i in range(1, min(len(bez_px_offs), wpproc.NUM_DISPLAYS)):
+            # Add previous offsets to ones further away to the right.
+            # Each display needs to be offset by the given bezel relative to
+            # the display to its left, which can be shifted relative to
+            # the anchor.
+            bez_px_offs[i]+=bez_px_offs[i-1]
+            self.manual_offsets[i] = (self.manual_offsets[i][0] + bez_px_offs[i],
+                                        self.manual_offsets[i][1])
+        self.bezel_px_offsets = bez_px_offs
         if sp_logging.DEBUG:
             sp_logging.G_LOGGER.info(
                 "Bezel px calculation: resulting combined manual offset: %s",
