@@ -406,7 +406,7 @@ class ConfigPanel(wx.Panel):
     def onAlignTest(self, event):
         """Align test, takes alignment settings from open profile and sets a test image wp."""
         # Use the settings currently written out in the fields!
-        testimage = [os.path.join(PATH, "resources/test.png")]
+        testimage = [os.path.join(PATH, "superpaper/resources/test.png")]
         if not os.path.isfile(testimage[0]):
             print(testimage)
             msg = "Test image not found in {}.".format(testimage)

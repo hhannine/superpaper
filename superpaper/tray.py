@@ -266,20 +266,20 @@ New hotkeys are registered."
         sp_logging.G_LOGGER.info('Tray icon was left-clicked.')
 
     def open_config(self, event):
-        """Opens Superpaper base folder, PATH."""
+        """Opens Superpaper config folder, CONFIG_PATH."""
         if platform.system() == "Windows":
             try:
-                os.startfile(sp_paths.PATH)
+                os.startfile(sp_paths.CONFIG_PATH)
             except BaseException:
                 show_message_dialog("There was an error trying to open the config folder.")
         elif platform.system() == "Darwin":
             try:
-                subprocess.check_call(["open", sp_paths.PATH])
+                subprocess.check_call(["open", sp_paths.CONFIG_PATH])
             except subprocess.CalledProcessError:
                 show_message_dialog("There was an error trying to open the config folder.")
         else:
             try:
-                subprocess.check_call(['xdg-open', sp_paths.PATH])
+                subprocess.check_call(['xdg-open', sp_paths.CONFIG_PATH])
             except subprocess.CalledProcessError:
                 show_message_dialog("There was an error trying to open the config folder.")
 

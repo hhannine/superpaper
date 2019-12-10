@@ -25,9 +25,10 @@ def test_import(packaname, humanname):
 
 if __name__ == "__main__":
     test_import("wx", "wxPython")
-    # read_version()
-    # print(establish_config_dir())
-    # sys.exit(0)
+
+    with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'README.md'),
+              encoding='utf-8') as f:
+        long_description = f.read()
 
     setup(
         name="superpaper",
@@ -36,7 +37,7 @@ if __name__ == "__main__":
         description="Cross-platform wallpaper manager that focuses on "
                     "multi-monitor support. Features include ppi corrections, "
                     "keyboard shortcuts, slideshow.",
-        long_description="todo",
+        long_description=long_description,
         url="https://github.com/hhannine/superpaper",
 
         classifiers=[
@@ -58,13 +59,21 @@ if __name__ == "__main__":
         install_requires=[
             "Pillow>=6.0.0",
             "screeninfo>=0.6.1",
+            "system_hotkey>=1.0.3",
+            "xcffib>=0.8.0",
+            "xpybutil>=0.0.5"
         ],
         packages=["superpaper"],
         entry_points={
             "console_scripts": ["superpaper = superpaper.superpaper:main"]
-        },      # On windows create a 'gui_scripts' entry
+            # "gui_scripts": ["superpaper = superpaper.superpaper:main"]    # for possible future windows install support.
+        },
         package_data={
-            "superpaper": ["resources/superpaper.png", "profiles/example.profile", "profiles/example_multi.profile"]
+            "superpaper": ["resources/superpaper.png",
+                           "resources/test.png",
+                           "profiles/example.profile",
+                           "profiles/example_multi.profile"
+                          ]
         },
         data_files=[
             ("share/applications", ["superpaper/resources/superpaper.desktop"]),

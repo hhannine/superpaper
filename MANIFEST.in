@@ -1,3 +1,4 @@
 include resources/superpaper.png
+include resources/test.png
 include profiles/*
 
