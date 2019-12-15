@@ -1,4 +1,6 @@
+__pycache__/
 superpaper/__pycache__
 build/
 dist/
 superpaper.egg-info/
+*.spec
