@@ -7,6 +7,7 @@ from distutils.dir_util import copy_tree
 
 SRCPATH = os.path.realpath("./superpaper")
 DISTPATH = os.path.realpath("./releases/")
+INNO_STUB = os.path.realpath("./releases/innostub")
 
 def read_version():
     with open("superpaper/__version__.py") as verfile:
@@ -28,6 +29,9 @@ def make_portable(dst_path):
     copy_tree(os.path.join(SRCPATH, "resources"), portres)
     # copy profiles
     copy_tree(os.path.join(SRCPATH, "profiles"), portprof)
+    # copy exe-less structure to be used by innosetup
+    copy_tree(portpath, INNO_STUB)
+
     # copy executable
     shutil.copy2("./dist/superpaper.exe", portexec)
     # zip it

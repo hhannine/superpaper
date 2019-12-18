@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Superpaper"
-#define MyAppVersion "1.2.0"
+#define MyAppVersion "1.2a2"
 #define MyAppPublisher "Henri Hänninen"
 #define MyAppURL "https://github.com/hhannine/superpaper/"
 #define MyAppExeName "superpaper.exe"
@@ -21,13 +21,13 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
-LicenseFile=C:\Users\hana_\Documents\GitHub\Superpaper\LICENSE
+LicenseFile=..\LICENSE
 ; Uncomment the following line to run in non administrative install mode (install for current user only.)
-;PrivilegesRequired=lowest
-PrivilegesRequiredOverridesAllowed=dialog
-OutputDir=C:\Users\hana_\Documents\GitHub\Superpaper\releases\1.2a2
+PrivilegesRequired=admin
+;PrivilegesRequiredOverridesAllowed=dialog
+OutputDir=..\releases\{#MyAppVersion}
 OutputBaseFilename=superpaper_win_installer
-SetupIconFile=C:\Users\hana_\Documents\GitHub\Superpaper\superpaper\resources\superpaper.ico
+SetupIconFile=..\superpaper\resources\superpaper.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -37,16 +37,22 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "startupicon"; Description: "Start application with Windows"; GroupDescription: "{cm:AdditionalIcons}"
 
 [Files]
-Source: "C:\Users\hana_\Documents\GitHub\Superpaper\dist\superpaper.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\hana_\Documents\GitHub\Superpaper\releases\1.2a2\superpaper-portable\profiles\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "C:\Users\hana_\Documents\GitHub\Superpaper\releases\1.2a2\superpaper-portable\superpaper\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\dist\superpaper.exe"; DestDir: "{app}\superpaper"; Flags: ignoreversion
+Source: "..\releases\innostub\profiles\*"; DestDir: "{app}\profiles"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\releases\innostub\superpaper\*"; DestDir: "{app}\superpaper"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
-Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{group}\{#MyAppName}"; Filename: "{app}\superpaper\{#MyAppExeName}"
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\superpaper\{#MyAppExeName}"; Tasks: desktopicon
+;Name: "{userstartup}\{#MyAppName}"; Filename: "{app}\superpaper\{#MyAppExeName}"; Tasks: startupicon
+;Name: "{userstartup}\{#MyAppName}"; Filename: "{app}\superpaper\{#MyAppExeName}"  ; system-wide startup
+
+[Registry]
+Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "{#MyAppName}"; ValueData: """{app}\superpaper\{#MyAppExeName}"""; Flags: uninsdeletevalue; Tasks: startupicon
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
