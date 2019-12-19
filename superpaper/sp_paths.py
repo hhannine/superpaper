@@ -28,8 +28,18 @@ def setup_config_path():
                                     )
         # if DEBUG: G_LOGGER.info("config path: %s", config_path)
         return config_path
+    elif platform.system() == "Windows":
+        # Windows and Mac default to the old portable config behavior
+        config_path = PATH
+        # and test if it is writable:
+        if not test_full_write_access(config_path):
+            # if it is not writable, use %LOCALAPPDATA%\Superpaper
+            config_path = os.path.join(os.getenv("LOCALAPPDATA"), "Superpaper")
+            if not os.path.isdir(config_path):
+                os.mkdir(config_path)
+        return config_path
     else:
-        # Windows and Mac keep the old portable config behavior for now.
+        # Mac & other default to the old portable config behavior
         config_path = PATH
         return config_path
 
@@ -50,8 +60,19 @@ def setup_cache_path():
         temp_path = os.path.join(cache_path, "temp")
         # if DEBUG: G_LOGGER.info("temp path: %s", temp_path)
         return temp_path
+    elif platform.system() == "Windows":
+        # Windows and Mac default to the old portable temp behavior
+        parent_path = PATH
+        temp_path = os.path.join(parent_path, "temp")
+        # and test if it is writable:
+        if not test_full_write_access(parent_path):
+            # if it is not writable, use %LOCALAPPDATA%\Superpaper\temp
+            temp_path = os.path.join(os.getenv("LOCALAPPDATA"), os.path.join("Superpaper", "temp"))
+            if not os.path.isdir(temp_path):
+                os.mkdir(temp_path)
+        return temp_path
     else:
-        # Windows and Mac keep the old portable config behavior for now.
+        # Mac & other keep the old portable config behavior for now.
         temp_path = os.path.join(PATH, "temp")
         return temp_path
 
@@ -76,13 +97,23 @@ def xdg_path_setup(xdg_var, fallback_path):
         os.mkdir(xdg_path)
         return xdg_path
 
+def test_full_write_access(path):
+    try:
+        testdir = os.path.join(path, "test_write_access")
+        os.mkdir(testdir)
+        os.rmdir(testdir)
+        return True
+    except PermissionError:
+        # There is no access to create folders in path:
+        return False
+
 
 # Derivative paths
+CONFIG_PATH = setup_config_path()   # Save profiles and settings here.
+print(CONFIG_PATH)
 TEMP_PATH = setup_cache_path()     # Save adjusted wallpapers in here.
 if not os.path.isdir(TEMP_PATH):
     os.mkdir(TEMP_PATH)
-CONFIG_PATH = setup_config_path()   # Save profiles and settings here.
-print(CONFIG_PATH)
 PROFILES_PATH = os.path.join(CONFIG_PATH, "profiles")
 print(PROFILES_PATH)
 if not os.path.isdir(PROFILES_PATH):

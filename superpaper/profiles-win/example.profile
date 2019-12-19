@@ -7,4 +7,4 @@ offsets=0,0;0,0
 bezels=19;20
 diagonal_inches=27;25;24
 hotkey=control+super+shift+h
-display1paths=/home;/
+display1paths=C:\Users;C:\

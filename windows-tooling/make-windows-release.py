@@ -28,7 +28,7 @@ def make_portable(dst_path):
     # copy resources
     copy_tree(os.path.join(SRCPATH, "resources"), portres)
     # copy profiles
-    copy_tree(os.path.join(SRCPATH, "profiles"), portprof)
+    copy_tree(os.path.join(SRCPATH, "profiles-win"), portprof)
     # copy exe-less structure to be used by innosetup
     copy_tree(portpath, INNO_STUB)
 

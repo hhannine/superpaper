@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Superpaper"
-#define MyAppVersion "1.2a2"
+#define MyAppVersion "1.2a3"
 #define MyAppPublisher "Henri Hänninen"
 #define MyAppURL "https://github.com/hhannine/superpaper/"
 #define MyAppExeName "superpaper.exe"
@@ -41,7 +41,7 @@ Name: "startupicon"; Description: "Start application with Windows"; GroupDescrip
 
 [Files]
 Source: "..\dist\superpaper.exe"; DestDir: "{app}\superpaper"; Flags: ignoreversion
-Source: "..\releases\innostub\profiles\*"; DestDir: "{app}\profiles"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\releases\innostub\profiles\*"; DestDir: "{app}\superpaper\profiles"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\releases\innostub\superpaper\*"; DestDir: "{app}\superpaper"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
@@ -55,5 +55,5 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\superpaper\{#MyAppExeName}"
 Root: HKLM; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "{#MyAppName}"; ValueData: """{app}\superpaper\{#MyAppExeName}"""; Flags: uninsdeletevalue; Tasks: startupicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\superpaper\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
