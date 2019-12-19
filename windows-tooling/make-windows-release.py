@@ -37,13 +37,12 @@ def make_portable(dst_path):
     # zip it
     shutil.make_archive(os.path.join(dst_path, "superpaper-portable"), 'zip', portpath)
 
-def update_inno_script(version_str, output_path):
-    # update both VERSTION_STR and OUTPUT PATH
-    return 0
-
-def run_inno_script():
-    inno_cmd = "iscc scriptfile.iss"
+def run_inno_script(version_str):
+    inno_cmd = "iscc ./windows-tooling/inno-setup-script.iss /DMyAppVersion={}".format(version_str)
     os.system(inno_cmd)
+
+
+
 
 def main():
     if not os.path.isdir(DISTPATH):
@@ -68,13 +67,9 @@ def main():
     make_portable(dist_path)
     
     print("Portable package build done.")
-    exit(0)
-
-    # update inno script
-    update_inno_script(version, dist_path)
 
     # run inno installer compilation
-    run_inno_script()
+    run_inno_script(version)
 
     # done
     print("Release built and packaged.")

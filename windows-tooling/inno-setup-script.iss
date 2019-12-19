@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Superpaper"
-#define MyAppVersion "1.2a3"
+; #define MyAppVersion "null"  ; Set version via a command line argument
 #define MyAppPublisher "Henri Hänninen"
 #define MyAppURL "https://github.com/hhannine/superpaper/"
 #define MyAppExeName "superpaper.exe"
