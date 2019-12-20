@@ -47,11 +47,12 @@ using the manual offset.
 
 In the above banner photo you can see the PPI and bezel corrections in action. The left one is a 27" 4K display, and the right one is a 25" 1440p display.
 
-## Support
+### Support
 If you find Superpaper useful please consider supporting its development: [Support via PayPal][paypal-superpaper] or [Support via Github Sponsors][github-sponsors]. Github matches your donations done through the sponsorship program!
 
 [paypal-superpaper]: https://www.paypal.me/superpaper/5
 [github-sponsors]: https://github.com/sponsors/hhannine
+
 
 ## Installation
 
@@ -86,7 +87,7 @@ sudo dnf install python3-wxpython4
 #### Python wheels (if wxPython4 is not in your standard repositories)
 For a few CentOS, Debian, Fedora and Ubuntu flavors there are pre-built wheels so on those you can look at the [instructions](https://wxpython.org/pages/downloads/) to install wxpython through pip, without having to build it as you do when installing directly from PyPI.
 #### Installing other dependencies manually:
-Install easily via pip3:
+Install via pip3:
 ```
 pip3 install -U Pillow screeninfo system_hotkey xcffib xpybutil
 ```
@@ -100,9 +101,10 @@ Once wxPython4 is installed, you can just run:
 ```
 pip3 install -U superpaper
 ```
+This will install an icon and .desktop file for menu entries.
 
 ### Windows
-For Windows an installer and a portable package are available under [releases](https://github.com/hhannine/Superpaper/releases).
+For Windows an installer and a portable package are available under [releases](https://github.com/hhannine/superpaper/releases).
 These work on a download-and-run basis without additional requirements. In the portable package, look for the executable "superpaper.exe" in the subfolder "superpaper".
 
 If you want to run the cloned repo on Windows, on top of the requirements listed in the Linux section, you will need the "pywin32" module (instead of the xcffib and xpybutil modules). Installation through pip:
