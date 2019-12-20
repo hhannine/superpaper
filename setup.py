@@ -38,6 +38,7 @@ if __name__ == "__main__":
                     "multi-monitor support. Features include ppi corrections, "
                     "keyboard shortcuts, slideshow.",
         long_description=long_description,
+        long_description_content_type="text/markdown",
         url="https://github.com/hhannine/superpaper",
 
         classifiers=[
@@ -45,7 +46,7 @@ if __name__ == "__main__":
             "Environment :: X11 Applications",
             # "Environment :: Win32",
             "Intended Audience :: End Users/Desktop",
-            "License :: OSI Approved :: MIT Licence",
+            "License :: OSI Approved :: MIT License",
             "Natural Language :: English",
             "Operating System :: POSIX :: Linux",
             # "Operating System :: Microsoft :: Windows",
