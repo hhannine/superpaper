@@ -35,7 +35,7 @@ def make_portable(dst_path):
     # copy executable
     shutil.copy2("./dist/superpaper.exe", portexec)
     # zip it
-    shutil.make_archive(os.path.join(dst_path, "superpaper-portable"), 'zip', portpath)
+    shutil.make_archive(portpath, 'zip', dst_path, "superpaper-portable")
 
 def run_inno_script(version_str):
     inno_cmd = "iscc ./windows-tooling/inno-setup-script.iss /DMyAppVersion={}".format(version_str)
