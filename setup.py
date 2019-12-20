@@ -42,7 +42,8 @@ if __name__ == "__main__":
         url="https://github.com/hhannine/superpaper",
 
         classifiers=[
-            "Development Status :: 4 - Beta",
+            # "Development Status :: 4 - Beta",
+            "Development Status :: 5 - Production/Stable",
             "Environment :: X11 Applications",
             # "Environment :: Win32",
             "Intended Audience :: End Users/Desktop",
