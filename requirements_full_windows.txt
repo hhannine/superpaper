@@ -1,0 +1,5 @@
+Pillow>=6.0.0
+screeninfo>=0.6.1
+wxPython>=4.0.4
+system_hotkey>=1.0
+pywin32

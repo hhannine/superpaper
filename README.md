@@ -47,45 +47,78 @@ using the manual offset.
 
 In the above banner photo you can see the PPI and bezel corrections in action. The left one is a 27" 4K display, and the right one is a 25" 1440p display.
 
-## Support
-If you find Superpaper useful please consider supporting its development: [Support via PayPal][paypal-superpaper].
+### Support
+If you find Superpaper useful please consider supporting its development: [Support via PayPal][paypal-superpaper] or [Support via Github Sponsors][github-sponsors]. Github matches your donations done through the sponsorship program!
 
 [paypal-superpaper]: https://www.paypal.me/superpaper/5
+[github-sponsors]: https://github.com/sponsors/hhannine
+
 
 ## Installation
 
-### A. Portable releases
-For Linux and Windows there are portable stand-alone binary packages available under [releases](https://github.com/hhannine/Superpaper/releases).
-These work on a download-and-run basis without additional requirements. Look for the executable "superpaper.exe", or "superpaper" on Linux.
+### Linux
 
-Standalone package for Mac OS X is unfortunately unavailable at this time, but you may look at the alternative way to run Superpaper.
+Superpaper is available from PyPI, [here][sp-on-pypi].
 
-
-### B. Run the script
-
-You may either clone the repository or download the packaged script under releases. You will need to take care of its dependencies, which are:
+[sp-on-pypi]: https://pypi.org/project/superpaper
 
 #### Requirements
 - Python 3.5+
-- Pillow (or the slower PIL should also work, or on Linux the faster Pillow-SIMD)
+- Pillow
 - screeninfo
-- wxpython (tray applet & slideshow, optional)
+- wxpython (tray applet, GUI & slideshow, optional)
 - system_hotkey (hotkeys, optional)
+- xcffib (dep for system_hotkey)
+- xpybutil (dep for system_hotkey)
 
-If you are going to run only in CLI mode you will need to install the first three in the list. For full functionality you will of course need to install all of them.
+If you install Superpaper from PyPI, pip will handle everything else other than _wxPython_. It will be easiest to install wxPython from your distribution specific package repository:
+#### Arch / Manjaro
+```
+sudo pacman -S python-wxpython
+```
+#### Debian / Ubuntu and derivatives
+```
+sudo apt install python3-wxgtk4.0
+```
+#### Fedora
+```
+sudo dnf install python3-wxpython4
+```
+#### Python wheels (if wxPython4 is not in your standard repositories)
+For a few CentOS, Debian, Fedora and Ubuntu flavors there are pre-built wheels so on those you can look at the [instructions](https://wxpython.org/pages/downloads/) to install wxpython through pip, without having to build it as you do when installing directly from PyPI.
+#### Installing other dependencies manually:
+Install via pip3:
+```
+pip3 install -U Pillow screeninfo system_hotkey xcffib xpybutil
+```
+#### Running CLI only
+If you are going to run only in CLI mode you will need to install the first two modules in the list:
+```
+pip3 install -U Pillow screeninfo 
+```
+### Installing Superpaper from PyPI
+Once wxPython4 is installed, you can just run:
+```
+pip3 install -U superpaper
+```
+This will install an icon and .desktop file for menu entries.
 
-One can install these easily via pip3:
+### Windows
+For Windows an installer and a portable package are available under [releases](https://github.com/hhannine/superpaper/releases).
+These work on a download-and-run basis without additional requirements. In the portable package, look for the executable "superpaper.exe" in the subfolder "superpaper".
+
+If you want to run the cloned repo on Windows, on top of the requirements listed in the Linux section, you will need the "pywin32" module (instead of the xcffib and xpybutil modules). Installation through pip:
 ```
-pip3 install Pillow
-pip3 install screeninfo
-pip3 install wxpython
-pip3 install system_hotkey
+pip3 install -U Pillow screeninfo wxpython system_hotkey pywin32
 ```
-System_hotkey has dependencies: on Linux it needs "xcffib" and "xpybutil" modules, and on Windows it needs "pywin32".
-Note that on Linux wxpython needs to be built and even though it is automated via pip, it has its own [dependencies](https://wxpython.org/blog/2017-08-17-builds-for-linux-with-pip/index.html), 
-and the build may take some time.
-However for a few CentOS, Debian, Fedora and Ubuntu flavors there are pre-built wheels so on those you can look at the [instructions](https://wxpython.org/pages/downloads/) to install wxpython
-without having to build it yourself.
+
+### Max OS X
+Basic support for OS X has been kept in the script but it has not been tested. If you want to try to run it, best bet would be to install the dependencies through pip:
+```
+pip install -U wxpython Pillow screeninfo
+```
+and then clone the repository.
+
 
 
 ## Usage
@@ -133,8 +166,8 @@ Accepted values and their explanations are:
 - offsets
 	- horizontal,vertical pixel offsets with offsets of different monitors separated by ";"
 - bezels
-	- List of monitor bezel thicknesses in millimeters, floats are accepted, values separated by ";". 
-	- Measure at the edges where monitor sides meet. A possible gap can be included in the values given.
+	- List of adjacent monitor bezel pairs' thicknesses in millimeters, i.e. "bezel+gap+bezel", floats are accepted, values separated by ";". 
+	- Measure adjacent bezels and add them together with a possible gap to get a combined thickness. One value for 2 monitors, two values for 3 and so on.
 - diagonal_inches
 	- List of monitor diagonals in inches. Used for computing display pixel densities (PPI).
 - hotkey
