@@ -17,17 +17,22 @@ def setup_config_path():
 
     On Linux systems use XDG_CONFIG_HOME standard, i.e.
     $HOME/.config/superpaper by default.
+    Snap package uses SNAP_USER_DATA.
     On Windows and Mac use executable portable path for now.
     """
     # from sp_logging import DEBUG, G_LOGGER
 
     if platform.system() == "Linux":
-        config_path = xdg_path_setup("XDG_CONFIG_HOME",
-                                     os.path.join(os.path.expanduser("~"),
-                                                  ".config")
-                                    )
-        # if DEBUG: G_LOGGER.info("config path: %s", config_path)
-        return config_path
+        if os.environ.get("SNAP_USER_DATA"):
+            config_path = os.environ.get("SNAP_USER_DATA")
+            return config_path
+        else:
+            config_path = xdg_path_setup("XDG_CONFIG_HOME",
+                                        os.path.join(os.path.expanduser("~"),
+                                                    ".config")
+                                        )
+            # if DEBUG: G_LOGGER.info("config path: %s", config_path)
+            return config_path
     elif platform.system() == "Windows":
         # Windows and Mac default to the old portable config behavior
         config_path = PATH
@@ -47,19 +52,24 @@ def setup_config_path():
 def setup_cache_path():
     """Sets up temp wallpaper path.
 
-    On Linux systems use XDG_CACHE_HOME standard.
+    On Linux systems use XDG_CACHE_HOME standard. Snap package uses SNAP_USER_COMMON.
     On Windows and Mac use executable portable path (PATH/temp) for now.
     """
     # from sp_logging import DEBUG, G_LOGGER
 
     if platform.system() == "Linux":
-        cache_path = xdg_path_setup("XDG_CACHE_HOME",
-                                     os.path.join(os.path.expanduser("~"),
-                                                  ".cache")
-                                    )
-        temp_path = os.path.join(cache_path, "temp")
-        # if DEBUG: G_LOGGER.info("temp path: %s", temp_path)
-        return temp_path
+        if os.environ.get("SNAP_USER_COMMON"):
+            common_path = os.environ.get("SNAP_USER_COMMON")
+            temp_path = os.path.join(common_path, "temp")
+            return temp_path
+        else:
+            cache_path = xdg_path_setup("XDG_CACHE_HOME",
+                                        os.path.join(os.path.expanduser("~"),
+                                                    ".cache")
+                                        )
+            temp_path = os.path.join(cache_path, "temp")
+            # if DEBUG: G_LOGGER.info("temp path: %s", temp_path)
+            return temp_path
     elif platform.system() == "Windows":
         # Windows and Mac default to the old portable temp behavior
         parent_path = PATH

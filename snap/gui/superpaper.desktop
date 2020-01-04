@@ -1,0 +1,10 @@
+[Desktop Entry]
+Encoding=UTF-8
+Type=Application
+Version=1.0
+Name=Superpaper-Snap
+GenericName=Multi-monitor wallpaper manager
+Exec=superpaper
+Icon=${SNAP}/meta/gui/superpaper.png
+Terminal=False
+Categories=Utility;

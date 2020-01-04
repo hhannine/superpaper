@@ -1,0 +1,82 @@
+name: superpaper # you probably want to 'snapcraft register <name>'
+base: core18 # the base snap is the execution environment for this snap
+version: '1.2.0' # just for humans, typically '1.2+git' or '1.3.2'
+license: MIT
+icon: snap/gui/superpaper.png
+summary: Multi-monitor wallpaper manager with spanning, multi image and more. # 79 char long summary
+description: |
+  Superpaper is an advanced multi-monitor wallpaper manager
+  for GNU/Linux supporting various desktop environments.
+  On top of standard spanning and multi image wallpaper features
+  it supports spanning corrections for monitor bezels, and if your
+  displays don't have the same pixel density it will take that into
+  account as well.
+
+  Other features include: slideshow, saving wallpaper setting profiles,
+  hotkeys, manual wallpaper offsets, alignment testing tool and
+  Windows support. 
+
+grade: stable # must be 'stable' to release into candidate/stable channels
+confinement: strict # use 'strict' once you have the right plugs and slots
+# confinement: devmode # use 'strict' once you have the right plugs and slots
+
+plugs:
+  kde-plasma-dbus:
+    bus: session
+    interface: dbus
+    name: org.kde.plasmashell
+    # name: org.kde.PlasmaShell
+  freedesktop-dbus:
+    bus: session
+    interface: dbus
+    name: org.freedesktop.DBus
+
+apps:
+  superpaper:
+    command: bin/superpaper
+    # plugs: [dbus]
+    # plugs: [desktop, x11, gsettings, kde-plasma-dbus, home, removable-media]
+    plugs:
+      - desktop
+      - desktop-legacy
+      - unity7
+      - x11
+      - gsettings
+      - kde-plasma-dbus
+      - freedesktop-dbus
+      - dbus
+      - home
+      - removable-media
+
+parts:
+  superpaper:
+    # See 'snapcraft plugins'
+    plugin: python
+    python-version: python3
+    source: .
+    build-packages:
+      # - libwxbase3.0-dev
+      # - libwxgtk3.0-dev
+      # - libwxgtk-webview3.0-gtk3-dev
+      - python3-wxgtk4.0
+      - python3-wxgtk-media4.0
+      - python3-wxgtk-webview4.0
+      - python3-dbus
+      - libxcb-render0-dev
+      - libgdk-pixbuf2.0-dev
+    stage-packages:
+      # - libwxbase3.0-0v5
+      # - libwxgtk3.0-0v5
+      # - libwxgtk-webview3.0-gtk3-0v5
+      - python3-wxgtk4.0
+      - python3-wxgtk-media4.0
+      - python3-wxgtk-webview4.0
+      - python3-dbus
+      - libxcb-render0-dev
+      - libglu1-mesa
+      - libgpm2
+      - libslang2
+      - libgdk-pixbuf2.0-dev
+    # python-packages:
+      # - dbus-python
+    requirements: [requirements_full_linux.txt]

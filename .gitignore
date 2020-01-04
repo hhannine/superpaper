@@ -2,6 +2,9 @@ __pycache__/
 superpaper/__pycache__
 build/
 dist/
+prime/
 releases/
 superpaper.egg-info/
+*.snap
 *.spec
+.vscode
