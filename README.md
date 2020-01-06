@@ -59,6 +59,10 @@ If you find Superpaper useful please consider supporting its development: [Suppo
 ### Linux
 
 Superpaper is available from PyPI, [here][sp-on-pypi].
+Somewhat experimental AppImage and Snap packages are available on the [releases page](https://github.com/hhannine/superpaper/releases). The AppImage will run once you make it executable. To install the snap you need to install it from the local file with:
+```
+sudo snap install superpaper_1.2.0_amd64_experimental_classic.snap --classic --dangerous
+```
 
 [sp-on-pypi]: https://pypi.org/project/superpaper
 
