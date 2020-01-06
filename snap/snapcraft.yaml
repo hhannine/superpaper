@@ -17,19 +17,20 @@ description: |
   Windows support. 
 
 grade: stable # must be 'stable' to release into candidate/stable channels
-confinement: strict # use 'strict' once you have the right plugs and slots
+# confinement: strict # use 'strict' once you have the right plugs and slots
+confinement: classic # use 'strict' once you have the right plugs and slots
 # confinement: devmode # use 'strict' once you have the right plugs and slots
 
-plugs:
-  kde-plasma-dbus:
-    bus: session
-    interface: dbus
-    name: org.kde.plasmashell
-    # name: org.kde.PlasmaShell
-  freedesktop-dbus:
-    bus: session
-    interface: dbus
-    name: org.freedesktop.DBus
+# plugs:
+#   kde-plasma-dbus:
+#     bus: session
+#     interface: dbus
+#     name: org.kde.plasmashell
+#     # name: org.kde.PlasmaShell
+#   freedesktop-dbus:
+#     bus: session
+#     interface: dbus
+#     name: org.freedesktop.DBus
 
 apps:
   superpaper:
