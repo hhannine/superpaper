@@ -5,6 +5,7 @@ dist/
 prime/
 releases/
 superpaper.egg-info/
+*.AppImage
 *.snap
 *.spec
 .vscode

@@ -38,7 +38,7 @@ def make_portable(dst_path):
     shutil.make_archive(portpath, 'zip', dst_path, "superpaper-portable")
 
 def run_inno_script(version_str):
-    inno_cmd = "iscc ./windows-tooling/inno-setup-script.iss /DMyAppVersion={}".format(version_str)
+    inno_cmd = "iscc ./release-tooling/inno-setup-script.iss /DMyAppVersion={}".format(version_str)
     os.system(inno_cmd)
 
 
@@ -57,7 +57,7 @@ def main():
     # run pyinstaller build
     # os.system("python make-pyinstaller-build.py dist")
     try:
-        subprocess.call(["python", "./windows-tooling/make-pyinstaller-build.py", "dist"])
+        subprocess.call(["python", "./release-tooling/make-pyinstaller-build.py", "dist"])
     except:
         print("\nPyinstaller build FAILED.\n")
         exit(0)
