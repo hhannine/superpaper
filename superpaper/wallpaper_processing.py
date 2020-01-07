@@ -602,8 +602,7 @@ def set_wallpaper_piecewise(image_piece_list):
         if desk_env in ["/usr/share/xsessions/plasma", "plasma"]:
             kdeplasma_actions(None, image_piece_list)
         elif desk_env in ["xfce", "xubuntu"]:
-            # xfce_actions(image_piece_list)
-            print("todo xfce quick change.")
+            xfce_actions(None, image_piece_list)
     else:
         pass
 
