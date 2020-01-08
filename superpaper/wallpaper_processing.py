@@ -75,6 +75,52 @@ class RepeatedTimer(object):
         self.is_running = False
 
 
+class Display():
+    """
+    Stores refined data of a display.
+    
+    Computes PPI if data is available. Stores non-negative translated offsets.
+    """
+    def __init__(self):
+        self.resolution = (0,0)
+        self.digital_offests = (0,0)
+        self.phys_size_mm = (0,0)
+        self.phys_offests = None
+        self.ppi = None
+        self.name = None
+        if self.resolution and self.phys_size_mm:
+            self.ppi = self.compute_ppi()
+
+    def __str__(self):
+        return (
+            f"Display("
+            f"resolution={self.resolution}, "
+            f"digital_offests={self.digital_offests}, "
+            f"phys_size_mm={self.phys_size_mm}, "
+            f"phys_offests={self.phys_offests}, "
+            f"ppi={self.ppi}, "
+            f"name={self.name!r}"
+            f")"
+        )
+
+    def compute_ppi(self):
+        if self.phys_size_mm[0]:
+            ppmm_horiz = self.resolution[0]/self.phys_size_mm[0]
+        else:
+            if sp_logging.DEBUG:
+                sp_logging.G_LOGGER.info("Display.compute_ppi: self.phys_size_mm[0] was 0.")
+            return None
+        if self.phys_size_mm[1]:
+            ppmm_vert = self.resolution[1]/self.phys_size_mm[1]
+        else:
+            if sp_logging.DEBUG:
+                sp_logging.G_LOGGER.info("Display.compute_ppi: self.phys_size_mm[1] was 0.")
+            return None
+        if abs(ppmm_horiz/ppmm_vert - 1) > 0.01:
+            if sp_logging.DEBUG:
+                sp_logging.G_LOGGER.info("Horizontal and vertical PPmm do not match! hor: %s, ver: %s", ppmm_horiz, ppmm_vert)
+        return ppmm_horiz * 25.4  # inch has 25.4 times the pixels of a millimeter.
+
 def get_display_data():
     """Updates global display variables: number of displays, resolutions and offsets."""
     # https://github.com/rr-/screeninfo
@@ -301,7 +347,7 @@ def compute_crop_tuples(resolution_array_ppinormalized, manual_offsets):
     leftmost = min(crop_tuples, key=itemgetter(0))[0]
     # Top-most edge of the crop tuples.
     topmost = min(crop_tuples, key=itemgetter(1))[1]
-    if leftmost is 0 and topmost is 0:
+    if leftmost == 0 and topmost == 0:
         if sp_logging.DEBUG:
             sp_logging.G_LOGGER.info("crop_tuples: %s", crop_tuples)
         return crop_tuples  # [(left, up, right, bottom),...]

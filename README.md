@@ -67,7 +67,7 @@ sudo snap install superpaper_1.2.0_amd64_experimental_classic.snap --classic --d
 [sp-on-pypi]: https://pypi.org/project/superpaper
 
 #### Requirements
-- Python 3.5+
+- Python 3.6+
 - Pillow
 - screeninfo
 - wxpython (tray applet, GUI & slideshow, optional)
