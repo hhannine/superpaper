@@ -7,6 +7,7 @@ with native platform methods whenever possible.
 Written by Henri Hänninen, copyright 2019 under MIT licence.
 """
 
+import math
 import os
 import platform
 import subprocess
@@ -84,7 +85,12 @@ class Display():
     def __init__(self, monitor):
         self.resolution = (monitor.width, monitor.height)
         self.digital_offsets = (monitor.x, monitor.y)
-        self.phys_size_mm = (monitor.width_mm, monitor.height_mm)
+        self.phys_size_mm = tuple(
+            sorted(
+                [monitor.width_mm, monitor.height_mm],
+                reverse=bool(self.resolution[0]>self.resolution[1])
+            )
+        )   # Take care that physical rotation matches resolution.
         self.phys_offsets = None    # Determined through GUI input. Anchored to top-left? TODO
         self.ppi = None
         self.name = monitor.name
@@ -123,9 +129,10 @@ class Display():
         if abs(ppmm_horiz/ppmm_vert - 1) > 0.01:
             if sp_logging.DEBUG:
                 sp_logging.G_LOGGER.info(
-                    "Horizontal and vertical PPmm do not match! hor: %s, ver: %s",
-                    ppmm_horiz, ppmm_vert
+                    "WARNING: Horizontal and vertical PPI do not match! hor: %s, ver: %s",
+                    ppmm_horiz * 25.4, ppmm_vert * 25.4
                 )
+                sp_logging.G_LOGGER.info(str(self))
         return ppmm_horiz * 25.4  # inch has 25.4 times the pixels of a millimeter.
 
     def translate_offset(self, translate_tuple):
@@ -139,6 +146,32 @@ class Display():
             old_offsets[0] - translate_tuple[0],
             old_offsets[1] - translate_tuple[1]
         )
+
+    def ppi_and_physsize_from_diagonal_inch(self, diag_inch):
+        """
+        If physical size detection fails, it can be computed by
+        asking the user to enter the diagonal dimension of the monitor
+        in inches.
+        """
+        height_to_width_ratio = self.resolution[1]/self.resolution[0]
+        phys_width_inch = diag_inch / math.sqrt(1 + height_to_width_ratio**2)
+        phys_height_inch = height_to_width_ratio * phys_width_inch
+
+        self.phys_size_mm = (phys_width_inch * 25.4, phys_height_inch * 25.4)
+        self.ppi = self.resolution[0] / phys_width_inch
+
+        if sp_logging.DEBUG:
+            sp_logging.G_LOGGER.info(
+                "Updated PPI = %s and phys_size_mm = %s based on diagonal size: %s inches",
+                self.ppi,
+                self.phys_size_mm,
+                diag_inch
+            )
+            sp_logging.G_LOGGER.info(
+                str(self)
+            )
+
+
 
 def extract_global_vars(disp_list):
     res_arr = []
@@ -161,77 +194,30 @@ def get_display_data():
     DISPLAY_OFFSET_ARRAY = []
     monitors = get_monitors()
     NUM_DISPLAYS = len(monitors)
-    for m_index in range(len(monitors)):
-        res = []
-        offset = []
-        res.append(monitors[m_index].width)
-        res.append(monitors[m_index].height)
-        offset.append(monitors[m_index].x)
-        offset.append(monitors[m_index].y)
-        RESOLUTION_ARRAY.append(tuple(res))
-        DISPLAY_OFFSET_ARRAY.append(tuple(offset))
-    # new code
+
     display_list = []
     for monitor in monitors:
         display_list.append(Display(monitor))
-    for disp in display_list:
-        print(str(disp))
     # Check that there are no negative offsets and fix if any are found.
-    leftmost_offset_new = min([disp.digital_offsets[0] for disp in display_list])
-    topmost_offset_new = min([disp.digital_offsets[1] for disp in display_list])
-    if leftmost_offset_new < 0 or topmost_offset_new < 0:
+    leftmost_offset = min([disp.digital_offsets[0] for disp in display_list])
+    topmost_offset = min([disp.digital_offsets[1] for disp in display_list])
+    if leftmost_offset < 0 or topmost_offset < 0:
         for disp in display_list:
-            disp.translate_offset((leftmost_offset_new, topmost_offset_new))
+            disp.translate_offset((leftmost_offset, topmost_offset))
     # sort display list by digital offsets
     display_list.sort(key=lambda x: x.digital_offsets)
-    for disp in display_list:
-        print(str(disp))
     # extract global variables for legacy compatibility
-    res_array_new, off_array_new = extract_global_vars(display_list)
-
-    # old code, TODO test and clean up.
-    # Check that the display offsets are sane, i.e. translate the values if
-    # there are any negative values (Windows).
-    leftmost_offset = min(DISPLAY_OFFSET_ARRAY, key=itemgetter(0))[0]
-    topmost_offset = min(DISPLAY_OFFSET_ARRAY, key=itemgetter(1))[1]
-    if leftmost_offset < 0 or topmost_offset < 0:
-        if sp_logging.DEBUG:
-            sp_logging.G_LOGGER.info("Negative display offset: %s",
-                                     DISPLAY_OFFSET_ARRAY)
-        translate_offsets = []
-        for offset in DISPLAY_OFFSET_ARRAY:
-            translate_offsets.append((offset[0] - leftmost_offset, offset[1] - topmost_offset))
-        DISPLAY_OFFSET_ARRAY = translate_offsets
-        if sp_logging.DEBUG:
-            sp_logging.G_LOGGER.info("Sanitised display offset: %s",
-                                     DISPLAY_OFFSET_ARRAY)
+    RESOLUTION_ARRAY, DISPLAY_OFFSET_ARRAY = extract_global_vars(display_list)
+    
     if sp_logging.DEBUG:
         sp_logging.G_LOGGER.info(
-            "get_display_data output: NUM_DISPLAYS = %s, %s, %s",
+            "get_display_data output: NUM_DISPLAYS = %s, RES_ARR = %s, OFF_ARR = %s",
             NUM_DISPLAYS,
             RESOLUTION_ARRAY,
             DISPLAY_OFFSET_ARRAY
         )
-    # Sort displays left to right according to offset data
-    display_indices = list(range(len(DISPLAY_OFFSET_ARRAY)))
-    display_indices.sort(key=DISPLAY_OFFSET_ARRAY.__getitem__)
-    DISPLAY_OFFSET_ARRAY = list(map(DISPLAY_OFFSET_ARRAY.__getitem__, display_indices))
-    RESOLUTION_ARRAY = list(map(RESOLUTION_ARRAY.__getitem__, display_indices))
-    if sp_logging.DEBUG:
-        sp_logging.G_LOGGER.info(
-            "SORTED get_display_data output: NUM_DISPLAYS = %s, %s, %s",
-            NUM_DISPLAYS,
-            RESOLUTION_ARRAY,
-            DISPLAY_OFFSET_ARRAY
-        )
-    if res_array_new == RESOLUTION_ARRAY:
-        print("Resolution arrays match!")
-    else:
-        print("Resolution arrays DO NOT match! new: {}, old: {}".format(res_array_new, RESOLUTION_ARRAY))
-    if off_array_new == DISPLAY_OFFSET_ARRAY:
-        print("Offset arrays match!")
-    else:
-        print("Offset arrays DO NOT match! new: {}, old: {}".format(res_array_new, RESOLUTION_ARRAY))
+        for disp in display_list:
+            sp_logging.G_LOGGER.info(str(disp))
     return display_list
 
 def compute_canvas(res_array, offset_array):
