@@ -17,12 +17,12 @@ except ImportError:
 
 
 
-class ConfigFrame(wx.Frame):
+class ProfileConfigFrame(wx.Frame):
     """Profile configuration dialog frame base class."""
     def __init__(self, parent_tray_obj):
         wx.Frame.__init__(self, parent=None, title="Superpaper Profile Configuration")
         self.frame_sizer = wx.BoxSizer(wx.VERTICAL)
-        config_panel = ConfigPanel(self, parent_tray_obj)
+        config_panel = ProfileConfigPanel(self, parent_tray_obj)
         self.frame_sizer.Add(config_panel, 1, wx.EXPAND)
         self.SetAutoLayout(True)
         self.SetSizer(self.frame_sizer)
@@ -32,7 +32,7 @@ class ConfigFrame(wx.Frame):
         self.Show()
 
 
-class ConfigPanel(wx.Panel):
+class ProfileConfigPanel(wx.Panel):
     """This class defines the config dialog UI."""
     def __init__(self, parent, parent_tray_obj):
         wx.Panel.__init__(self, parent)

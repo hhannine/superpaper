@@ -1,3 +1,3 @@
 """Version string for Superpaper."""
 
-__version__ = "1.2.0"
+__version__ = "1.3a0"

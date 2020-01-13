@@ -10,7 +10,8 @@ from threading import Lock
 from superpaper.__version__ import __version__
 import superpaper.sp_logging as sp_logging
 import superpaper.sp_paths as sp_paths
-from superpaper.configuration_dialogs import ConfigFrame, SettingsFrame, HelpFrame
+from superpaper.gui import ConfigFrame
+from superpaper.configuration_dialogs import ProfileConfigFrame, SettingsFrame, HelpFrame
 from superpaper.message_dialog import show_message_dialog
 from superpaper.data import (GeneralSettingsData,
                   list_profiles, read_active_profile, write_active_profile)
@@ -105,7 +106,7 @@ class TaskBarIcon(wx.adv.TaskBarIcon):
                     "WARNING: Could not import keyboard hotkey hook library, \
 hotkeys will not work. Exception: %s", excep)
         if self.g_settings.show_help is True:
-            config_frame = ConfigFrame(self)
+            config_frame = ProfileConfigFrame(self)
             help_frame = HelpFrame()
 
 
@@ -240,6 +241,7 @@ New hotkeys are registered."
         """Method called by WX library when user right clicks tray icon. Opens tray menu."""
         menu = wx.Menu()
         create_menu_item(menu, "Open Config Folder", self.open_config)
+        create_menu_item(menu, "Wallpaper Configuration", self.configure_wallpapers)
         create_menu_item(menu, "Profile Configuration", self.configure_profiles)
         create_menu_item(menu, "Settings", self.configure_settings)
         create_menu_item(menu, "Reload Profiles", self.reload_profiles)
@@ -283,9 +285,13 @@ New hotkeys are registered."
             except subprocess.CalledProcessError:
                 show_message_dialog("There was an error trying to open the config folder.")
 
+    def configure_wallpapers(self, event):
+        """Opens wallpaper configuration panel."""
+        config_frame = ConfigFrame(self)
+
     def configure_profiles(self, event):
         """Opens profile configuration panel."""
-        config_frame = ConfigFrame(self)
+        config_frame = ProfileConfigFrame(self)
 
     def configure_settings(self, event):
         """Opens general settings panel."""
