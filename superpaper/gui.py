@@ -46,7 +46,10 @@ class WallpaperSettingsPanel(wx.Panel):
         self.sizer_settings_right = wx.BoxSizer(wx.VERTICAL)
         # bottom_half: bottom button row
         self.sizer_bottom_buttonrow = wx.BoxSizer(wx.HORIZONTAL)
-        self.tc_width = 160
+        # settings GUI properties
+        self.tc_width = 160  # standard width for wx.TextCtrl etc elements.
+        self.show_advanced_settings = False
+
         # top half
         self.wpprev_pnl = WallpaperPreviewPanel(self.frame)
         self.sizer_top_half.Add(self.wpprev_pnl, 0, wx.CENTER|wx.EXPAND)
@@ -61,7 +64,7 @@ class WallpaperSettingsPanel(wx.Panel):
 
         # settings sizer right contents
         # TODO Some settings in the right column are CONDITIONAL: bezel corr, maybe diag inches?
-        # bezel correction TODO TBD whether to put this on left or right
+        # bezel correction TODO don't show if span mode is multi image or simple span.
 
         # self.sizer_settings_right.Add(self.sizer_setting_, 0, wx.CENTER|wx.EXPAND)
 
@@ -73,15 +76,8 @@ class WallpaperSettingsPanel(wx.Panel):
 
 
         # bottom button row contents
-        self.button_help = wx.Button(self, label="Help")                # TODO maybe align left?
-        self.button_align_test = wx.Button(self, label="Align Test")    # TODO maybe align left?
-        self.button_apply = wx.Button(self, label="Apply")
-        self.button_close = wx.Button(self, label="Close")
-        self.sizer_bottom_buttonrow.Add(self.button_help, 0, wx.ALIGN_LEFT|wx.ALL, 5)
-        self.sizer_bottom_buttonrow.Add(self.button_align_test, 0, wx.ALIGN_LEFT|wx.ALL, 5)
-        self.sizer_bottom_buttonrow.AddStretchSpacer()
-        self.sizer_bottom_buttonrow.Add(self.button_apply, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
-        self.sizer_bottom_buttonrow.Add(self.button_close, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
+        self.create_sizer_bottom_buttonrow()
+
 
         # Add sub-sizers to bottom_half
         self.sizer_setting_sizers.Add(self.sizer_settings_left, 0, wx.CENTER|wx.EXPAND)
@@ -120,6 +116,9 @@ class WallpaperSettingsPanel(wx.Panel):
         self.button_new = wx.Button(self, label="New")
         self.button_save = wx.Button(self, label="Save")
         self.button_delete = wx.Button(self, label="Delete")
+        self.button_new.Bind(wx.EVT_BUTTON, self.onCreateNewProfile)
+        self.button_save.Bind(wx.EVT_BUTTON, self.onSave)
+        self.button_delete.Bind(wx.EVT_BUTTON, self.onDeleteProfile)
 
         # Add elements to the sizer
         self.sizer_profiles.Add(st_choice_profiles, 0, wx.CENTER|wx.ALL, 5)
@@ -131,27 +130,61 @@ class WallpaperSettingsPanel(wx.Panel):
         self.sizer_profiles.Add(self.button_save, 0, wx.CENTER|wx.ALL, 5)
 
     def create_sizer_settins_left(self):
-        #    span mode
+        # span mode sizer
         self.sizer_setting_span_mode = wx.StaticBoxSizer(wx.VERTICAL, self, "Span mode")
+        radio_choices_spanmode = ["Simple span", "Advanced span", "Separate image for every display"]
+        self.radiobox_spanmode = wx.RadioBox(self, wx.ID_ANY, 
+                                             choices=radio_choices_spanmode,
+                                             style=wx.RA_VERTICAL 
+                                            )
+        self.sizer_setting_span_mode.Add(self.radiobox_spanmode, 0, wx.ALIGN_LEFT|wx.ALL, 5)
 
-        self.sizer_setting_slideshow = wx.StaticBoxSizer(wx.VERTICAL, self, "Slideshow")
-        # st_slide = wx.StaticText(self, -1, "Slideshow")
+        # slideshow sizer
+        self.sizer_setting_slideshow = wx.StaticBoxSizer(wx.VERTICAL, self, "Wallpaper slideshow")
         st_sshow_sort = wx.StaticText(self, -1, "Slideshow order:")
         self.ch_sshow_sort = wx.Choice(self, -1, name="SortChoice",
                                  size=(self.tc_width, -1),
                                  choices=["Shuffle", "Alphabetical"])
         st_sshow_delay = wx.StaticText(self, -1, "Delay:")
         st_sshow_delay_units = wx.StaticText(self, -1, "minutes")
-        self.tc_sshow_delay = wx.TextCtrl(self, -1, size=(self.tc_width, -1))
-        self.cb_slideshow = wx.CheckBox(self, -1, "Slideshow")  # Put the title in the left column
+        self.tc_sshow_delay = wx.TextCtrl(self, -1, size=(self.tc_width, -1)) # TODO right-align numeric data
+        self.cb_slideshow = wx.CheckBox(self, -1, "Slideshow")
         # TODO disable ch_sshow_sort and tc_sshow_delay based on the Check state of the CheckBox
+        self.sizer_setting_slideshow.Add(self.cb_slideshow, 0, wx.ALIGN_LEFT, 5)
 
-
+        # hotkey sizer
         self.sizer_setting_hotkey = wx.StaticBoxSizer(wx.VERTICAL, self, "Hotkey")
+        self.cb_hotkey = wx.CheckBox(self, -1, "Bind a hotkey to this profile")
+        st_hotkey_bind = wx.StaticText(self, -1, "Hotkey to bind:")
+        self.tc_hotkey_bind = wx.TextCtrl(self, -1, size=(self.tc_width, -1))
+        self.hotkey_bind_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.hotkey_bind_sizer.Add(st_hotkey_bind, 0, wx.CENTER|wx.EXPAND, 5)
+        self.hotkey_bind_sizer.Add(self.tc_hotkey_bind, 0, wx.CENTER|wx.EXPAND, 5)
+        self.sizer_setting_hotkey.Add(self.cb_hotkey, 0, wx.CENTER|wx.EXPAND, 5)
+        self.sizer_setting_hotkey.Add(self.hotkey_bind_sizer, 0, wx.CENTER|wx.EXPAND, 5)
+        # TODO disable tc based on checkbox
 
-        self.sizer_settings_left.Add(self.sizer_setting_span_mode, 0, wx.CENTER|wx.EXPAND)
-        self.sizer_settings_left.Add(self.sizer_setting_slideshow, 0, wx.CENTER|wx.EXPAND)
-        self.sizer_settings_left.Add(self.sizer_setting_hotkey, 0, wx.CENTER|wx.EXPAND)
+        # Add subsizers to the left column sizer
+        self.sizer_settings_left.Add(self.sizer_setting_span_mode, 0, wx.CENTER|wx.EXPAND, 5)
+        self.sizer_settings_left.Add(self.sizer_setting_slideshow, 0, wx.CENTER|wx.EXPAND, 5)
+        self.sizer_settings_left.Add(self.sizer_setting_hotkey, 0, wx.CENTER|wx.EXPAND, 5)
+
+    def create_sizer_bottom_buttonrow(self):
+        self.button_help = wx.Button(self, label="Help")                # TODO maybe align left?
+        self.button_align_test = wx.Button(self, label="Align Test")    # TODO maybe align left?
+        self.button_apply = wx.Button(self, label="Apply")
+        self.button_close = wx.Button(self, label="Close")
+
+        self.button_apply.Bind(wx.EVT_BUTTON, self.onApply)
+        self.button_align_test.Bind(wx.EVT_BUTTON, self.onAlignTest)
+        self.button_help.Bind(wx.EVT_BUTTON, self.onHelp)
+        self.button_close.Bind(wx.EVT_BUTTON, self.onClose)
+
+        self.sizer_bottom_buttonrow.Add(self.button_help, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        self.sizer_bottom_buttonrow.Add(self.button_align_test, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        self.sizer_bottom_buttonrow.AddStretchSpacer()
+        self.sizer_bottom_buttonrow.Add(self.button_apply, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
+        self.sizer_bottom_buttonrow.Add(self.button_close, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
 
 
     def update_choiceprofile(self):
@@ -331,6 +364,7 @@ class WallpaperPreviewPanel(wx.Panel):
     exists that matches the given resolutions, offsets and sizes.
     """
     def __init__(self, parent):
-        wx.Panel.__init__(self, parent, size=(1000,666))
+        self.preview_size = (1000,666)
+        wx.Panel.__init__(self, parent, size=self.preview_size)
         self.frame = parent
         self.SetBackgroundColour(wx.BLACK)
