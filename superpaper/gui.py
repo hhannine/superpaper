@@ -4,6 +4,7 @@ New wallpaper configuration GUI for Superpaper.
 import os
 
 import superpaper.sp_logging as sp_logging
+import superpaper.wallpaper_processing as wpproc
 from superpaper.data import GeneralSettingsData, ProfileData, TempProfileData, CLIProfileData, list_profiles
 from superpaper.message_dialog import show_message_dialog
 from superpaper.wallpaper_processing import NUM_DISPLAYS, get_display_data, change_wallpaper_job
@@ -60,20 +61,10 @@ class WallpaperSettingsPanel(wx.Panel):
         self.create_sizer_profiles()
 
         # settings sizer left contents
-        self.create_sizer_settins_left()
+        self.create_sizer_settings_left()
 
         # settings sizer right contents
-        # TODO Some settings in the right column are CONDITIONAL: bezel corr, maybe diag inches?
-        # bezel correction TODO don't show if span mode is multi image or simple span.
-
-        # self.sizer_settings_right.Add(self.sizer_setting_, 0, wx.CENTER|wx.EXPAND)
-
-        # paths sizer contents
-        self.sizer_setting_paths = wx.StaticBoxSizer(wx.VERTICAL, self, "Wallpaper paths")
-
-        self.sizer_settings_right.Add(self.sizer_setting_paths, 0, wx.CENTER|wx.EXPAND, 5)
-
-
+        self.create_sizer_settings_right()
 
         # bottom button row contents
         self.create_sizer_bottom_buttonrow()
@@ -129,9 +120,9 @@ class WallpaperSettingsPanel(wx.Panel):
         self.sizer_profiles.Add(self.button_delete, 0, wx.CENTER|wx.ALL, 5)
         self.sizer_profiles.Add(self.button_save, 0, wx.CENTER|wx.ALL, 5)
 
-    def create_sizer_settins_left(self):
+    def create_sizer_settings_left(self):
         # span mode sizer
-        self.sizer_setting_span_mode = wx.StaticBoxSizer(wx.VERTICAL, self, "Span mode")
+        self.sizer_setting_span_mode = wx.StaticBoxSizer(wx.VERTICAL, self, "Span Mode")
         radio_choices_spanmode = ["Simple span", "Advanced span", "Separate image for every display"]
         self.radiobox_spanmode = wx.RadioBox(self, wx.ID_ANY, 
                                              choices=radio_choices_spanmode,
@@ -140,7 +131,7 @@ class WallpaperSettingsPanel(wx.Panel):
         self.sizer_setting_span_mode.Add(self.radiobox_spanmode, 0, wx.ALIGN_LEFT|wx.ALL, 5)
 
         # slideshow sizer
-        self.sizer_setting_slideshow = wx.StaticBoxSizer(wx.VERTICAL, self, "Wallpaper slideshow")
+        self.sizer_setting_slideshow = wx.StaticBoxSizer(wx.VERTICAL, self, "Wallpaper Slideshow")
         statbox_parent_sshow = self.sizer_setting_slideshow.GetStaticBox()
         st_sshow_sort = wx.StaticText(statbox_parent_sshow, -1, "Slideshow order:")
         self.ch_sshow_sort = wx.Choice(statbox_parent_sshow, -1, name="SortChoice",
@@ -181,9 +172,71 @@ class WallpaperSettingsPanel(wx.Panel):
         self.sizer_settings_left.Add(self.sizer_setting_slideshow, 0, wx.CENTER|wx.EXPAND, 5)
         self.sizer_settings_left.Add(self.sizer_setting_hotkey, 0, wx.CENTER|wx.EXPAND, 5)
 
+    def create_sizer_settings_right(self):
+        # TODO Some settings in the right column are CONDITIONAL: bezel corr, maybe diag inches?
+        # bezel correction TODO don't show if span mode is multi image or simple span.
+        if True:
+            self.create_sizer_settings_advanced()
+        # self.sizer_settings_right.Add(self.sizer_setting_, 0, wx.CENTER|wx.EXPAND)
+
+        # paths sizer contents
+        self.sizer_setting_paths = wx.StaticBoxSizer(wx.VERTICAL, self, "Wallpaper Paths")
+
+        self.sizer_settings_right.Add(self.sizer_setting_paths, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+
+    def create_sizer_settings_advanced(self):
+        self.sizer_setting_adv = wx.StaticBoxSizer(wx.VERTICAL, self, "Advanced Wallpaper Adjustment")
+        statbox_parent_adv = self.sizer_setting_adv.GetStaticBox()
+
+        # Fallback Diagonal Inches
+        self.sizer_setting_diaginch = wx.StaticBoxSizer(wx.VERTICAL, self, "Display Diagonal Sizes")
+        statbox_parent_diaginch = self.sizer_setting_diaginch.GetStaticBox()
+        st_diaginch_override = wx.StaticText(
+            statbox_parent_diaginch, -1,
+            "Manual display size input:"
+        )
+        self.button_override = wx.Button(statbox_parent_diaginch, label="Override Detected Sizes")
+        self.button_override.Bind(wx.EVT_BUTTON, self.onOverrideSizes)
+        self.sizer_setting_diaginch.Add(st_diaginch_override, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_setting_diaginch.Add(self.button_override, 0, wx.CENTER|wx.ALL, 5)
+
+        # Bezels
+        self.sizer_setting_bezels = wx.StaticBoxSizer(wx.VERTICAL, self, "Bezel Correction")
+        statbox_parent_bezels = self.sizer_setting_bezels.GetStaticBox()
+        self.cb_bezels = wx.CheckBox(statbox_parent_bezels, -1, "Apply Bezel Correction")
+        self.cb_bezels.Bind(wx.EVT_CHECKBOX, self.onCheckboxBezels)
+        st_bezels = wx.StaticText(
+            statbox_parent_bezels, -1,
+            "Bezel pair thicknesses, incl. gap (millimeters):"
+        )
+        self.sizer_setting_bezels.Add(self.cb_bezels, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        self.sizer_setting_bezels.Add(st_bezels, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        tc_list_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.tc_list_bezels = self.list_of_textctrl(statbox_parent_bezels, wpproc.NUM_DISPLAYS-1)
+        for tc in self.tc_list_bezels:
+            tc_list_sizer.Add(tc, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+            tc.Disable()
+        self.sizer_setting_bezels.Add(tc_list_sizer, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+
+        # Offsets
+        self.sizer_setting_offsets = wx.StaticBoxSizer(wx.VERTICAL, self, "Manual Display Offsets")
+        statbox_parent_offsets = self.sizer_setting_offsets.GetStaticBox()
+
+        # Add setting subsizers to the adv settings sizer
+        self.sizer_setting_adv.Add(self.sizer_setting_diaginch, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        self.sizer_setting_adv.Add(self.sizer_setting_bezels, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        self.sizer_setting_adv.Add(self.sizer_setting_offsets, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+
+        self.sizer_settings_right.Add(self.sizer_setting_adv, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+
+    def create_sizer_diaginch_override(self):
+        self.sizer_setting_diaginch.Clear(True)
+        statbox_parent_diaginch = self.sizer_setting_diaginch.GetStaticBox()
+
+
     def create_sizer_bottom_buttonrow(self):
-        self.button_help = wx.Button(self, label="Help")                # TODO maybe align left?
-        self.button_align_test = wx.Button(self, label="Align Test")    # TODO maybe align left?
+        self.button_help = wx.Button(self, label="Help")
+        self.button_align_test = wx.Button(self, label="Align Test")
         self.button_apply = wx.Button(self, label="Apply")
         self.button_close = wx.Button(self, label="Close")
 
@@ -209,6 +262,18 @@ class WallpaperSettingsPanel(wx.Panel):
             self.profnames.append(prof.name)
         self.profnames.append("Create a new profile")
         self.choice_profiles.SetItems(self.profnames)
+
+    def list_of_textctrl(self, ctrl_parent, num_disp):
+        print("num_disp = ", num_disp)
+        tcrtl_list = []
+        for i in range(num_disp):
+            tcrtl_list.append(
+                wx.TextCtrl(ctrl_parent, -1, size=(self.tc_width/2, -1))
+            )
+        return tcrtl_list
+
+
+
     #
     # Event methods
     #
@@ -221,9 +286,16 @@ class WallpaperSettingsPanel(wx.Panel):
         cb_state = self.cb_hotkey.GetValue()
         self.tc_hotkey_bind.Enable(cb_state)
 
+    def onCheckboxBezels(self, event):
+        cb_state = self.cb_bezels.GetValue()
+
     #
     # Top level button definitions
     #
+    def onOverrideSizes(self, event):
+        self.create_sizer_diaginch_override()
+
+
     def onClose(self, event):
         """Closes the profile config panel."""
         self.frame.Close(True)
@@ -346,7 +418,7 @@ class WallpaperSettingsPanel(wx.Panel):
             show_message_dialog(msg, "Error")
         ppi = None
         inches = self.tc_inches.GetLineText(0).split(";")
-        if (inches == "") or (len(inches) < NUM_DISPLAYS):
+        if (inches == "") or (len(inches) < wpproc.NUM_DISPLAYS):
             msg = "You must enter a diagonal inch value for every \
 display, serparated by a semicolon ';'."
             show_message_dialog(msg, "Error")
