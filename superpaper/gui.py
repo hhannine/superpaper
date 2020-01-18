@@ -52,7 +52,7 @@ class WallpaperSettingsPanel(wx.Panel):
 
         # top half
         self.wpprev_pnl = WallpaperPreviewPanel(self.frame)
-        self.sizer_top_half.Add(self.wpprev_pnl, 0, wx.CENTER|wx.EXPAND)
+        self.sizer_top_half.Add(self.wpprev_pnl, 0, wx.CENTER|wx.EXPAND, 5)
         
         # bottom half
         
@@ -71,7 +71,7 @@ class WallpaperSettingsPanel(wx.Panel):
         # paths sizer contents
         self.sizer_setting_paths = wx.StaticBoxSizer(wx.VERTICAL, self, "Wallpaper paths")
 
-        self.sizer_settings_right.Add(self.sizer_setting_paths, 0, wx.CENTER|wx.EXPAND)
+        self.sizer_settings_right.Add(self.sizer_setting_paths, 0, wx.CENTER|wx.EXPAND, 5)
 
 
 
@@ -80,16 +80,16 @@ class WallpaperSettingsPanel(wx.Panel):
 
 
         # Add sub-sizers to bottom_half
-        self.sizer_setting_sizers.Add(self.sizer_settings_left, 0, wx.CENTER|wx.EXPAND)
-        self.sizer_setting_sizers.Add(self.sizer_settings_right, 0, wx.CENTER|wx.EXPAND)
+        self.sizer_setting_sizers.Add(self.sizer_settings_left, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        self.sizer_setting_sizers.Add(self.sizer_settings_right, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
 
-        self.sizer_bottom_half.Add(self.sizer_profiles, 0, wx.CENTER|wx.EXPAND)
-        self.sizer_bottom_half.Add(self.sizer_setting_sizers, 0, wx.CENTER|wx.EXPAND)
-        self.sizer_bottom_half.Add(self.sizer_bottom_buttonrow, 0, wx.CENTER|wx.EXPAND)
+        self.sizer_bottom_half.Add(self.sizer_profiles, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        self.sizer_bottom_half.Add(self.sizer_setting_sizers, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        self.sizer_bottom_half.Add(self.sizer_bottom_buttonrow, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
 
         # Collect items at main sizer
-        self.sizer_main.Add(self.sizer_top_half, 0, wx.CENTER|wx.EXPAND)
-        self.sizer_main.Add(self.sizer_bottom_half, 0, wx.CENTER|wx.EXPAND)
+        self.sizer_main.Add(self.sizer_top_half, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        self.sizer_main.Add(self.sizer_bottom_half, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
 
         self.SetSizer(self.sizer_main)
         self.sizer_main.Fit(parent)
@@ -141,35 +141,37 @@ class WallpaperSettingsPanel(wx.Panel):
 
         # slideshow sizer
         self.sizer_setting_slideshow = wx.StaticBoxSizer(wx.VERTICAL, self, "Wallpaper slideshow")
-        st_sshow_sort = wx.StaticText(self, -1, "Slideshow order:")
-        self.ch_sshow_sort = wx.Choice(self, -1, name="SortChoice",
+        statbox_parent_sshow = self.sizer_setting_slideshow.GetStaticBox()
+        st_sshow_sort = wx.StaticText(statbox_parent_sshow, -1, "Slideshow order:")
+        self.ch_sshow_sort = wx.Choice(statbox_parent_sshow, -1, name="SortChoice",
                                  size=(self.tc_width, -1),
                                  choices=["Shuffle", "Alphabetical"])
-        st_sshow_delay = wx.StaticText(self, -1, "Delay (minutes):")
+        st_sshow_delay = wx.StaticText(statbox_parent_sshow, -1, "Delay (minutes):")
         # st_sshow_delay_units = wx.StaticText(self, -1, "minutes")
-        self.tc_sshow_delay = wx.TextCtrl(self, -1, size=(self.tc_width, -1)) # TODO right-align numeric data
-        self.cb_slideshow = wx.CheckBox(self, -1, "Slideshow")
+        self.tc_sshow_delay = wx.TextCtrl(statbox_parent_sshow, -1, size=(self.tc_width, -1)) # TODO right-align numeric data
+        self.cb_slideshow = wx.CheckBox(statbox_parent_sshow, -1, "Slideshow")
         # TODO disable ch_sshow_sort and tc_sshow_delay based on the Check state of the CheckBox
         self.tc_sshow_delay.Disable()
         self.ch_sshow_sort.Disable()
         self.cb_slideshow.Bind(wx.EVT_CHECKBOX, self.onCheckboxSlideshow)
-        self.sizer_setting_slideshow.Add(self.cb_slideshow, 0, wx.ALIGN_LEFT, 5)
-        self.sizer_setting_slideshow.Add(st_sshow_delay, 0, wx.ALIGN_LEFT, 5)
-        self.sizer_setting_slideshow.Add(self.tc_sshow_delay, 0, wx.ALIGN_LEFT, 5)
-        self.sizer_setting_slideshow.Add(st_sshow_sort, 0, wx.ALIGN_LEFT, 5)
-        self.sizer_setting_slideshow.Add(self.ch_sshow_sort, 0, wx.ALIGN_LEFT, 5)
+        self.sizer_setting_slideshow.Add(self.cb_slideshow, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        self.sizer_setting_slideshow.Add(st_sshow_delay, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        self.sizer_setting_slideshow.Add(self.tc_sshow_delay, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        self.sizer_setting_slideshow.Add(st_sshow_sort, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        self.sizer_setting_slideshow.Add(self.ch_sshow_sort, 0, wx.ALIGN_LEFT|wx.ALL, 5)
 
         # hotkey sizer
         self.sizer_setting_hotkey = wx.StaticBoxSizer(wx.VERTICAL, self, "Hotkey")
-        self.cb_hotkey = wx.CheckBox(self, -1, "Bind a hotkey to this profile")
-        st_hotkey_bind = wx.StaticText(self, -1, "Hotkey to bind:")
-        self.tc_hotkey_bind = wx.TextCtrl(self, -1, size=(self.tc_width, -1))
+        statbox_parent_hkey = self.sizer_setting_hotkey.GetStaticBox()
+        self.cb_hotkey = wx.CheckBox(statbox_parent_hkey, -1, "Bind a hotkey to this profile")
+        st_hotkey_bind = wx.StaticText(statbox_parent_hkey, -1, "Hotkey to bind:")
+        self.tc_hotkey_bind = wx.TextCtrl(statbox_parent_hkey, -1, size=(self.tc_width, -1))
         self.tc_hotkey_bind.Disable()
         self.hotkey_bind_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.hotkey_bind_sizer.Add(st_hotkey_bind, 0, wx.CENTER|wx.EXPAND, 5)
-        self.hotkey_bind_sizer.Add(self.tc_hotkey_bind, 0, wx.CENTER|wx.EXPAND, 5)
-        self.sizer_setting_hotkey.Add(self.cb_hotkey, 0, wx.CENTER|wx.EXPAND, 5)
-        self.sizer_setting_hotkey.Add(self.hotkey_bind_sizer, 0, wx.CENTER|wx.EXPAND, 5)
+        self.hotkey_bind_sizer.Add(st_hotkey_bind, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        self.hotkey_bind_sizer.Add(self.tc_hotkey_bind, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        self.sizer_setting_hotkey.Add(self.cb_hotkey, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        self.sizer_setting_hotkey.Add(self.hotkey_bind_sizer, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
         # TODO disable tc based on checkbox
         self.cb_hotkey.Bind(wx.EVT_CHECKBOX, self.onCheckboxHotkey)
 
