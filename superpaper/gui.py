@@ -71,8 +71,10 @@ class WallpaperSettingsPanel(wx.Panel):
 
 
         # Add sub-sizers to bottom_half
-        self.sizer_setting_sizers.Add(self.sizer_settings_left, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
-        self.sizer_setting_sizers.Add(self.sizer_settings_right, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        #    Note: horizontal sizer needs children to have proportion = 1
+        #    in order to expand them horizontally instead of vertically.
+        self.sizer_setting_sizers.Add(self.sizer_settings_left, 1, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        self.sizer_setting_sizers.Add(self.sizer_settings_right, 1, wx.CENTER|wx.EXPAND|wx.ALL, 5)
 
         self.sizer_bottom_half.Add(self.sizer_profiles, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
         self.sizer_bottom_half.Add(self.sizer_setting_sizers, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
@@ -133,22 +135,24 @@ class WallpaperSettingsPanel(wx.Panel):
         # slideshow sizer
         self.sizer_setting_slideshow = wx.StaticBoxSizer(wx.VERTICAL, self, "Wallpaper Slideshow")
         statbox_parent_sshow = self.sizer_setting_slideshow.GetStaticBox()
-        st_sshow_sort = wx.StaticText(statbox_parent_sshow, -1, "Slideshow order:")
+        self.st_sshow_sort = wx.StaticText(statbox_parent_sshow, -1, "Slideshow order:")
         self.ch_sshow_sort = wx.Choice(statbox_parent_sshow, -1, name="SortChoice",
                                  size=(self.tc_width, -1),
                                  choices=["Shuffle", "Alphabetical"])
-        st_sshow_delay = wx.StaticText(statbox_parent_sshow, -1, "Delay (minutes):")
+        self.st_sshow_delay = wx.StaticText(statbox_parent_sshow, -1, "Delay (minutes):")
         # st_sshow_delay_units = wx.StaticText(self, -1, "minutes")
         self.tc_sshow_delay = wx.TextCtrl(statbox_parent_sshow, -1, size=(self.tc_width, -1)) # TODO right-align numeric data
         self.cb_slideshow = wx.CheckBox(statbox_parent_sshow, -1, "Slideshow")
-        # TODO disable ch_sshow_sort and tc_sshow_delay based on the Check state of the CheckBox
+        # disable ch_sshow_sort and tc_sshow_delay based on the Check state of the CheckBox
+        self.st_sshow_sort.Disable()
+        self.st_sshow_delay.Disable()
         self.tc_sshow_delay.Disable()
         self.ch_sshow_sort.Disable()
         self.cb_slideshow.Bind(wx.EVT_CHECKBOX, self.onCheckboxSlideshow)
         self.sizer_setting_slideshow.Add(self.cb_slideshow, 0, wx.ALIGN_LEFT|wx.ALL, 5)
-        self.sizer_setting_slideshow.Add(st_sshow_delay, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        self.sizer_setting_slideshow.Add(self.st_sshow_delay, 0, wx.ALIGN_LEFT|wx.ALL, 5)
         self.sizer_setting_slideshow.Add(self.tc_sshow_delay, 0, wx.ALIGN_LEFT|wx.ALL, 5)
-        self.sizer_setting_slideshow.Add(st_sshow_sort, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        self.sizer_setting_slideshow.Add(self.st_sshow_sort, 0, wx.ALIGN_LEFT|wx.ALL, 5)
         self.sizer_setting_slideshow.Add(self.ch_sshow_sort, 0, wx.ALIGN_LEFT|wx.ALL, 5)
 
         # hotkey sizer
@@ -156,6 +160,7 @@ class WallpaperSettingsPanel(wx.Panel):
         statbox_parent_hkey = self.sizer_setting_hotkey.GetStaticBox()
         self.cb_hotkey = wx.CheckBox(statbox_parent_hkey, -1, "Bind a hotkey to this profile")
         st_hotkey_bind = wx.StaticText(statbox_parent_hkey, -1, "Hotkey to bind:")
+        st_hotkey_bind.Disable()
         self.tc_hotkey_bind = wx.TextCtrl(statbox_parent_hkey, -1, size=(self.tc_width, -1))
         self.tc_hotkey_bind.Disable()
         self.hotkey_bind_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -209,18 +214,35 @@ class WallpaperSettingsPanel(wx.Panel):
             statbox_parent_bezels, -1,
             "Bezel pair thicknesses, incl. gap (millimeters):"
         )
+        st_bezels.Disable()
         self.sizer_setting_bezels.Add(self.cb_bezels, 0, wx.ALIGN_LEFT|wx.ALL, 5)
         self.sizer_setting_bezels.Add(st_bezels, 0, wx.ALIGN_LEFT|wx.ALL, 5)
-        tc_list_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        tc_list_sizer_bez = wx.BoxSizer(wx.HORIZONTAL)
         self.tc_list_bezels = self.list_of_textctrl(statbox_parent_bezels, wpproc.NUM_DISPLAYS-1)
         for tc in self.tc_list_bezels:
-            tc_list_sizer.Add(tc, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+            tc_list_sizer_bez.Add(tc, 0, wx.ALIGN_LEFT|wx.ALL, 5)
             tc.Disable()
-        self.sizer_setting_bezels.Add(tc_list_sizer, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        self.sizer_setting_bezels.Add(tc_list_sizer_bez, 0, wx.ALIGN_LEFT|wx.ALL, 5)
 
         # Offsets
         self.sizer_setting_offsets = wx.StaticBoxSizer(wx.VERTICAL, self, "Manual Display Offsets")
         statbox_parent_offsets = self.sizer_setting_offsets.GetStaticBox()
+        self.cb_offsets = wx.CheckBox(statbox_parent_offsets, -1, "Apply Manual Offsets")
+        self.cb_offsets.Bind(wx.EVT_CHECKBOX, self.onCheckboxOffsets)
+        st_offsets = wx.StaticText(
+            statbox_parent_offsets, -1,
+            "Manual wallpaper offsets/panning in pixels (x,y=px,px):"
+        )
+        st_offsets.Disable()
+        self.sizer_setting_offsets.Add(self.cb_offsets, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        self.sizer_setting_offsets.Add(st_offsets, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        tc_list_sizer_offs = wx.BoxSizer(wx.HORIZONTAL)
+        self.tc_list_offsets = self.list_of_textctrl(statbox_parent_offsets, wpproc.NUM_DISPLAYS)
+        for tc in self.tc_list_offsets:
+            tc_list_sizer_offs.Add(tc, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+            tc.SetValue("0,0")
+            tc.Disable()
+        self.sizer_setting_offsets.Add(tc_list_sizer_offs, 0, wx.ALIGN_LEFT|wx.ALL, 5)
 
         # Add setting subsizers to the adv settings sizer
         self.sizer_setting_adv.Add(self.sizer_setting_diaginch, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
@@ -232,7 +254,23 @@ class WallpaperSettingsPanel(wx.Panel):
     def create_sizer_diaginch_override(self):
         self.sizer_setting_diaginch.Clear(True)
         statbox_parent_diaginch = self.sizer_setting_diaginch.GetStaticBox()
-
+        self.cb_diaginch = wx.CheckBox(statbox_parent_diaginch, -1, "Input Display Sizes Manually")
+        self.cb_diaginch.Bind(wx.EVT_CHECKBOX, self.onCheckboxDiaginch)
+        st_diaginch = wx.StaticText(
+            statbox_parent_diaginch, -1,
+            "Display diagonal sizes (inches):"
+        )
+        st_diaginch.Disable()
+        self.sizer_setting_diaginch.Add(self.cb_diaginch, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        self.sizer_setting_diaginch.Add(st_diaginch, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        tc_list_sizer_diag = wx.BoxSizer(wx.HORIZONTAL)
+        self.tc_list_diaginch = self.list_of_textctrl(statbox_parent_diaginch, wpproc.NUM_DISPLAYS)
+        for tc in self.tc_list_diaginch:
+            tc_list_sizer_diag.Add(tc, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+            tc.Disable()
+        self.sizer_setting_diaginch.Add(tc_list_sizer_diag, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        self.sizer_setting_adv.Layout()
+        self.sizer_main.Fit(self.frame)
 
     def create_sizer_bottom_buttonrow(self):
         self.button_help = wx.Button(self, label="Help")
@@ -264,7 +302,6 @@ class WallpaperSettingsPanel(wx.Panel):
         self.choice_profiles.SetItems(self.profnames)
 
     def list_of_textctrl(self, ctrl_parent, num_disp):
-        print("num_disp = ", num_disp)
         tcrtl_list = []
         for i in range(num_disp):
             tcrtl_list.append(
@@ -272,22 +309,48 @@ class WallpaperSettingsPanel(wx.Panel):
             )
         return tcrtl_list
 
-
+    def sizer_toggle_children(self, sizer, bool_state):
+        for child in sizer.GetChildren():
+            if child.IsSizer():
+                self.sizer_toggle_children(child.GetSizer(), bool_state)
+            else:
+                widget = child.GetWindow()
+                if (
+                    isinstance(widget, wx.TextCtrl) or
+                    isinstance(widget, wx.StaticText) or
+                    isinstance(widget, wx.Choice)
+                ):
+                    widget.Enable(bool_state)
 
     #
     # Event methods
     #
     def onCheckboxSlideshow(self, event):
         cb_state = self.cb_slideshow.GetValue()
-        self.tc_sshow_delay.Enable(cb_state)
-        self.ch_sshow_sort.Enable(cb_state)
+        sizer = self.sizer_setting_slideshow
+        self.sizer_toggle_children(sizer, cb_state)
 
     def onCheckboxHotkey(self, event):
         cb_state = self.cb_hotkey.GetValue()
-        self.tc_hotkey_bind.Enable(cb_state)
+        sizer = self.hotkey_bind_sizer
+        self.sizer_toggle_children(sizer, cb_state)
+
 
     def onCheckboxBezels(self, event):
         cb_state = self.cb_bezels.GetValue()
+        sizer = self.sizer_setting_bezels
+        self.sizer_toggle_children(sizer, cb_state)
+
+    def onCheckboxOffsets(self, event):
+        cb_state = self.cb_offsets.GetValue()
+        sizer = self.sizer_setting_offsets
+        self.sizer_toggle_children(sizer, cb_state)
+
+    def onCheckboxDiaginch(self, event):
+        cb_state = self.cb_diaginch.GetValue()
+        sizer = self.sizer_setting_diaginch
+        self.sizer_toggle_children(sizer, cb_state)
+
 
     #
     # Top level button definitions
