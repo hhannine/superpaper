@@ -44,7 +44,7 @@ class WallpaperSettingsPanel(wx.Panel):
         self.sizer_profiles = wx.BoxSizer(wx.HORIZONTAL)
         self.sizer_setting_sizers = wx.BoxSizer(wx.HORIZONTAL)
         self.sizer_settings_left = wx.BoxSizer(wx.VERTICAL)
-        self.sizer_settings_right = wx.BoxSizer(wx.VERTICAL)
+        self.sizer_settings_right = wx.BoxSizer(wx.HORIZONTAL)
         # bottom_half: bottom button row
         self.sizer_bottom_buttonrow = wx.BoxSizer(wx.HORIZONTAL)
         # settings GUI properties
@@ -185,9 +185,37 @@ class WallpaperSettingsPanel(wx.Panel):
         # self.sizer_settings_right.Add(self.sizer_setting_, 0, wx.CENTER|wx.EXPAND)
 
         # paths sizer contents
-        self.sizer_setting_paths = wx.StaticBoxSizer(wx.VERTICAL, self, "Wallpaper Paths")
+        self.create_sizer_paths()
 
-        self.sizer_settings_right.Add(self.sizer_setting_paths, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+    def create_sizer_paths(self):
+        self.sizer_setting_paths = wx.StaticBoxSizer(wx.VERTICAL, self, "Wallpaper Paths")
+        statbox_parent_paths = self.sizer_setting_paths.GetStaticBox()
+        self.path_listctrl = wx.ListCtrl(statbox_parent_paths, -1,
+                                         style=wx.LC_REPORT
+                                         #| wx.BORDER_SUNKEN
+                                        # | wx.BORDER_NONE
+                                         | wx.LC_EDIT_LABELS
+                                         | wx.LC_SORT_ASCENDING
+                                         #| wx.LC_NO_HEADER
+                                         #| wx.LC_VRULES
+                                         #| wx.LC_HRULES
+                                         #| wx.LC_SINGLE_SEL
+                                        )
+        self.sizer_setting_paths.Add(self.path_listctrl, 1, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        # Buttons
+        self.sizer_setting_paths_buttons = wx.BoxSizer(wx.HORIZONTAL)
+        self.button_browse = wx.Button(statbox_parent_paths, label="Browse")
+        self.button_remove_source = wx.Button(statbox_parent_paths, label="Remove selected source")
+        self.sizer_setting_paths_buttons.Add(self.button_browse, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_setting_paths_buttons.Add(self.button_remove_source, 0, wx.CENTER|wx.ALL, 5)
+        # add button sizer to parent paths sizer
+        self.sizer_setting_paths.Add(self.sizer_setting_paths_buttons, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+
+
+        # Default span mode is simple span so the initial ListCtrl
+        # should have only one column
+
+        self.sizer_settings_right.Add(self.sizer_setting_paths, 1, wx.CENTER|wx.EXPAND|wx.ALL, 5)
 
     def create_sizer_settings_advanced(self):
         self.sizer_setting_adv = wx.StaticBoxSizer(wx.VERTICAL, self, "Advanced Wallpaper Adjustment")
@@ -200,7 +228,7 @@ class WallpaperSettingsPanel(wx.Panel):
             statbox_parent_diaginch, -1,
             "Manual display size input:"
         )
-        self.button_override = wx.Button(statbox_parent_diaginch, label="Override Detected Sizes")
+        self.button_override = wx.Button(statbox_parent_diaginch, label="Override detected sizes")
         self.button_override.Bind(wx.EVT_BUTTON, self.onOverrideSizes)
         self.sizer_setting_diaginch.Add(st_diaginch_override, 0, wx.CENTER|wx.ALL, 5)
         self.sizer_setting_diaginch.Add(self.button_override, 0, wx.CENTER|wx.ALL, 5)
@@ -208,7 +236,7 @@ class WallpaperSettingsPanel(wx.Panel):
         # Bezels
         self.sizer_setting_bezels = wx.StaticBoxSizer(wx.VERTICAL, self, "Bezel Correction")
         statbox_parent_bezels = self.sizer_setting_bezels.GetStaticBox()
-        self.cb_bezels = wx.CheckBox(statbox_parent_bezels, -1, "Apply Bezel Correction")
+        self.cb_bezels = wx.CheckBox(statbox_parent_bezels, -1, "Apply bezel correction")
         self.cb_bezels.Bind(wx.EVT_CHECKBOX, self.onCheckboxBezels)
         st_bezels = wx.StaticText(
             statbox_parent_bezels, -1,
@@ -227,7 +255,7 @@ class WallpaperSettingsPanel(wx.Panel):
         # Offsets
         self.sizer_setting_offsets = wx.StaticBoxSizer(wx.VERTICAL, self, "Manual Display Offsets")
         statbox_parent_offsets = self.sizer_setting_offsets.GetStaticBox()
-        self.cb_offsets = wx.CheckBox(statbox_parent_offsets, -1, "Apply Manual Offsets")
+        self.cb_offsets = wx.CheckBox(statbox_parent_offsets, -1, "Apply manual offsets")
         self.cb_offsets.Bind(wx.EVT_CHECKBOX, self.onCheckboxOffsets)
         st_offsets = wx.StaticText(
             statbox_parent_offsets, -1,
@@ -249,12 +277,12 @@ class WallpaperSettingsPanel(wx.Panel):
         self.sizer_setting_adv.Add(self.sizer_setting_bezels, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
         self.sizer_setting_adv.Add(self.sizer_setting_offsets, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
 
-        self.sizer_settings_right.Add(self.sizer_setting_adv, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        self.sizer_settings_right.Add(self.sizer_setting_adv, 1, wx.CENTER|wx.EXPAND|wx.ALL, 5)
 
     def create_sizer_diaginch_override(self):
         self.sizer_setting_diaginch.Clear(True)
         statbox_parent_diaginch = self.sizer_setting_diaginch.GetStaticBox()
-        self.cb_diaginch = wx.CheckBox(statbox_parent_diaginch, -1, "Input Display Sizes Manually")
+        self.cb_diaginch = wx.CheckBox(statbox_parent_diaginch, -1, "Input display sizes manually")
         self.cb_diaginch.Bind(wx.EVT_CHECKBOX, self.onCheckboxDiaginch)
         st_diaginch = wx.StaticText(
             statbox_parent_diaginch, -1,
