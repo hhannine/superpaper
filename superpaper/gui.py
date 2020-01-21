@@ -5,10 +5,11 @@ import os
 
 import superpaper.sp_logging as sp_logging
 import superpaper.wallpaper_processing as wpproc
+from superpaper.configuration_dialogs import BrowsePaths, HelpFrame
 from superpaper.data import GeneralSettingsData, ProfileData, TempProfileData, CLIProfileData, list_profiles
 from superpaper.message_dialog import show_message_dialog
-from superpaper.wallpaper_processing import NUM_DISPLAYS, get_display_data, change_wallpaper_job
 from superpaper.sp_paths import PATH, CONFIG_PATH, PROFILES_PATH
+from superpaper.wallpaper_processing import NUM_DISPLAYS, get_display_data, change_wallpaper_job
 
 try:
     import wx
@@ -190,22 +191,35 @@ class WallpaperSettingsPanel(wx.Panel):
     def create_sizer_paths(self):
         self.sizer_setting_paths = wx.StaticBoxSizer(wx.VERTICAL, self, "Wallpaper Paths")
         statbox_parent_paths = self.sizer_setting_paths.GetStaticBox()
+        st_paths_info = wx.StaticText(statbox_parent_paths, -1, "Browse to add your wallpaper files or source folders here:")
         self.path_listctrl = wx.ListCtrl(statbox_parent_paths, -1,
                                          style=wx.LC_REPORT
-                                         #| wx.BORDER_SUNKEN
-                                        # | wx.BORDER_NONE
-                                         | wx.LC_EDIT_LABELS
+                                        #  | wx.BORDER_SUNKEN
+                                         | wx.BORDER_SIMPLE
+                                        #  | wx.BORDER_STATIC
+                                        #  | wx.BORDER_THEME
+                                        #  | wx.BORDER_NONE
+                                        #  | wx.LC_EDIT_LABELS
                                          | wx.LC_SORT_ASCENDING
-                                         #| wx.LC_NO_HEADER
-                                         #| wx.LC_VRULES
-                                         #| wx.LC_HRULES
-                                         #| wx.LC_SINGLE_SEL
+                                        #  | wx.LC_NO_HEADER
+                                        #  | wx.LC_VRULES
+                                        #  | wx.LC_HRULES
+                                        #  | wx.LC_SINGLE_SEL
                                         )
+        test_src = [("0", "path1"), ("0", "image1"), ("1", "image2")]
+        self.path_listctrl.InsertColumn(0, 'Display', wx.LIST_FORMAT_RIGHT, width = 100)
+        self.path_listctrl.InsertColumn(1, 'Source')
+        for i in test_src:
+            index = self.path_listctrl.InsertItem(test_src.index(i), i[0])
+            self.path_listctrl.SetItem(index, 1, i[1])
+        self.sizer_setting_paths.Add(st_paths_info, 0, wx.ALIGN_LEFT|wx.ALL, 5)
         self.sizer_setting_paths.Add(self.path_listctrl, 1, wx.CENTER|wx.EXPAND|wx.ALL, 5)
         # Buttons
         self.sizer_setting_paths_buttons = wx.BoxSizer(wx.HORIZONTAL)
         self.button_browse = wx.Button(statbox_parent_paths, label="Browse")
         self.button_remove_source = wx.Button(statbox_parent_paths, label="Remove selected source")
+        self.button_browse.Bind(wx.EVT_BUTTON, self.onBrowsePaths)
+        self.button_remove_source.Bind(wx.EVT_BUTTON, self.onRemoveSource)
         self.sizer_setting_paths_buttons.Add(self.button_browse, 0, wx.CENTER|wx.ALL, 5)
         self.sizer_setting_paths_buttons.Add(self.button_remove_source, 0, wx.CENTER|wx.ALL, 5)
         # add button sizer to parent paths sizer
@@ -386,6 +400,14 @@ class WallpaperSettingsPanel(wx.Panel):
     def onOverrideSizes(self, event):
         self.create_sizer_diaginch_override()
 
+    def onBrowsePaths(self, event):
+        """Opens the pick paths dialog."""
+        dlg = BrowsePaths(None, self, event)
+        dlg.ShowModal()
+
+    def onRemoveSource(self, event):
+        """Removes selection from wallpaper source ListCtrl."""
+        pass
 
     def onClose(self, event):
         """Closes the profile config panel."""
