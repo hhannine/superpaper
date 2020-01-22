@@ -402,8 +402,11 @@ class WallpaperSettingsPanel(wx.Panel):
 
     def onBrowsePaths(self, event):
         """Opens the pick paths dialog."""
-        dlg = BrowsePaths(None, self, event)
-        dlg.ShowModal()
+        dlg = BrowsePaths(self, self.show_advanced_settings)
+        res = dlg.ShowModal()
+        if res == wx.ID_OK:
+            self.path_list_data = dlg.path_list_data
+        dlg.Destroy()
 
     def onRemoveSource(self, event):
         """Removes selection from wallpaper source ListCtrl."""

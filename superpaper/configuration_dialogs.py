@@ -4,6 +4,7 @@ GUI dialogs for Superpaper.
 import os
 
 import superpaper.sp_logging as sp_logging
+import superpaper.wallpaper_processing as wpproc
 from superpaper.data import GeneralSettingsData, ProfileData, TempProfileData, CLIProfileData, list_profiles
 from superpaper.message_dialog import show_message_dialog
 from superpaper.wallpaper_processing import NUM_DISPLAYS, get_display_data, change_wallpaper_job
@@ -446,23 +447,44 @@ display, serparated by a semicolon ';'."
 
 class BrowsePaths(wx.Dialog):
     """Path picker dialog class."""
-    def __init__(self, parent, parent_self, parent_event):
-        wx.Dialog.__init__(self, parent, -1, 'Choose Image Source Directories', size=(500, 700))
-        self.parent_self = parent_self
-        self.parent_event = parent_event
+    def __init__(self, parent, show_adv):
+        wx.Dialog.__init__(self, parent, -1, 'Choose image source directories or image files', size=(700, 800))
+        # self.show_adv = show_adv
+        self.show_adv = True
+        self.path_list_data = []
         self.paths = []
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_browse = wx.BoxSizer(wx.VERTICAL)
-        sizer_textfield = wx.BoxSizer(wx.VERTICAL)
+        self.sizer_paths_list = wx.BoxSizer(wx.VERTICAL)
         sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
         self.dir3 = wx.GenericDirCtrl(self, -1,
-                                      size=(450, 550))
-        sizer_browse.Add(self.dir3, 0, wx.CENTER|wx.ALL|wx.EXPAND, 5)
-        self.tc_paths = wx.TextCtrl(self, -1, size=(450, -1))
-        sizer_textfield.Add(self.tc_paths, 0, wx.CENTER|wx.ALL, 5)
+                                    #   size=(450, 550)
+                                      )
+        sizer_browse.Add(self.dir3, 1, wx.CENTER|wx.ALL|wx.EXPAND, 5)
+        st_paths_list = wx.StaticText(
+            self, -1,
+            "Selected wallpaper source directories and files:"
+        )
+        self.sizer_paths_list.Add(st_paths_list, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        self.create_paths_listctrl(self.show_adv)
 
-        self.button_add = wx.Button(self, label="Add")
-        self.button_remove = wx.Button(self, label="Remove")
+        if self.show_adv:
+            sizer_radio = wx.BoxSizer(wx.VERTICAL)
+            st_radio = wx.StaticText(
+                self, -1,
+                "Select display to add sources to:"
+            )
+            radio_choices_displays = ["Display {}".format(i) for i in range(wpproc.NUM_DISPLAYS)]
+            self.radiobox_spanmode = wx.RadioBox(self, wx.ID_ANY,
+                                                 choices=radio_choices_displays,
+                                                 style=wx.RA_HORIZONTAL
+                                                )
+            sizer_radio.Add(st_radio, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+            sizer_radio.Add(self.radiobox_spanmode, 0, wx.CENTER|wx.ALL|wx.EXPAND, 5)
+
+
+        self.button_add = wx.Button(self, label="Add source")
+        self.button_remove = wx.Button(self, label="Remove source")
         self.button_ok = wx.Button(self, label="Ok")
         self.button_cancel = wx.Button(self, label="Cancel")
 
@@ -473,52 +495,102 @@ class BrowsePaths(wx.Dialog):
 
         sizer_buttons.Add(self.button_add, 0, wx.CENTER|wx.ALL, 5)
         sizer_buttons.Add(self.button_remove, 0, wx.CENTER|wx.ALL, 5)
+        sizer_buttons.AddStretchSpacer()
         sizer_buttons.Add(self.button_ok, 0, wx.CENTER|wx.ALL, 5)
         sizer_buttons.Add(self.button_cancel, 0, wx.CENTER|wx.ALL, 5)
 
-        sizer_main.Add(sizer_browse, 5, wx.ALL|wx.ALIGN_CENTER|wx.EXPAND)
-        sizer_main.Add(sizer_textfield, 5, wx.ALL|wx.ALIGN_CENTER)
-        sizer_main.Add(sizer_buttons, 5, wx.ALL|wx.ALIGN_CENTER)
+        sizer_main.Add(sizer_browse, 1, wx.ALL|wx.ALIGN_CENTER|wx.EXPAND)
+        sizer_main.Add(self.sizer_paths_list, 0, wx.ALL|wx.ALIGN_CENTER)
+        if self.show_adv:
+            sizer_main.Add(sizer_radio, 0, wx.ALL|wx.ALIGN_CENTER|wx.EXPAND, 5)
+        sizer_main.Add(sizer_buttons, 0, wx.ALL|wx.EXPAND, 5)
         self.SetSizer(sizer_main)
         self.SetAutoLayout(True)
 
+    def create_paths_listctrl(self, show_adv):
+        if show_adv:
+            self.paths_listctrl = wx.ListCtrl(self, -1,
+                                              size=(690, 160),
+                                              style=wx.LC_REPORT
+                                              #  | wx.BORDER_SUNKEN
+                                              | wx.BORDER_SIMPLE
+                                              #  | wx.BORDER_STATIC
+                                              #  | wx.BORDER_THEME
+                                              #  | wx.BORDER_NONE
+                                              #  | wx.LC_EDIT_LABELS
+                                              | wx.LC_SORT_ASCENDING
+                                              #  | wx.LC_NO_HEADER
+                                              #  | wx.LC_VRULES
+                                              #  | wx.LC_HRULES
+                                              #  | wx.LC_SINGLE_SEL
+                                             )
+            self.paths_listctrl.InsertColumn(0, 'Display', wx.LIST_FORMAT_RIGHT, width = 100)
+            self.paths_listctrl.InsertColumn(1, 'Source')
+        else:
+            # show simpler listing without header if only one wallpaper target
+            self.paths_listctrl = wx.ListCtrl(self, -1,
+                                              size=(690, 160),
+                                              style=wx.LC_REPORT
+                                              #  | wx.BORDER_SUNKEN
+                                              | wx.BORDER_SIMPLE
+                                              #  | wx.BORDER_STATIC
+                                              #  | wx.BORDER_THEME
+                                              #  | wx.BORDER_NONE
+                                              #  | wx.LC_EDIT_LABELS
+                                              #  | wx.LC_SORT_ASCENDING
+                                              | wx.LC_NO_HEADER
+                                              #  | wx.LC_VRULES
+                                              #  | wx.LC_HRULES
+                                              #  | wx.LC_SINGLE_SEL
+                                             )
+
+
+        self.sizer_paths_list.Add(self.paths_listctrl, 0, wx.CENTER|wx.ALL|wx.EXPAND, 5)
+
+
+
     def onAdd(self, event):
         """Adds selected path to export field."""
-        text_field = self.tc_paths.GetLineText(0)
-        new_path = self.dir3.GetPath()
-        self.paths.append(new_path)
-        if text_field == "":
-            text_field = new_path
-        else:
-            text_field = ";".join([text_field, new_path])
-        self.tc_paths.SetValue(text_field)
-        self.tc_paths.SetInsertionPointEnd()
+        # text_field = self.tc_paths.GetLineText(0)
+        # new_path = self.dir3.GetPath()
+        # self.paths.append(new_path)
+        # if text_field == "":
+        #     text_field = new_path
+        # else:
+        #     text_field = ";".join([text_field, new_path])
+        # self.tc_paths.SetValue(text_field)
+        # self.tc_paths.SetInsertionPointEnd()
+        pass
 
     def onRemove(self, event):
         """Removes last appended path from export field."""
-        if len(self.paths) > 0:
-            del self.paths[-1]
-            text_field = ";".join(self.paths)
-            self.tc_paths.SetValue(text_field)
-            self.tc_paths.SetInsertionPointEnd()
+        # TODO remove btn should be disabled if not in valid selection
+        pass
+        # if len(self.paths) > 0:
+        #     del self.paths[-1]
+        #     text_field = ";".join(self.paths)
+        #     self.tc_paths.SetValue(text_field)
+        #     self.tc_paths.SetInsertionPointEnd()
 
     def onOk(self, event):
         """Exports path to parent Profile Config dialog."""
-        paths_string = self.tc_paths.GetLineText(0)
-        # If paths textctrl is empty, assume user wants current selection.
-        if paths_string == "":
-            paths_string = self.dir3.GetPath()
-        button_obj = self.parent_event.GetEventObject()
-        button_name = button_obj.GetName()
-        button_id = int(button_name.split("-")[1])
-        text_field = self.parent_self.paths_controls[button_id]
-        old_text = text_field.GetLineText(0)
-        if old_text == "":
-            new_text = paths_string
-        else:
-            new_text = old_text + ";" + paths_string
-        text_field.ChangeValue(new_text)
-        self.Destroy()
+        # paths_string = self.tc_paths.GetLineText(0)
+        # # If paths textctrl is empty, assume user wants current selection.
+        # if paths_string == "":
+        #     paths_string = self.dir3.GetPath()
+        # button_obj = self.parent_event.GetEventObject()
+        # button_name = button_obj.GetName()
+        # button_id = int(button_name.split("-")[1])
+        # text_field = self.parent_self.paths_controls[button_id]
+        # old_text = text_field.GetLineText(0)
+        # if old_text == "":
+        #     new_text = paths_string
+        # else:
+        #     new_text = old_text + ";" + paths_string
+        # text_field.ChangeValue(new_text)
+
+        # if listctrl is empty, onOk maybe could pass on the selected item? or disable OK if list is empty?
+        return wx.ID_OK
 
     def onCancel(self, event):
         """Closes path picker, throwing away selections."""
