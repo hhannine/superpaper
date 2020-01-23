@@ -448,9 +448,13 @@ display, serparated by a semicolon ';'."
 class BrowsePaths(wx.Dialog):
     """Path picker dialog class."""
     def __init__(self, parent, show_adv):
-        wx.Dialog.__init__(self, parent, -1, 'Choose image source directories or image files', size=(700, 800))
+        wx.Dialog.__init__(self, parent, -1, 'Choose image source directories or image files', size=(750, 850))
+        BMP_SIZE = 24
+        self.tsize = (BMP_SIZE, BMP_SIZE)
+        self.il = wx.ImageList(BMP_SIZE, BMP_SIZE)
         # self.show_adv = show_adv
         self.show_adv = True
+        # self.show_adv = False
         self.path_list_data = []
         self.paths = []
         sizer_main = wx.BoxSizer(wx.VERTICAL)
@@ -458,7 +462,10 @@ class BrowsePaths(wx.Dialog):
         self.sizer_paths_list = wx.BoxSizer(wx.VERTICAL)
         sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
         self.dir3 = wx.GenericDirCtrl(self, -1,
-                                    #   size=(450, 550)
+                                    #   size=(450, 550),
+                                    #   style=wx.DIRCTRL_SHOW_FILTERS|wx.DIRCTRL_MULTIPLE,
+                                    #   style=wx.DIRCTRL_MULTIPLE,
+                                      filter="Image files (*.jpg, *.png)|*.jpg;*.png"
                                       )
         sizer_browse.Add(self.dir3, 1, wx.CENTER|wx.ALL|wx.EXPAND, 5)
         st_paths_list = wx.StaticText(
@@ -470,17 +477,13 @@ class BrowsePaths(wx.Dialog):
 
         if self.show_adv:
             sizer_radio = wx.BoxSizer(wx.VERTICAL)
-            st_radio = wx.StaticText(
-                self, -1,
-                "Select display to add sources to:"
-            )
             radio_choices_displays = ["Display {}".format(i) for i in range(wpproc.NUM_DISPLAYS)]
-            self.radiobox_spanmode = wx.RadioBox(self, wx.ID_ANY,
+            self.radiobox_displays = wx.RadioBox(self, wx.ID_ANY,
+                                                 label="Select display to add sources to",
                                                  choices=radio_choices_displays,
                                                  style=wx.RA_HORIZONTAL
                                                 )
-            sizer_radio.Add(st_radio, 0, wx.ALIGN_LEFT|wx.ALL, 5)
-            sizer_radio.Add(self.radiobox_spanmode, 0, wx.CENTER|wx.ALL|wx.EXPAND, 5)
+            sizer_radio.Add(self.radiobox_displays, 0, wx.CENTER|wx.ALL|wx.EXPAND, 5)
 
 
         self.button_add = wx.Button(self, label="Add source")
@@ -510,7 +513,7 @@ class BrowsePaths(wx.Dialog):
     def create_paths_listctrl(self, show_adv):
         if show_adv:
             self.paths_listctrl = wx.ListCtrl(self, -1,
-                                              size=(690, 160),
+                                              size=(740, 160),
                                               style=wx.LC_REPORT
                                               #  | wx.BORDER_SUNKEN
                                               | wx.BORDER_SIMPLE
@@ -525,11 +528,11 @@ class BrowsePaths(wx.Dialog):
                                               #  | wx.LC_SINGLE_SEL
                                              )
             self.paths_listctrl.InsertColumn(0, 'Display', wx.LIST_FORMAT_RIGHT, width = 100)
-            self.paths_listctrl.InsertColumn(1, 'Source')
+            self.paths_listctrl.InsertColumn(1, 'Source', width = 600)
         else:
             # show simpler listing without header if only one wallpaper target
             self.paths_listctrl = wx.ListCtrl(self, -1,
-                                              size=(690, 160),
+                                              size=(740, 160),
                                               style=wx.LC_REPORT
                                               #  | wx.BORDER_SUNKEN
                                               | wx.BORDER_SIMPLE
@@ -543,24 +546,45 @@ class BrowsePaths(wx.Dialog):
                                               #  | wx.LC_HRULES
                                               #  | wx.LC_SINGLE_SEL
                                              )
+            self.paths_listctrl.InsertColumn(0, 'Source', width = 700)
 
+        # Add the item list to the control
+        self.paths_listctrl.SetImageList(self.il, wx.IMAGE_LIST_SMALL)
 
         self.sizer_paths_list.Add(self.paths_listctrl, 0, wx.CENTER|wx.ALL|wx.EXPAND, 5)
 
+    def append_to_listctrl(self, data_row):
+        if self.show_adv:
+            img_id = self.add_to_imagelist(data_row[1])
+            index = self.paths_listctrl.InsertItem(self.paths_listctrl.GetItemCount(), data_row[0], img_id)
+            self.paths_listctrl.SetItem(index, 1, data_row[1])
+        else:
+            img_id = self.add_to_imagelist(data_row[0])
+            index = self.paths_listctrl.InsertItem(self.paths_listctrl.GetItemCount(), data_row[0], img_id)
+            # self.paths_listctrl.SetItem(index, 1, data[1])
+
+    def add_to_imagelist(self, path):
+        folder_bmp =  wx.ArtProvider.GetBitmap(wx.ART_FOLDER, wx.ART_TOOLBAR, self.tsize)
+        file_bmp =  wx.ArtProvider.GetBitmap(wx.ART_NORMAL_FILE, wx.ART_TOOLBAR, self.tsize)
+        if os.path.isdir(path):
+            img_id = self.il.Add(folder_bmp)
+        else:
+            img_id = self.il.Add(file_bmp)
+        return img_id
 
 
     def onAdd(self, event):
         """Adds selected path to export field."""
-        # text_field = self.tc_paths.GetLineText(0)
-        # new_path = self.dir3.GetPath()
-        # self.paths.append(new_path)
-        # if text_field == "":
-        #     text_field = new_path
-        # else:
-        #     text_field = ";".join([text_field, new_path])
-        # self.tc_paths.SetValue(text_field)
-        # self.tc_paths.SetInsertionPointEnd()
-        pass
+        path_data_tuples = []
+        sel_path = self.dir3.GetPath()
+        # self.dir3.GetPaths(paths) # could use this to be more efficient but it does not will the list
+        print(sel_path)
+        if self.show_adv:
+            # Extra column in advanced mode
+            disp_id = str(self.radiobox_displays.GetSelection())
+            self.append_to_listctrl([disp_id, sel_path])
+        else:
+            self.append_to_listctrl([sel_path])
 
     def onRemove(self, event):
         """Removes last appended path from export field."""

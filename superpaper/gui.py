@@ -406,6 +406,7 @@ class WallpaperSettingsPanel(wx.Panel):
         res = dlg.ShowModal()
         if res == wx.ID_OK:
             self.path_list_data = dlg.path_list_data
+            self.image_list = dlg.il
         dlg.Destroy()
 
     def onRemoveSource(self, event):
