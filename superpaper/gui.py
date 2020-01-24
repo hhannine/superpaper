@@ -51,6 +51,10 @@ class WallpaperSettingsPanel(wx.Panel):
         # settings GUI properties
         self.tc_width = 160  # standard width for wx.TextCtrl etc elements.
         self.show_advanced_settings = False
+        self.use_multiple_image = False
+        BMP_SIZE = 32
+        self.tsize = (BMP_SIZE, BMP_SIZE)
+        self.image_list = wx.ImageList(BMP_SIZE, BMP_SIZE)
 
         # top half
         self.wpprev_pnl = WallpaperPreviewPanel(self.frame)
@@ -64,6 +68,8 @@ class WallpaperSettingsPanel(wx.Panel):
         # settings sizer left contents
         self.create_sizer_settings_left()
 
+        self.create_sizer_settings_advanced()
+
         # settings sizer right contents
         self.create_sizer_settings_right()
 
@@ -75,6 +81,9 @@ class WallpaperSettingsPanel(wx.Panel):
         #    Note: horizontal sizer needs children to have proportion = 1
         #    in order to expand them horizontally instead of vertically.
         self.sizer_setting_sizers.Add(self.sizer_settings_left, 1, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        self.sizer_setting_sizers.Add(self.sizer_setting_adv, 1, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        self.sizer_setting_sizers.Hide(self.sizer_setting_adv)
+        self.sizer_setting_sizers.Layout()
         self.sizer_setting_sizers.Add(self.sizer_settings_right, 1, wx.CENTER|wx.EXPAND|wx.ALL, 5)
 
         self.sizer_bottom_half.Add(self.sizer_profiles, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
@@ -125,13 +134,16 @@ class WallpaperSettingsPanel(wx.Panel):
 
     def create_sizer_settings_left(self):
         # span mode sizer
-        self.sizer_setting_span_mode = wx.StaticBoxSizer(wx.VERTICAL, self, "Span Mode")
+        # self.sizer_setting_span_mode = wx.StaticBoxSizer(wx.VERTICAL, self, "Span Mode")
         radio_choices_spanmode = ["Simple span", "Advanced span", "Separate image for every display"]
-        self.radiobox_spanmode = wx.RadioBox(self, wx.ID_ANY, 
-                                             choices=radio_choices_spanmode,
-                                             style=wx.RA_VERTICAL 
-                                            )
-        self.sizer_setting_span_mode.Add(self.radiobox_spanmode, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        self.radiobox_spanmode = wx.RadioBox(
+            self, wx.ID_ANY,
+            label="Span mode",
+            choices=radio_choices_spanmode,
+            style=wx.RA_VERTICAL
+        )
+        self.radiobox_spanmode.Bind(wx.EVT_RADIOBOX, self.onSpanRadio)
+        # self.sizer_setting_span_mode.Add(self.radiobox_spanmode, 0, wx.ALIGN_LEFT|wx.ALL, 5)
 
         # slideshow sizer
         self.sizer_setting_slideshow = wx.StaticBoxSizer(wx.VERTICAL, self, "Wallpaper Slideshow")
@@ -174,50 +186,42 @@ class WallpaperSettingsPanel(wx.Panel):
 
 
         # Add subsizers to the left column sizer
-        self.sizer_settings_left.Add(self.sizer_setting_span_mode, 0, wx.CENTER|wx.EXPAND, 5)
+        self.sizer_settings_left.Add(self.radiobox_spanmode, 0, wx.CENTER|wx.EXPAND, 5)
         self.sizer_settings_left.Add(self.sizer_setting_slideshow, 0, wx.CENTER|wx.EXPAND, 5)
         self.sizer_settings_left.Add(self.sizer_setting_hotkey, 0, wx.CENTER|wx.EXPAND, 5)
 
     def create_sizer_settings_right(self):
-        # TODO Some settings in the right column are CONDITIONAL: bezel corr, maybe diag inches?
-        # bezel correction TODO don't show if span mode is multi image or simple span.
-        if True:
-            self.create_sizer_settings_advanced()
-        # self.sizer_settings_right.Add(self.sizer_setting_, 0, wx.CENTER|wx.EXPAND)
-
         # paths sizer contents
         self.create_sizer_paths()
 
     def create_sizer_paths(self):
         self.sizer_setting_paths = wx.StaticBoxSizer(wx.VERTICAL, self, "Wallpaper Paths")
-        statbox_parent_paths = self.sizer_setting_paths.GetStaticBox()
-        st_paths_info = wx.StaticText(statbox_parent_paths, -1, "Browse to add your wallpaper files or source folders here:")
-        self.path_listctrl = wx.ListCtrl(statbox_parent_paths, -1,
-                                         style=wx.LC_REPORT
-                                        #  | wx.BORDER_SUNKEN
-                                         | wx.BORDER_SIMPLE
-                                        #  | wx.BORDER_STATIC
-                                        #  | wx.BORDER_THEME
-                                        #  | wx.BORDER_NONE
-                                        #  | wx.LC_EDIT_LABELS
-                                         | wx.LC_SORT_ASCENDING
-                                        #  | wx.LC_NO_HEADER
-                                        #  | wx.LC_VRULES
-                                        #  | wx.LC_HRULES
-                                        #  | wx.LC_SINGLE_SEL
-                                        )
-        test_src = [("0", "path1"), ("0", "image1"), ("1", "image2")]
-        self.path_listctrl.InsertColumn(0, 'Display', wx.LIST_FORMAT_RIGHT, width = 100)
-        self.path_listctrl.InsertColumn(1, 'Source')
-        for i in test_src:
-            index = self.path_listctrl.InsertItem(test_src.index(i), i[0])
-            self.path_listctrl.SetItem(index, 1, i[1])
+        self.statbox_parent_paths = self.sizer_setting_paths.GetStaticBox()
+        st_paths_info = wx.StaticText(self.statbox_parent_paths, -1, "Browse to add your wallpaper files or source folders here:")
+        if self.use_multiple_image:
+            self.path_listctrl = wx.ListCtrl(self.statbox_parent_paths, -1,
+                                              style=wx.LC_REPORT
+                                              | wx.BORDER_SIMPLE
+                                              | wx.LC_SORT_ASCENDING
+                                             )
+            self.path_listctrl.InsertColumn(0, 'Display', wx.LIST_FORMAT_RIGHT, width = 100)
+            self.path_listctrl.InsertColumn(1, 'Source', width = 600)
+        else:
+            # show simpler listing without header if only one wallpaper target
+            self.path_listctrl = wx.ListCtrl(self.statbox_parent_paths, -1,
+                                              style=wx.LC_REPORT
+                                              | wx.BORDER_SIMPLE
+                                              | wx.LC_NO_HEADER
+                                             )
+            self.path_listctrl.InsertColumn(0, 'Source', width = 700)
+        self.path_listctrl.SetImageList(self.image_list, wx.IMAGE_LIST_SMALL)
+
         self.sizer_setting_paths.Add(st_paths_info, 0, wx.ALIGN_LEFT|wx.ALL, 5)
         self.sizer_setting_paths.Add(self.path_listctrl, 1, wx.CENTER|wx.EXPAND|wx.ALL, 5)
         # Buttons
         self.sizer_setting_paths_buttons = wx.BoxSizer(wx.HORIZONTAL)
-        self.button_browse = wx.Button(statbox_parent_paths, label="Browse")
-        self.button_remove_source = wx.Button(statbox_parent_paths, label="Remove selected source")
+        self.button_browse = wx.Button(self.statbox_parent_paths, label="Browse")
+        self.button_remove_source = wx.Button(self.statbox_parent_paths, label="Remove selected source")
         self.button_browse.Bind(wx.EVT_BUTTON, self.onBrowsePaths)
         self.button_remove_source.Bind(wx.EVT_BUTTON, self.onRemoveSource)
         self.sizer_setting_paths_buttons.Add(self.button_browse, 0, wx.CENTER|wx.ALL, 5)
@@ -291,7 +295,6 @@ class WallpaperSettingsPanel(wx.Panel):
         self.sizer_setting_adv.Add(self.sizer_setting_bezels, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
         self.sizer_setting_adv.Add(self.sizer_setting_offsets, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
 
-        self.sizer_settings_right.Add(self.sizer_setting_adv, 1, wx.CENTER|wx.EXPAND|wx.ALL, 5)
 
     def create_sizer_diaginch_override(self):
         self.sizer_setting_diaginch.Clear(True)
@@ -327,6 +330,8 @@ class WallpaperSettingsPanel(wx.Panel):
 
         self.sizer_bottom_buttonrow.Add(self.button_help, 0, wx.ALIGN_LEFT|wx.ALL, 5)
         self.sizer_bottom_buttonrow.Add(self.button_align_test, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        self.sizer_bottom_buttonrow.Hide(self.button_align_test)
+        self.sizer_bottom_buttonrow.Layout()
         self.sizer_bottom_buttonrow.AddStretchSpacer()
         self.sizer_bottom_buttonrow.Add(self.button_apply, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
         self.sizer_bottom_buttonrow.Add(self.button_close, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
@@ -364,9 +369,53 @@ class WallpaperSettingsPanel(wx.Panel):
                 ):
                     widget.Enable(bool_state)
 
+    def show_adv_setting_sizer(self, show_bool):
+        self.sizer_setting_sizers.Show(self.sizer_setting_adv, show=show_bool)
+        self.sizer_setting_sizers.Layout()
+        self.sizer_bottom_buttonrow.Show(self.button_align_test, show=show_bool)
+        self.sizer_bottom_buttonrow.Layout()
+
+    def refresh_path_listctrl(self, mult_img_bool):
+        self.path_listctrl.Destroy()
+        if mult_img_bool:
+            self.path_listctrl = wx.ListCtrl(self.statbox_parent_paths, -1,
+                                              style=wx.LC_REPORT
+                                              | wx.BORDER_SIMPLE
+                                              | wx.LC_SORT_ASCENDING
+                                             )
+            self.path_listctrl.InsertColumn(0, 'Display', wx.LIST_FORMAT_RIGHT, width = 100)
+            self.path_listctrl.InsertColumn(1, 'Source', width = 600)
+        else:
+            # show simpler listing without header if only one wallpaper target
+            self.path_listctrl = wx.ListCtrl(self.statbox_parent_paths, -1,
+                                              style=wx.LC_REPORT
+                                              | wx.BORDER_SIMPLE
+                                              | wx.LC_NO_HEADER
+                                             )
+            self.path_listctrl.InsertColumn(0, 'Source', width = 700)
+        self.path_listctrl.SetImageList(self.image_list, wx.IMAGE_LIST_SMALL)
+        self.sizer_setting_paths.Insert(1, self.path_listctrl, 1, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        self.sizer_setting_paths.Layout()
+
+
+
     #
     # Event methods
     #
+    def onSpanRadio(self, event):
+        selection = self.radiobox_spanmode.GetSelection()
+        if selection == 1:
+            self.show_advanced_settings = True
+            self.use_multiple_image = False
+        elif selection == 2:
+            self.show_advanced_settings = False
+            self.use_multiple_image = True
+        else:
+            self.show_advanced_settings = False
+            self.use_multiple_image = False
+        self.show_adv_setting_sizer(self.show_advanced_settings)
+        self.refresh_path_listctrl(self.use_multiple_image)
+
     def onCheckboxSlideshow(self, event):
         cb_state = self.cb_slideshow.GetValue()
         sizer = self.sizer_setting_slideshow
@@ -393,6 +442,47 @@ class WallpaperSettingsPanel(wx.Panel):
         sizer = self.sizer_setting_diaginch
         self.sizer_toggle_children(sizer, cb_state)
 
+    #
+    # ListCtrl methods
+    #
+
+    def append_to_listctrl(self, data_row):
+        if self.use_multiple_image:
+            img_id = self.add_to_imagelist(data_row[1])
+            index = self.path_listctrl.InsertItem(self.path_listctrl.GetItemCount(), data_row[0], img_id)
+            self.path_listctrl.SetItem(index, 1, data_row[1])
+        else:
+            img_id = self.add_to_imagelist(data_row[0])
+            index = self.path_listctrl.InsertItem(self.path_listctrl.GetItemCount(), data_row[0], img_id)
+            # self.path_listctrl.SetItem(index, 1, data[1])
+
+    def add_to_imagelist(self, path):
+        folder_bmp =  wx.ArtProvider.GetBitmap(wx.ART_FOLDER, wx.ART_TOOLBAR, self.tsize)
+        if os.path.isdir(path):
+            img_id = self.image_list.Add(folder_bmp)
+        else:
+            thumb_bmp = self.create_thumb_bmp(path)
+            img_id = self.image_list.Add(thumb_bmp)
+        return img_id
+
+    def create_thumb_bmp(self, filename):
+        wximg = wx.Image(filename, type=wx.BITMAP_TYPE_ANY)
+        imgsize = wximg.GetSize()
+        w2h_ratio = imgsize[0]/imgsize[1]
+        if w2h_ratio > 1:
+            target_w = self.tsize[0]
+            target_h = target_w/w2h_ratio
+            pos = (0, round((target_w - target_h)/2))
+        else:
+            target_h = self.tsize[1]
+            target_w = target_h*w2h_ratio
+            pos = (round((target_h - target_w)/2), 0)
+        bmp = wximg.Scale(target_w, target_h).Resize(self.tsize, pos).ConvertToBitmap()
+        return bmp
+
+    def populate_lc_browse(self, pathslist, imglist):
+        for path_item in pathslist:
+            self.append_to_listctrl(path_item)
 
     #
     # Top level button definitions
@@ -402,16 +492,19 @@ class WallpaperSettingsPanel(wx.Panel):
 
     def onBrowsePaths(self, event):
         """Opens the pick paths dialog."""
-        dlg = BrowsePaths(self, self.show_advanced_settings)
+        dlg = BrowsePaths(self, self.use_multiple_image)
         res = dlg.ShowModal()
         if res == wx.ID_OK:
-            self.path_list_data = dlg.path_list_data
-            self.image_list = dlg.il
+            path_list_data = dlg.path_list_data
+            image_list = dlg.il
+            self.populate_lc_browse(path_list_data, image_list)
         dlg.Destroy()
 
     def onRemoveSource(self, event):
         """Removes selection from wallpaper source ListCtrl."""
-        pass
+        item = self.path_listctrl.GetFocusedItem()
+        if item != -1:
+            self.path_listctrl.DeleteItem(item)
 
     def onClose(self, event):
         """Closes the profile config panel."""

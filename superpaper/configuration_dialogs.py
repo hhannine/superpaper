@@ -449,24 +449,25 @@ class BrowsePaths(wx.Dialog):
     """Path picker dialog class."""
     def __init__(self, parent, show_adv):
         wx.Dialog.__init__(self, parent, -1, 'Choose image source directories or image files', size=(750, 850))
-        BMP_SIZE = 24
+        BMP_SIZE = 32
         self.tsize = (BMP_SIZE, BMP_SIZE)
         self.il = wx.ImageList(BMP_SIZE, BMP_SIZE)
-        # self.show_adv = show_adv
-        self.show_adv = True
-        # self.show_adv = False
+
+        self.show_adv = show_adv
         self.path_list_data = []
         self.paths = []
         sizer_main = wx.BoxSizer(wx.VERTICAL)
         sizer_browse = wx.BoxSizer(wx.VERTICAL)
         self.sizer_paths_list = wx.BoxSizer(wx.VERTICAL)
         sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
-        self.dir3 = wx.GenericDirCtrl(self, -1,
-                                    #   size=(450, 550),
-                                    #   style=wx.DIRCTRL_SHOW_FILTERS|wx.DIRCTRL_MULTIPLE,
-                                    #   style=wx.DIRCTRL_MULTIPLE,
-                                      filter="Image files (*.jpg, *.png)|*.jpg;*.png"
-                                      )
+        self.dir3 = wx.GenericDirCtrl(
+            self, -1,
+            #   size=(450, 550),
+            #   style=wx.DIRCTRL_SHOW_FILTERS|wx.DIRCTRL_MULTIPLE,
+            #   style=wx.DIRCTRL_MULTIPLE,
+            # dir=def_dir,
+            filter="Image files (*.jpg, *.png)|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tiff;*.webp"
+        )
         sizer_browse.Add(self.dir3, 1, wx.CENTER|wx.ALL|wx.EXPAND, 5)
         st_paths_list = wx.StaticText(
             self, -1,
@@ -513,7 +514,7 @@ class BrowsePaths(wx.Dialog):
     def create_paths_listctrl(self, show_adv):
         if show_adv:
             self.paths_listctrl = wx.ListCtrl(self, -1,
-                                              size=(740, 160),
+                                              size=(740, 200),
                                               style=wx.LC_REPORT
                                               #  | wx.BORDER_SUNKEN
                                               | wx.BORDER_SIMPLE
@@ -528,11 +529,11 @@ class BrowsePaths(wx.Dialog):
                                               #  | wx.LC_SINGLE_SEL
                                              )
             self.paths_listctrl.InsertColumn(0, 'Display', wx.LIST_FORMAT_RIGHT, width = 100)
-            self.paths_listctrl.InsertColumn(1, 'Source', width = 600)
+            self.paths_listctrl.InsertColumn(1, 'Source', width = 620)
         else:
             # show simpler listing without header if only one wallpaper target
             self.paths_listctrl = wx.ListCtrl(self, -1,
-                                              size=(740, 160),
+                                              size=(740, 200),
                                               style=wx.LC_REPORT
                                               #  | wx.BORDER_SUNKEN
                                               | wx.BORDER_SIMPLE
@@ -546,7 +547,7 @@ class BrowsePaths(wx.Dialog):
                                               #  | wx.LC_HRULES
                                               #  | wx.LC_SINGLE_SEL
                                              )
-            self.paths_listctrl.InsertColumn(0, 'Source', width = 700)
+            self.paths_listctrl.InsertColumn(0, 'Source', width = 720)
 
         # Add the item list to the control
         self.paths_listctrl.SetImageList(self.il, wx.IMAGE_LIST_SMALL)
@@ -565,20 +566,34 @@ class BrowsePaths(wx.Dialog):
 
     def add_to_imagelist(self, path):
         folder_bmp =  wx.ArtProvider.GetBitmap(wx.ART_FOLDER, wx.ART_TOOLBAR, self.tsize)
-        file_bmp =  wx.ArtProvider.GetBitmap(wx.ART_NORMAL_FILE, wx.ART_TOOLBAR, self.tsize)
+        # file_bmp =  wx.ArtProvider.GetBitmap(wx.ART_NORMAL_FILE, wx.ART_TOOLBAR, self.tsize)
         if os.path.isdir(path):
             img_id = self.il.Add(folder_bmp)
         else:
-            img_id = self.il.Add(file_bmp)
+            thumb_bmp = self.create_thumb_bmp(path)
+            img_id = self.il.Add(thumb_bmp)
         return img_id
 
+    def create_thumb_bmp(self, filename):
+        wximg = wx.Image(filename, type=wx.BITMAP_TYPE_ANY)
+        imgsize = wximg.GetSize()
+        w2h_ratio = imgsize[0]/imgsize[1]
+        if w2h_ratio > 1:
+            target_w = self.tsize[0]
+            target_h = target_w/w2h_ratio
+            pos = (0, round((target_w - target_h)/2))
+        else:
+            target_h = self.tsize[1]
+            target_w = target_h*w2h_ratio
+            pos = (round((target_h - target_w)/2), 0)
+        bmp = wximg.Scale(target_w, target_h).Resize(self.tsize, pos).ConvertToBitmap()
+        return bmp
 
     def onAdd(self, event):
         """Adds selected path to export field."""
         path_data_tuples = []
         sel_path = self.dir3.GetPath()
         # self.dir3.GetPaths(paths) # could use this to be more efficient but it does not will the list
-        print(sel_path)
         if self.show_adv:
             # Extra column in advanced mode
             disp_id = str(self.radiobox_displays.GetSelection())
@@ -589,32 +604,24 @@ class BrowsePaths(wx.Dialog):
     def onRemove(self, event):
         """Removes last appended path from export field."""
         # TODO remove btn should be disabled if not in valid selection
-        pass
-        # if len(self.paths) > 0:
-        #     del self.paths[-1]
-        #     text_field = ";".join(self.paths)
-        #     self.tc_paths.SetValue(text_field)
-        #     self.tc_paths.SetInsertionPointEnd()
+        item = self.paths_listctrl.GetFocusedItem()
+        if item != -1:
+            self.paths_listctrl.DeleteItem(item)
+
+
 
     def onOk(self, event):
         """Exports path to parent Profile Config dialog."""
-        # paths_string = self.tc_paths.GetLineText(0)
-        # # If paths textctrl is empty, assume user wants current selection.
-        # if paths_string == "":
-        #     paths_string = self.dir3.GetPath()
-        # button_obj = self.parent_event.GetEventObject()
-        # button_name = button_obj.GetName()
-        # button_id = int(button_name.split("-")[1])
-        # text_field = self.parent_self.paths_controls[button_id]
-        # old_text = text_field.GetLineText(0)
-        # if old_text == "":
-        #     new_text = paths_string
-        # else:
-        #     new_text = old_text + ";" + paths_string
-        # text_field.ChangeValue(new_text)
-
+        columns = self.paths_listctrl.GetColumnCount()
+        for idx in range(self.paths_listctrl.GetItemCount()):
+            item_dat = []
+            for col in range(columns):
+                item_dat.append(self.paths_listctrl.GetItemText(idx, col))
+            self.path_list_data.append(item_dat)
+        print(self.path_list_data)
         # if listctrl is empty, onOk maybe could pass on the selected item? or disable OK if list is empty?
-        return wx.ID_OK
+        self.EndModal(wx.ID_OK)
+
 
     def onCancel(self, event):
         """Closes path picker, throwing away selections."""
