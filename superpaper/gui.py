@@ -229,10 +229,6 @@ class WallpaperSettingsPanel(wx.Panel):
         # add button sizer to parent paths sizer
         self.sizer_setting_paths.Add(self.sizer_setting_paths_buttons, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
 
-
-        # Default span mode is simple span so the initial ListCtrl
-        # should have only one column
-
         self.sizer_settings_right.Add(self.sizer_setting_paths, 1, wx.CENTER|wx.EXPAND|wx.ALL, 5)
 
     def create_sizer_settings_advanced(self):
@@ -337,6 +333,104 @@ class WallpaperSettingsPanel(wx.Panel):
         self.sizer_bottom_buttonrow.Add(self.button_close, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
 
     #
+    # Profile loading and display methods
+    #
+    def populate_fields(self, profile):
+        """Populates config dialog fields with data from a profile."""
+        self.tc_name.ChangeValue(profile.name)
+
+        self.show_advanced_settings = False
+        self.use_multiple_image = False
+        legacy_advanced = bool(
+            profile.spanmode == "single" and
+            bool(
+                profile.ppimode or
+                profile.bezels or
+                profile.manual_offsets_useronly
+            )
+        )
+
+        # Basic settings
+        if (profile.spanmode == "single" and not legacy_advanced):
+            self.radiobox_spanmode.SetSelection(0)
+        elif (profile.spanmode == "advanced" or legacy_advanced):
+            self.show_advanced_settings = True
+            self.radiobox_spanmode.SetSelection(1)
+        elif profile.spanmode == "multi":
+            self.use_multiple_image = True
+            self.radiobox_spanmode.SetSelection(2)
+        else:
+            # default to simple span
+            self.radiobox_spanmode.SetSelection(0)
+
+        if profile.slideshow:
+            self.cb_slideshow.SetValue(True)
+            wx.PostEvent(self.cb_slideshow, wx.CommandEvent(commandEventType=wx.EVT_CHECKBOX.typeId))
+            self.tc_sshow_delay.ChangeValue(str(profile.delay_list[0]))
+            if profile.sortmode == "shuffle":
+                self.ch_sshow_sort.SetSelection(0)
+            elif profile.sortmode == "alphabetical":
+                self.ch_sshow_sort.SetSelection(1)
+            else:
+                self.ch_sshow_sort.SetSelection(wx.NOT_FOUND)
+        else:
+            self.cb_slideshow.SetValue(False)
+            wx.PostEvent(self.cb_slideshow, wx.CommandEvent(commandEventType=wx.EVT_CHECKBOX.typeId))
+            self.tc_delay.Clear()
+            self.ch_sshow_sort.SetSelection(wx.NOT_FOUND)
+
+        if profile.hk_binding:
+            self.cb_hotkey.SetValue(True)
+            self.tc_hotkey_bind.ChangeValue(self.show_hkbinding(profile.hk_binding))
+        else:
+            self.cb_hotkey.SetValue(False)
+            self.tc_hotkey_bind.Clear()
+        wx.PostEvent(self.cb_hotkey, wx.CommandEvent(commandEventType=wx.EVT_CHECKBOX.typeId))
+
+
+        # Advanced settings
+        if self.show_advanced_settings:
+            self.show_adv_setting_sizer(True)
+            # profile.inches: not stored in profile anymore
+            # profile.bezels: not stored in profile anymore
+            if profile.manual_offsets_useronly:
+                self.cb_offsets.SetValue(True)
+                for tc, off in zip(self.tc_list_offsets, profile.manual_offsets_useronly):
+                    offstr = "{},{}".format(off[0], off[1])
+                    tc.SetValue(offstr)
+            else:
+                self.cb_offsets.SetValue(False)
+            wx.PostEvent(self.cb_offsets, wx.CommandEvent(commandEventType=wx.EVT_CHECKBOX.typeId))
+        else:
+            self.show_adv_setting_sizer(False)
+
+        # Paths displays: get number to show from profile.
+        self.paths_array_to_listctrl(profile.paths_array)
+
+
+    def paths_array_to_listctrl(self, paths_array):
+        self.refresh_path_listctrl(self.use_multiple_image)
+        if self.use_multiple_image:
+            for plist in paths_array:
+                for pth in plist:
+                    self.append_to_listctrl(
+                        [str(paths_array.index(plist)), pth]
+                    )
+        else:
+            for plist in paths_array:
+                for pth in plist:
+                    self.append_to_listctrl([pth])
+
+    def show_hkbinding(self, hktuple):
+        """Format a hotkey tuple into a '+' separated string."""
+        if hktuple:
+            hkstring = "+".join(hktuple)
+            return hkstring
+        else:
+            return ""
+
+
+    #
     # Helper methods
     #
     def update_choiceprofile(self):
@@ -377,6 +471,7 @@ class WallpaperSettingsPanel(wx.Panel):
 
     def refresh_path_listctrl(self, mult_img_bool):
         self.path_listctrl.Destroy()
+        self.image_list.RemoveAll()
         if mult_img_bool:
             self.path_listctrl = wx.ListCtrl(self.statbox_parent_paths, -1,
                                               style=wx.LC_REPORT
@@ -447,14 +542,16 @@ class WallpaperSettingsPanel(wx.Panel):
     #
 
     def append_to_listctrl(self, data_row):
-        if self.use_multiple_image:
+        if (self.use_multiple_image and len(data_row) == 2):
             img_id = self.add_to_imagelist(data_row[1])
             index = self.path_listctrl.InsertItem(self.path_listctrl.GetItemCount(), data_row[0], img_id)
             self.path_listctrl.SetItem(index, 1, data_row[1])
-        else:
+        elif (not self.use_multiple_image and len(data_row) == 1):
             img_id = self.add_to_imagelist(data_row[0])
             index = self.path_listctrl.InsertItem(self.path_listctrl.GetItemCount(), data_row[0], img_id)
             # self.path_listctrl.SetItem(index, 1, data[1])
+        else:
+            print("UseMultImg: {}. Bad data_row: {}".format(self.use_multiple_image, data_row))
 
     def add_to_imagelist(self, path):
         folder_bmp =  wx.ArtProvider.GetBitmap(wx.ART_FOLDER, wx.ART_TOOLBAR, self.tsize)
