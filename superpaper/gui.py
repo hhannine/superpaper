@@ -49,7 +49,7 @@ class WallpaperSettingsPanel(wx.Panel):
         # bottom_half: bottom button row
         self.sizer_bottom_buttonrow = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.defdir = ""
+        self.defdir = GeneralSettingsData().browse_default_dir
         # settings GUI properties
         self.tc_width = 160  # standard width for wx.TextCtrl etc elements.
         self.show_advanced_settings = False

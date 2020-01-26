@@ -625,11 +625,17 @@ class BrowsePaths(wx.Dialog):
         sel_path = self.dir3.GetPath()
         if os.path.isdir(sel_path):
             self.defdir = sel_path
+            current_settings = GeneralSettingsData()
+            current_settings.browse_default_dir = self.defdir.strip()
+            current_settings.save_settings()
         else:
             pass
 
     def onClrDefDir(self, event):
-        self.defdir = None
+        self.defdir = ""
+        current_settings = GeneralSettingsData()
+        current_settings.browse_default_dir = ""
+        current_settings.save_settings()
 
 
     def onOk(self, event):
@@ -729,28 +735,25 @@ class SettingsPanel(wx.Panel):
     def onSave(self, event):
         """Saves settings to file."""
         current_settings = GeneralSettingsData()
-        show_help = current_settings.show_help
 
-        fname = os.path.join(CONFIG_PATH, "general_settings")
-        general_settings_file = open(fname, "w")
-        if self.cb_logging.GetValue():
-            general_settings_file.write("logging=true\n")
+        current_settings.logging = self.cb_logging.GetValue()
+        current_settings.use_hotkeys = self.cb_usehotkeys.GetValue()
+        if self.tc_hk_next.GetLineText(0):
+            current_settings.hk_binding_next = tuple(
+                self.tc_hk_next.GetLineText(0).strip().split("+")
+            )
         else:
-            general_settings_file.write("logging=false\n")
-        if self.cb_usehotkeys.GetValue():
-            general_settings_file.write("use hotkeys=true\n")
+            current_settings.hk_binding_next = None
+        if self.tc_hk_pause.GetLineText(0):
+            current_settings.hk_binding_pause = tuple(
+                self.tc_hk_pause.GetLineText(0).strip().split("+")
+            )
         else:
-            general_settings_file.write("use hotkeys=false\n")
-        general_settings_file.write("next wallpaper hotkey="
-                                    + self.tc_hk_next.GetLineText(0) + "\n")
-        general_settings_file.write("pause wallpaper hotkey="
-                                    + self.tc_hk_pause.GetLineText(0) + "\n")
-        if show_help:
-            general_settings_file.write("show_help_at_start=true\n")
-        else:
-            general_settings_file.write("show_help_at_start=false\n")
-        general_settings_file.write("set_command=" + self.tc_setcmd.GetLineText(0))
-        general_settings_file.close()
+            current_settings.hk_binding_pause = None
+
+        current_settings.set_command = self.tc_setcmd.GetLineText(0).strip()
+
+        current_settings.save_settings()
         # after saving file apply in tray object
         self.parent_tray_obj.read_general_settings()
 

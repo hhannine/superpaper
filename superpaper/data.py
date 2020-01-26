@@ -142,8 +142,10 @@ class GeneralSettingsData(object):
                             self.show_help = False
                         else:
                             pass
+                    elif words[0].strip() == "browse_default_dir":
+                        self.browse_default_dir = words[1].strip()
                     else:
-                        sp_logging.G_LOGGER.info("Exception: Unkown general setting: %s",
+                        sp_logging.G_LOGGER.info("GeneralSettings parse Exception: Unkown general setting: %s",
                                                  words[0])
             finally:
                 general_settings_file.close()
@@ -156,7 +158,7 @@ class GeneralSettingsData(object):
             self.hk_binding_next = ("control", "super", "w")
             general_settings_file.write("pause wallpaper hotkey=control+super+shift+p\n")
             self.hk_binding_pause = ("control", "super", "shift", "p")
-            general_settings_file.write("set_command=")
+            general_settings_file.write("set_command=\n")
             general_settings_file.write("browse_default_dir=")
             general_settings_file.close()
 
@@ -189,7 +191,7 @@ class GeneralSettingsData(object):
         else:
             general_settings_file.write("show_help_at_start=false\n")
 
-        general_settings_file.write("set_command={}".format(self.set_command))
+        general_settings_file.write("set_command={}\n".format(self.set_command))
         general_settings_file.write("browse_default_dir={}".format(self.browse_default_dir))
         general_settings_file.close()
 
