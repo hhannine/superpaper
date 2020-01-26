@@ -48,6 +48,8 @@ class WallpaperSettingsPanel(wx.Panel):
         self.sizer_settings_right = wx.BoxSizer(wx.HORIZONTAL)
         # bottom_half: bottom button row
         self.sizer_bottom_buttonrow = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.defdir = ""
         # settings GUI properties
         self.tc_width = 160  # standard width for wx.TextCtrl etc elements.
         self.show_advanced_settings = False
@@ -589,11 +591,12 @@ class WallpaperSettingsPanel(wx.Panel):
 
     def onBrowsePaths(self, event):
         """Opens the pick paths dialog."""
-        dlg = BrowsePaths(self, self.use_multiple_image)
+        dlg = BrowsePaths(self, self.use_multiple_image, self.defdir)
         res = dlg.ShowModal()
         if res == wx.ID_OK:
             path_list_data = dlg.path_list_data
             image_list = dlg.il
+            self.defdir = dlg.defdir
             self.populate_lc_browse(path_list_data, image_list)
         dlg.Destroy()
 
