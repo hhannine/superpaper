@@ -95,7 +95,7 @@ class WallpaperSettingsPanel(wx.Panel):
         self.sizer_bottom_half.Add(self.sizer_bottom_buttonrow, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
 
         # Collect items at main sizer
-        self.sizer_main.Add(self.sizer_top_half, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        self.sizer_main.Add(self.sizer_top_half, 1, wx.CENTER|wx.EXPAND|wx.ALL, 5)
         self.sizer_main.Add(self.sizer_bottom_half, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
 
         self.SetSizer(self.sizer_main)
@@ -779,7 +779,7 @@ class WallpaperPreviewPanel(wx.Panel):
     configuration. Method looks up saved setups to see if one
     exists that matches the given resolutions, offsets and sizes.
     """
-    def __init__(self, parent, display_data, image_list = None, use_mm = False, use_multi_image = False):
+    def __init__(self, parent, display_data, image_list = None, use_ppi_px = False, use_multi_image = False):
         self.preview_size = (1200,500)
         wx.Panel.__init__(self, parent, size=self.preview_size)
         # wx.Panel.__init__(self, parent)
@@ -793,8 +793,10 @@ class WallpaperPreviewPanel(wx.Panel):
         
         # Display data and sizes
         self.display_data = display_data
-        # dtop_canvas_px = self.get_canvas(display_data)
-        # dtop_canvas_relsz = self.get_canvas_relative(dtop_canvas_px)
+        dtop_canvas_px = self.get_canvas(display_data)
+        print("canvas", dtop_canvas_px)
+        dtop_canvas_relsz = self.get_canvas_relative(dtop_canvas_px)
+        print("canvas_rel", dtop_canvas_relsz)
 
         # bitmaps to be shown
         self.preview_img_list = []
@@ -804,63 +806,80 @@ class WallpaperPreviewPanel(wx.Panel):
     #
     # UI drawing methods
     #
-    def draw_displays(self, use_mm = False, use_multi_image = False):
+    def draw_displays(self, use_ppi_px = False, use_multi_image = False):
         work_sz = self.GetSize()
-        print(work_sz)
+        print("work_size", work_sz)
 
-    def preview_wallpaper(self, image_list, use_mm = False, use_multi_image = False):
+
+    def preview_wallpaper(self, image_list, use_ppi_px = False, use_multi_image = False):
         pass
+
 
     def relative_to_abs_size(self, rel_size):
         """Convert relative size to absolute size for drawing."""
         work_sz = self.GetSize()
         return (rel_size[0] * work_sz[0], rel_size[1] * work_sz[1])
 
+
     def abs_to_relative_display(self, abs_size):
         if self.maxsize[0]:
             # anchoring relative sizes to width
-            pass
+            max_length_abs = self.maxsize[0][0]
         elif self.maxsize[1]:
             # anchoring relative sizes to height
-            pass
+            max_length_abs = self.maxsize[1][0]
         else:
-            pass
+            print(f"abs_to_relative_display: self.maxsize not set. {self.maxsize}")
+        rel_width = abs_size[0] / max_width_abs
+        rel_height = abs_size[1] / max_width_abs
+        return (rel_width, rel_height)
 
 
 
     #
     # Data analysis methods
     #
-    def get_canvas(disp_data, use_mm = False):
+    def get_canvas(self, disp_data, use_ppi_px = False):
         """Returns a size tuple for the desktop are in pixels or millimeters."""
-        if use_mm:
-            pass
-        else:
+        if use_ppi_px:
             rightmost_edge = None
             bottommost_edge = None
+        else:
+            print("got here!")
+            rightmost_edge = max(
+                [disp.resolution[0] + disp.digital_offset[0] for disp in disp_data]
+            )
+            bottommost_edge = max(
+                [disp.resolution[1] + disp.digital_offset[1] for disp in disp_data]
+            )
         return (rightmost_edge, bottommost_edge)
 
-    def get_canvas_relative(canvas_px):
+    def get_canvas_relative(self, canvas_px):
         """Compute canvas size relative to the background panel size.
 
         Returns a size tuple in relative units so that along the longer
-        edge of the canvas, at most 90% of the panel dimensions are used."""
+        edge of the canvas, at most 90% of the panel dimensions are used.
+        
+        Input is either canvas size in true pixels or in PPI normalized
+        pixels."""
         rel_factor = 0.9
         rel_achor_gap = (1-rel_factor)/2
         work_sz = self.GetSize()
+        w2h_ratio_worksz = work_sz[0]/work_sz[1]
         w2h_ratio = canvas_px[0]/canvas_px[1]
-        if w2h_ratio > 1:
-            # canvas is more wide than tall
+        if w2h_ratio > w2h_ratio_worksz:
+            # canvas is wider than working area
             # limit width to 90% of working area
-            rel_width = rel_factor * work_sz[0]
+            # TODO WIDTH AND HEIGHT RELATIVE SCALES ARE NOT 1:1 SINCE THE DRAWING AREA IS NOT SQUARE
+            rel_width = rel_factor
             rel_height = rel_width / w2h_ratio
             anchor_left = rel_achor_gap
             anchor_top = (1 - rel_height) / 2
             self.maxsize = ((canvas_px[0], rel_width), None) # bookkeep that relative sizes are anchored to width and what size that corresponds to
-            # TODO with use_mm above should use canvas_mm[0]
+            # TODO BOOKKEEPING BOTH RELATIVE SCALES IS A MUST
         else:
-            # canvas is more tall than wide
-            rel_height = rel_factor * work_sz[1]
+            # canvas is taller than working area
+            rel_height = rel_factor
             rel_width = rel_height * w2h_ratio
             anchor_left = (1 - rel_width)/2
             anchor_top = rel_achor_gap

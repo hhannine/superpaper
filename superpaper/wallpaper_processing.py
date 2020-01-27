@@ -84,7 +84,7 @@ class Display():
     """
     def __init__(self, monitor):
         self.resolution = (monitor.width, monitor.height)
-        self.digital_offsets = (monitor.x, monitor.y)
+        self.digital_offset = (monitor.x, monitor.y)
         self.phys_size_mm = tuple(
             sorted(
                 [monitor.width_mm, monitor.height_mm],
@@ -93,6 +93,8 @@ class Display():
         )   # Take care that physical rotation matches resolution.
         self.phys_offsets = None    # Determined through GUI input. Anchored to top-left? TODO
         self.ppi = None
+        self.ppi_norm_resolution = None
+        self.ppi_norm_offset = None
         self.name = monitor.name
         if self.resolution and self.phys_size_mm:
             self.ppi = self.compute_ppi()
@@ -101,7 +103,7 @@ class Display():
         return (
             f"Display("
             f"resolution={self.resolution}, "
-            f"digital_offsets={self.digital_offsets}, "
+            f"digital_offset={self.digital_offset}, "
             f"phys_size_mm={self.phys_size_mm}, "
             f"phys_offsets={self.phys_offsets}, "
             f"ppi={self.ppi}, "
@@ -141,8 +143,8 @@ class Display():
         This takes the top left most corner of the canvas to (0,0)
         and retains relative offsets between displays as they should be.
         """
-        old_offsets = self.digital_offsets
-        self.digital_offsets = (
+        old_offsets = self.digital_offset
+        self.digital_offset = (
             old_offsets[0] - translate_tuple[0],
             old_offsets[1] - translate_tuple[1]
         )
@@ -178,7 +180,7 @@ def extract_global_vars(disp_list):
     off_arr = []
     for disp in disp_list:
         res_arr.append(disp.resolution)
-        off_arr.append(disp.digital_offsets)
+        off_arr.append(disp.digital_offset)
     return [res_arr, off_arr]
 
 def get_display_data():
@@ -199,13 +201,13 @@ def get_display_data():
     for monitor in monitors:
         display_list.append(Display(monitor))
     # Check that there are no negative offsets and fix if any are found.
-    leftmost_offset = min([disp.digital_offsets[0] for disp in display_list])
-    topmost_offset = min([disp.digital_offsets[1] for disp in display_list])
+    leftmost_offset = min([disp.digital_offset[0] for disp in display_list])
+    topmost_offset = min([disp.digital_offset[1] for disp in display_list])
     if leftmost_offset < 0 or topmost_offset < 0:
         for disp in display_list:
             disp.translate_offset((leftmost_offset, topmost_offset))
     # sort display list by digital offsets
-    display_list.sort(key=lambda x: x.digital_offsets)
+    display_list.sort(key=lambda x: x.digital_offset)
     # extract global variables for legacy compatibility
     RESOLUTION_ARRAY, DISPLAY_OFFSET_ARRAY = extract_global_vars(display_list)
     
