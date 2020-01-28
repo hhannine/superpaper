@@ -27,6 +27,7 @@ class ConfigFrame(wx.Frame):
         self.frame_sizer.Add(config_panel, 1, wx.EXPAND)
         self.SetAutoLayout(True)
         self.SetSizer(self.frame_sizer)
+        self.SetMinSize((1000,700))
         self.Fit()
         self.Layout()
         self.Center()
@@ -828,9 +829,10 @@ class WallpaperPreviewPanel(wx.Panel):
         for disp in self.display_rel_sizes:
             size = disp[0]
             offs = disp[1]
-            bmp = wx.Bitmap.FromRGBA(size[0], size[1], red=250, green=250, blue=250, alpha=255)
+            bmp = wx.Bitmap.FromRGBA(2*size[0], 2*size[1], red=250, green=250, blue=250, alpha=255)
             self.bmp_list.append(bmp)
             st_bmp = wx.StaticBitmap(self, wx.ID_ANY, bmp)
+            # st_bmp.SetScaleMode(wx.Scale_AspectFill)  # New in wxpython 4.1
             st_bmp.SetPosition(offs)
             self.preview_img_list.append(st_bmp)
 
@@ -841,6 +843,13 @@ class WallpaperPreviewPanel(wx.Panel):
         # print("canvas_rel", self.dtop_canvas_relsz)
         self.st_bmp_canvas.SetPosition(self.dtop_canvas_pos)
         self.st_bmp_canvas.SetSize(self.dtop_canvas_relsz)
+
+        self.display_rel_sizes = self.displays_on_canvas(self.display_data, self.dtop_canvas_pos, scaling_fac)
+        for disp, st_bmp in zip(self.display_rel_sizes, self.preview_img_list):
+            size = disp[0]
+            offs = disp[1]
+            st_bmp.SetPosition(offs)
+            st_bmp.SetSize(size)
 
     def preview_wallpaper(self, image_list, use_ppi_px = False, use_multi_image = False):
         pass
