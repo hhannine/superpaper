@@ -2,6 +2,7 @@
 New wallpaper configuration GUI for Superpaper.
 """
 import os
+from PIL import Image
 
 import superpaper.sp_logging as sp_logging
 import superpaper.wallpaper_processing as wpproc
@@ -9,7 +10,7 @@ from superpaper.configuration_dialogs import BrowsePaths, HelpFrame
 from superpaper.data import GeneralSettingsData, ProfileData, TempProfileData, CLIProfileData, list_profiles
 from superpaper.message_dialog import show_message_dialog
 from superpaper.sp_paths import PATH, CONFIG_PATH, PROFILES_PATH
-from superpaper.wallpaper_processing import NUM_DISPLAYS, get_display_data, change_wallpaper_job
+from superpaper.wallpaper_processing import NUM_DISPLAYS, get_display_data, change_wallpaper_job, resize_to_fill
 
 try:
     import wx
@@ -27,7 +28,7 @@ class ConfigFrame(wx.Frame):
         self.frame_sizer.Add(config_panel, 1, wx.EXPAND)
         self.SetAutoLayout(True)
         self.SetSizer(self.frame_sizer)
-        self.SetMinSize((1000,700))
+        self.SetMinSize((700,500))
         self.Fit()
         self.Layout()
         self.Center()
@@ -417,6 +418,13 @@ class WallpaperSettingsPanel(wx.Panel):
 
         # Paths displays: get number to show from profile.
         self.paths_array_to_listctrl(profile.paths_array)
+
+        # Update wallpaper preview from selected profile
+        self.wpprev_pnl.preview_wallpaper(
+            profile.next_wallpaper_files(),
+            self.show_advanced_settings,
+            self.use_multiple_image
+        )
 
 
     def paths_array_to_listctrl(self, paths_array):
@@ -829,7 +837,7 @@ class WallpaperPreviewPanel(wx.Panel):
         for disp in self.display_rel_sizes:
             size = disp[0]
             offs = disp[1]
-            bmp = wx.Bitmap.FromRGBA(2*size[0], 2*size[1], red=250, green=250, blue=250, alpha=255)
+            bmp = wx.Bitmap.FromRGBA(2*size[0], 2*size[1], red=250, green=250, blue=250, alpha=100)
             self.bmp_list.append(bmp)
             st_bmp = wx.StaticBitmap(self, wx.ID_ANY, bmp)
             # st_bmp.SetScaleMode(wx.Scale_AspectFill)  # New in wxpython 4.1
@@ -852,29 +860,29 @@ class WallpaperPreviewPanel(wx.Panel):
             st_bmp.SetSize(size)
 
     def preview_wallpaper(self, image_list, use_ppi_px = False, use_multi_image = False):
-        pass
-
-
-    def relative_to_abs_size(self, rel_size):
-        """Convert relative size to absolute size for drawing."""
-        work_sz = self.GetSize()
-        return (rel_size[0] * work_sz[0], rel_size[1] * work_sz[1])
-
-
-    def abs_to_relative_display(self, abs_size):
-        if self.maxsize[0]:
-            # anchoring relative sizes to width
-            max_length_abs = self.maxsize[0][0]
-        elif self.maxsize[1]:
-            # anchoring relative sizes to height
-            max_length_abs = self.maxsize[1][0]
+        if use_multi_image:
+            # hide canvas and set images to monitor previews
+            self.st_bmp_canvas.Hide()
+            for img_nm, dprev in zip(image_list, self.preview_img_list):
+                prev_sz = dprev.GetSize()
+                dprev.SetBitmap(self.resize_and_bitmap(img_nm, prev_sz))
+                dprev.Show()
         else:
-            print(f"abs_to_relative_display: self.maxsize not set. {self.maxsize}")
-        rel_width = abs_size[0] / max_width_abs
-        rel_height = abs_size[1] / max_width_abs
-        return (rel_width, rel_height)
+            img = image_list[0]
+            # set canvas to fit with keeping aspect the image, with dim/blur
+            # and crop pieces to show on monitor previews unaltered.
+            canv_sz = self.st_bmp_canvas.GetSize()
+            self.st_bmp_canvas.SetBitmap(self.resize_and_bitmap(img, canv_sz))
+            self.st_bmp_canvas.Show()
+            for dprev in self.preview_img_list:
+                dprev.Hide()
 
-
+    def resize_and_bitmap(self, fname, size):
+        """Take filename of an image and resize and center crop it to size."""
+        pil = resize_to_fill(Image.open(fname), size)
+        img = wx.EmptyImage(pil.size[0], pil.size[1])
+        img.SetData(pil.convert("RGB").tobytes())
+        return img.ConvertToBitmap()
 
     #
     # Data analysis methods
