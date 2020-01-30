@@ -381,7 +381,7 @@ class WallpaperSettingsPanel(wx.Panel):
         if profile.slideshow:
             self.cb_slideshow.SetValue(True)
             wx.PostEvent(self.cb_slideshow, wx.CommandEvent(commandEventType=wx.EVT_CHECKBOX.typeId))
-            self.tc_sshow_delay.ChangeValue(str(profile.delay_list[0]))
+            self.tc_sshow_delay.ChangeValue(str(profile.delay_list[0]/60))
             if profile.sortmode == "shuffle":
                 self.ch_sshow_sort.SetSelection(0)
             elif profile.sortmode == "alphabetical":
@@ -666,7 +666,7 @@ class WallpaperSettingsPanel(wx.Panel):
         # tmp_profile.name = self.tc_name.GetLineText(0)
         # tmp_profile.spanmode = self.ch_span.GetString(self.ch_span.GetSelection()).lower()
         # tmp_profile.slideshow = self.cb_slideshow.GetValue()
-        # tmp_profile.delay = self.tc_delay.GetLineText(0)
+        # tmp_profile.delay = self.tc_delay.GetLineText(0) # TODO save value as seconds for compatibility!
         # tmp_profile.sortmode = self.ch_sort.GetString(self.ch_sort.GetSelection()).lower()
         # tmp_profile.inches = self.tc_inches.GetLineText(0)
         # tmp_profile.manual_offsets = self.tc_offsets.GetLineText(0)
