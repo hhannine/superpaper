@@ -2,7 +2,7 @@
 New wallpaper configuration GUI for Superpaper.
 """
 import os
-from PIL import Image
+from PIL import Image, ImageEnhance
 
 import superpaper.sp_logging as sp_logging
 import superpaper.wallpaper_processing as wpproc
@@ -18,6 +18,7 @@ try:
 except ImportError:
     exit()
 
+TRAY_ICON = os.path.join(PATH, "superpaper/resources/superpaper.png")
 
 class ConfigFrame(wx.Frame):
     """Wallpaper configuration dialog frame base class."""
@@ -28,7 +29,8 @@ class ConfigFrame(wx.Frame):
         self.frame_sizer.Add(config_panel, 1, wx.EXPAND)
         self.SetAutoLayout(True)
         self.SetSizer(self.frame_sizer)
-        self.SetMinSize((700,500))
+        self.SetMinSize((600,600))
+        self.SetIcon(wx.Icon(TRAY_ICON, wx.BITMAP_TYPE_PNG))
         self.Fit()
         self.Layout()
         self.Center()
@@ -65,6 +67,7 @@ class WallpaperSettingsPanel(wx.Panel):
         # display_data_full = DisplaySetupData(wpproc.get_display_data()) # TODO
         self.wpprev_pnl = WallpaperPreviewPanel(self.frame, display_data)
         self.sizer_top_half.Add(self.wpprev_pnl, 1, wx.CENTER|wx.EXPAND, 5)
+        # self.sizer_top_half.SetMinSize((400,200))
         # self.sizer_top_half.SetMinSize()
         self.wpprev_pnl.Bind(wx.EVT_SIZE, self.onResize)
         
@@ -795,10 +798,11 @@ class WallpaperPreviewPanel(wx.Panel):
     exists that matches the given resolutions, offsets and sizes.
     """
     def __init__(self, parent, display_data, image_list = None, use_ppi_px = False, use_multi_image = False):
-        self.preview_size = (1200,500)
+        self.preview_size = (1200,450)
         wx.Panel.__init__(self, parent, size=self.preview_size)
         # wx.Panel.__init__(self, parent)
         self.frame = parent
+        # self.SetMinSize((300,100))
 
         # Colour definitions
         # self.SetBackgroundColour(wx.BLACK)
@@ -872,16 +876,32 @@ class WallpaperPreviewPanel(wx.Panel):
             # set canvas to fit with keeping aspect the image, with dim/blur
             # and crop pieces to show on monitor previews unaltered.
             canv_sz = self.st_bmp_canvas.GetSize()
-            self.st_bmp_canvas.SetBitmap(self.resize_and_bitmap(img, canv_sz))
+            bmp_clr, bmp_bw = self.resize_and_bitmap(img, canv_sz, True)
+            self.st_bmp_canvas.SetBitmap(bmp_bw)
             self.st_bmp_canvas.Show()
-            for dprev in self.preview_img_list:
-                dprev.Hide()
 
-    def resize_and_bitmap(self, fname, size):
+            canvas_pos = self.dtop_canvas_pos
+            for disp, st_bmp in zip(self.display_rel_sizes, self.preview_img_list):
+                # dprev.Hide()
+                sz = disp[0]
+                pos = (disp[1][0] - canvas_pos[0], disp[1][1] - canvas_pos[1])
+                crop = bmp_clr.GetSubBitmap(wx.Rect(pos, sz))
+                st_bmp.SetBitmap(crop)
+                st_bmp.Show()
+
+    def resize_and_bitmap(self, fname, size, enhance_color = False):
         """Take filename of an image and resize and center crop it to size."""
         pil = resize_to_fill(Image.open(fname), size)
-        img = wx.EmptyImage(pil.size[0], pil.size[1])
+        img = wx.Image(pil.size[0], pil.size[1])
         img.SetData(pil.convert("RGB").tobytes())
+        if enhance_color:
+            converter = ImageEnhance.Color(pil)
+            pilenh_bw = converter.enhance(0.25)
+            brightns = ImageEnhance.Brightness(pilenh_bw)
+            pilenh = brightns.enhance(0.25)
+            imgenh = wx.Image(pil.size[0], pil.size[1])
+            imgenh.SetData(pilenh.convert("RGB").tobytes())
+            return (img.ConvertToBitmap(), imgenh.ConvertToBitmap())
         return img.ConvertToBitmap()
 
     #
@@ -946,5 +966,5 @@ class WallpaperPreviewPanel(wx.Panel):
                     tuple([doff[0]*scaling_fac + off[0], doff[1]*scaling_fac + off[1]])
                 )
             )
-        print(display_szs_pos)
+        # print(display_szs_pos)
         return display_szs_pos
