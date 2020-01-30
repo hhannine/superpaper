@@ -835,13 +835,15 @@ class WallpaperPreviewPanel(wx.Panel):
         self.bmp_list.append(bmp_canv)
         self.st_bmp_canvas = wx.StaticBitmap(self, wx.ID_ANY, bmp_canv)
         self.st_bmp_canvas.SetPosition(self.dtop_canvas_pos)
+        self.st_bmp_canvas.Hide()
         # self.preview_img_list.append(self.st_bmp_canvas)
         
         # draw monitor previews
         for disp in self.display_rel_sizes:
             size = disp[0]
             offs = disp[1]
-            bmp = wx.Bitmap.FromRGBA(2*size[0], 2*size[1], red=250, green=250, blue=250, alpha=100)
+            # bmp = wx.Bitmap.FromRGBA(2*size[0], 2*size[1], red=250, green=250, blue=250, alpha=100)
+            bmp = wx.Bitmap.FromRGBA(2*size[0], 2*size[1], red=0, green=0, blue=0, alpha=255)
             self.bmp_list.append(bmp)
             st_bmp = wx.StaticBitmap(self, wx.ID_ANY, bmp)
             # st_bmp.SetScaleMode(wx.Scale_AspectFill)  # New in wxpython 4.1
