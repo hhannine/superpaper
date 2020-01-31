@@ -63,6 +63,7 @@ class WallpaperSettingsPanel(wx.Panel):
         self.image_list = wx.ImageList(BMP_SIZE, BMP_SIZE)
 
         # top half
+        self.resized = False
         display_data = wpproc.get_display_data()
         # display_data_full = DisplaySetupData(wpproc.get_display_data()) # TODO
         self.wpprev_pnl = WallpaperPreviewPanel(self.frame, display_data)
@@ -70,6 +71,7 @@ class WallpaperSettingsPanel(wx.Panel):
         # self.sizer_top_half.SetMinSize((400,200))
         # self.sizer_top_half.SetMinSize()
         self.wpprev_pnl.Bind(wx.EVT_SIZE, self.onResize)
+        self.wpprev_pnl.Bind(wx.EVT_IDLE, self.onIdle)
         
         # bottom half
         
@@ -525,7 +527,18 @@ class WallpaperSettingsPanel(wx.Panel):
     #
     def onResize(self, event):
         # wx.CallAfter()
+        self.resized = True
         self.wpprev_pnl.refresh_preview()
+
+    def onIdle(self, event):
+        leftdown = wx.GetMouseState().LeftIsDown()
+        print(leftdown)
+        update = bool(self.resized and not leftdown)
+        if update:
+            self.wpprev_pnl.full_refresh_preview(update, self.show_advanced_settings, self.use_multiple_image)
+            self.resized = False
+        else:
+            event.Skip()
 
     def onSpanRadio(self, event):
         selection = self.radiobox_spanmode.GetSelection()
@@ -819,6 +832,7 @@ class WallpaperPreviewPanel(wx.Panel):
         self.display_rel_sizes = self.displays_on_canvas(self.display_data, self.dtop_canvas_pos, scaling_fac)
 
         # bitmaps to be shown
+        self.current_preview_images = []
         self.preview_img_list = []
         self.bmp_list = []
 
@@ -865,7 +879,17 @@ class WallpaperPreviewPanel(wx.Panel):
             st_bmp.SetPosition(offs)
             st_bmp.SetSize(size)
 
+    def full_refresh_preview(self, is_resized, use_ppi_px, use_multi_image):
+        if is_resized:
+            dtop_canvas_relsz, dtop_canvas_pos, scaling_fac = self.fit_canvas_wrkarea(self.dtop_canvas_px)
+            if (self.current_preview_images and dtop_canvas_relsz is not self.dtop_canvas_relsz):
+                self.preview_wallpaper(self.current_preview_images, use_ppi_px, use_multi_image)
+            else:
+                pass
+
+
     def preview_wallpaper(self, image_list, use_ppi_px = False, use_multi_image = False):
+        self.current_preview_images = image_list
         if use_multi_image:
             # hide canvas and set images to monitor previews
             self.st_bmp_canvas.Hide()
