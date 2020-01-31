@@ -433,10 +433,10 @@ class WallpaperSettingsPanel(wx.Panel):
     def paths_array_to_listctrl(self, paths_array):
         self.refresh_path_listctrl(self.use_multiple_image)
         if self.use_multiple_image:
-            for plist in paths_array:
+            for plist, idx in zip(paths_array, range(len(paths_array))):
                 for pth in plist:
                     self.append_to_listctrl(
-                        [str(paths_array.index(plist)), pth]
+                        [str(idx), pth]
                     )
         else:
             for plist in paths_array:
