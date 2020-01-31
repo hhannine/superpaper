@@ -173,7 +173,7 @@ class WallpaperSettingsPanel(wx.Panel):
             statbox_parent_sshow, -1,
             size=(self.tc_width, -1),
             style=wx.TE_RIGHT
-        ) # TODO right-align numeric data
+        )
         self.cb_slideshow = wx.CheckBox(statbox_parent_sshow, -1, "Slideshow")
         self.st_sshow_sort.Disable()
         self.st_sshow_delay.Disable()
@@ -526,13 +526,11 @@ class WallpaperSettingsPanel(wx.Panel):
     # Event methods
     #
     def onResize(self, event):
-        # wx.CallAfter()
         self.resized = True
         self.wpprev_pnl.refresh_preview()
 
     def onIdle(self, event):
         leftdown = wx.GetMouseState().LeftIsDown()
-        print(leftdown)
         update = bool(self.resized and not leftdown)
         if update:
             self.wpprev_pnl.full_refresh_preview(update, self.show_advanced_settings, self.use_multiple_image)
@@ -813,12 +811,9 @@ class WallpaperPreviewPanel(wx.Panel):
     def __init__(self, parent, display_data, image_list = None, use_ppi_px = False, use_multi_image = False):
         self.preview_size = (1200,450)
         wx.Panel.__init__(self, parent, size=self.preview_size)
-        # wx.Panel.__init__(self, parent)
         self.frame = parent
-        # self.SetMinSize((300,100))
 
         # Colour definitions
-        # self.SetBackgroundColour(wx.BLACK)
         self.clr_prw_mntr = wx.Colour(0, 0, 0, alpha=wx.ALPHA_OPAQUE)
         self.clr_prw_bkg = wx.Colour(30, 30, 30, alpha=wx.ALPHA_OPAQUE)
         self.SetBackgroundColour(self.clr_prw_bkg)
@@ -850,13 +845,11 @@ class WallpaperPreviewPanel(wx.Panel):
         self.st_bmp_canvas = wx.StaticBitmap(self, wx.ID_ANY, bmp_canv)
         self.st_bmp_canvas.SetPosition(self.dtop_canvas_pos)
         self.st_bmp_canvas.Hide()
-        # self.preview_img_list.append(self.st_bmp_canvas)
         
         # draw monitor previews
         for disp in self.display_rel_sizes:
             size = disp[0]
             offs = disp[1]
-            # bmp = wx.Bitmap.FromRGBA(2*size[0], 2*size[1], red=250, green=250, blue=250, alpha=100)
             bmp = wx.Bitmap.FromRGBA(2*size[0], 2*size[1], red=0, green=0, blue=0, alpha=255)
             self.bmp_list.append(bmp)
             st_bmp = wx.StaticBitmap(self, wx.ID_ANY, bmp)
@@ -866,9 +859,7 @@ class WallpaperPreviewPanel(wx.Panel):
 
     def refresh_preview(self):
         self.dtop_canvas_px = self.get_canvas(self.display_data)
-        # print("canvas", self.dtop_canvas_px)
         self.dtop_canvas_relsz, self.dtop_canvas_pos, scaling_fac = self.fit_canvas_wrkarea(self.dtop_canvas_px)
-        # print("canvas_rel", self.dtop_canvas_relsz)
         self.st_bmp_canvas.SetPosition(self.dtop_canvas_pos)
         self.st_bmp_canvas.SetSize(self.dtop_canvas_relsz)
 
@@ -908,7 +899,6 @@ class WallpaperPreviewPanel(wx.Panel):
 
             canvas_pos = self.dtop_canvas_pos
             for disp, st_bmp in zip(self.display_rel_sizes, self.preview_img_list):
-                # dprev.Hide()
                 sz = disp[0]
                 pos = (disp[1][0] - canvas_pos[0], disp[1][1] - canvas_pos[1])
                 crop = bmp_clr.GetSubBitmap(wx.Rect(pos, sz))
@@ -968,7 +958,6 @@ class WallpaperPreviewPanel(wx.Panel):
             new_height = scaling_fac * canvas_px[1]
             anchor_left = rel_achor_gap * work_sz[0]
             anchor_top = (work_sz[1] - new_height) / 2
-            self.maxsize = ((canvas_px[0], new_width), None)
         else:
             # canvas is taller than working area
             new_height = rel_factor * work_sz[1]
@@ -976,7 +965,6 @@ class WallpaperPreviewPanel(wx.Panel):
             new_width = scaling_fac * canvas_px[0]
             anchor_left = (work_sz[0] - new_width)/2
             anchor_top = rel_achor_gap * work_sz[1]
-            self.maxsize = (None, (canvas_px[1], new_height)) # bookkeep that relative sizes are anchored to height
         canvas_rel = (new_width, new_height)
         canvas_rel_pos = (anchor_left, anchor_top)
         return (canvas_rel, canvas_rel_pos, scaling_fac)
@@ -992,5 +980,4 @@ class WallpaperPreviewPanel(wx.Panel):
                     tuple([doff[0]*scaling_fac + off[0], doff[1]*scaling_fac + off[1]])
                 )
             )
-        # print(display_szs_pos)
         return display_szs_pos
