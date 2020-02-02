@@ -840,7 +840,7 @@ class WallpaperPreviewPanel(wx.Panel):
         work_sz = self.GetSize()
 
         # draw canvas
-        bmp_canv = wx.Bitmap.FromRGBA(2*self.dtop_canvas_relsz[0], 2*self.dtop_canvas_relsz[1], red=0, green=0, blue=0, alpha=255)
+        bmp_canv = wx.Bitmap.FromRGBA(self.dtop_canvas_relsz[0], self.dtop_canvas_relsz[1], red=0, green=0, blue=0, alpha=255)
         self.bmp_list.append(bmp_canv)
         self.st_bmp_canvas = wx.StaticBitmap(self, wx.ID_ANY, bmp_canv)
         self.st_bmp_canvas.SetPosition(self.dtop_canvas_pos)
@@ -850,12 +850,38 @@ class WallpaperPreviewPanel(wx.Panel):
         for disp in self.display_rel_sizes:
             size = disp[0]
             offs = disp[1]
-            bmp = wx.Bitmap.FromRGBA(2*size[0], 2*size[1], red=0, green=0, blue=0, alpha=255)
+            bmp = wx.Bitmap.FromRGBA(size[0], size[1], red=0, green=0, blue=0, alpha=255)
             self.bmp_list.append(bmp)
             st_bmp = wx.StaticBitmap(self, wx.ID_ANY, bmp)
             # st_bmp.SetScaleMode(wx.Scale_AspectFill)  # New in wxpython 4.1
             st_bmp.SetPosition(offs)
             self.preview_img_list.append(st_bmp)
+
+        self.draw_monitor_numbers()
+
+    def resize_displays(self):
+        for disp, st_bmp in zip(self.display_rel_sizes, self.preview_img_list):
+            size = disp[0]
+            offs = disp[1]
+            bmp = wx.Bitmap.FromRGBA(size[0], size[1], red=0, green=0, blue=0, alpha=255)
+            st_bmp.SetBitmap(bmp)
+            st_bmp.SetPosition(offs)
+            st_bmp.SetSize(size)
+        self.draw_monitor_numbers()
+
+    def draw_monitor_numbers(self):
+        font = wx.Font(24, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        font_clr = wx.Colour(60, 60, 60, alpha=wx.ALPHA_OPAQUE)
+
+        for st_bmp in self.preview_img_list:
+            bmp = st_bmp.GetBitmap()
+            dc = wx.MemoryDC(bmp)
+            text = str(self.preview_img_list.index(st_bmp))
+            dc.SetTextForeground(font_clr)
+            dc.SetFont(font)
+            dc.DrawText(text, 5, 5)
+            del dc
+            st_bmp.SetBitmap(bmp)
 
     def refresh_preview(self):
         self.dtop_canvas_px = self.get_canvas(self.display_data)
@@ -876,7 +902,7 @@ class WallpaperPreviewPanel(wx.Panel):
             if (self.current_preview_images and dtop_canvas_relsz is not self.dtop_canvas_relsz):
                 self.preview_wallpaper(self.current_preview_images, use_ppi_px, use_multi_image)
             else:
-                pass
+                self.resize_displays()
 
 
     def preview_wallpaper(self, image_list, use_ppi_px = False, use_multi_image = False):
@@ -904,6 +930,7 @@ class WallpaperPreviewPanel(wx.Panel):
                 crop = bmp_clr.GetSubBitmap(wx.Rect(pos, sz))
                 st_bmp.SetBitmap(crop)
                 st_bmp.Show()
+        self.draw_monitor_numbers()
 
     def resize_and_bitmap(self, fname, size, enhance_color = False):
         """Take filename of an image and resize and center crop it to size."""
