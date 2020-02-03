@@ -173,6 +173,54 @@ class Display():
                 str(self)
             )
 
+class DisplaySystem():
+    """
+    Handle the display system as a whole, applying user data such as
+    bezel corrections, offsets, physical layout, and produces
+    resolutions and offsets that are used to set the wallpaper
+    in advanced mode.
+    """
+
+    def __init__(self):
+        self.disp_list = get_display_data()
+
+        # Data
+        self.bezel_px = []
+        self.user_offsets = []
+
+
+    def get_max_ppi(self):
+        return max([disp.ppi for disp in self.disp_list])
+
+    def get_normalized_ppi(self):
+        max_ppi = self.get_max_ppi()
+        return [disp.ppi/max_ppi for disp in self.disp_list]
+
+    def compute_ppinorm_resolutions(self):
+        pass
+
+    def is_in_column(self, col_last_disp, disp):
+        """Test if the horiz center of disp is below the last disp in the col."""
+        disp_cntr = (disp.digital_offset[0] + disp.digital_offset[0] + disp.resolution[0])/2 #(left+right)/2
+        col_last_left = col_last_disp.digital_offset[0]
+        col_last_right = col_last_disp.digital_offset[0] + col_last_disp.resolution[0]
+        if (disp_cntr > col_last_left and disp_cntr < col_last_right):
+            return True
+        else:
+            return False
+
+    def compute_initial_preview_offsets(self):
+        """
+        Uses desktop layout data to arrange the displays in their
+        physical dimensions in to horizontally centered columns and
+        then concatenating these columns horizontally centered, with
+        each columns width being that of the widest display in the
+        column. Display list needs to be sorted so that displays in
+        a column are together and then the columns progress left
+        to right.
+        """
+        pass
+
 
 
 def extract_global_vars(disp_list):
