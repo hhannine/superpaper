@@ -188,19 +188,44 @@ class DisplaySystem():
         self.bezel_px = []
         self.user_offsets = []
 
+        self.load_system()
 
-    def get_max_ppi(self):
+
+    def max_ppi(self):
         return max([disp.ppi for disp in self.disp_list])
 
-    def get_normalized_ppi(self):
-        max_ppi = self.get_max_ppi()
+    def get_normalized_ppis(self):
+        """Return list of PPI values normalized to the max_ppi."""
+        max_ppi = self.max_ppi()
         return [disp.ppi/max_ppi for disp in self.disp_list]
 
     def compute_ppinorm_resolutions(self):
-        pass
+        """Return PPI density normalized sizes of the real resolutions."""
+        rel_ppis = self.get_normalized_ppis()
+        for r_ppi, dsp in zip(rel_ppis, self.disp_list):
+            dsp.ppi_norm_resolution = (
+                round(dsp.resolution[0] / r_ppi),
+                round(dsp.resolution[1] / r_ppi)
+            )
 
-    def is_in_column(self, col_last_disp, disp):
+    def get_ppi_norm_crops(self):
+        """Returns list of ppi_norm crop tuples to cut from ppi_norm canvas.
+
+        A valid crop is a 4-tuple: (left, top, right, bottom).
+        """
+        crops = []
+        for dsp in self.disp_list:
+            left_top = dsp.ppi_norm_offset
+            right_btm = (
+                dsp.ppi_norm_resolution[0] + dsp.ppi_norm_offset[0],
+                dsp.ppi_norm_resolution[1] + dsp.ppi_norm_offset[1],
+            )
+            crops.append(left_top + right_btm)
+        return crops
+
+    def fits_in_column(self, disp, col):
         """Test if the horiz center of disp is below the last disp in the col."""
+        col_last_disp = col[-1]
         disp_cntr = (disp.digital_offset[0] + disp.digital_offset[0] + disp.resolution[0])/2 #(left+right)/2
         col_last_left = col_last_disp.digital_offset[0]
         col_last_right = col_last_disp.digital_offset[0] + col_last_disp.resolution[0]
@@ -208,6 +233,12 @@ class DisplaySystem():
             return True
         else:
             return False
+
+    def column_size(self, col):
+        width = max([dsp.ppi_norm_resolution[0] for dsp in col])
+        height = sum([dsp.ppi_norm_resolution[1] for dsp in col])
+        return (width, height)
+
 
     def compute_initial_preview_offsets(self):
         """
@@ -218,8 +249,84 @@ class DisplaySystem():
         column. Display list needs to be sorted so that displays in
         a column are together and then the columns progress left
         to right.
+
+        Column composition is TESTED with resolution but column SIZES
+        are in PPI normalized resolutions to reflect the physical sizes
+        of the displays.
         """
+        # Construct columns from disp_list
+        columns = []
+        work_col = []
+        for dsp in self.disp_list:
+            if work_col == []:
+                work_col.append(dsp)
+            else:
+                if self.fits_in_column(dsp, work_col):
+                    work_col.append(dsp)
+                else:
+                    columns.append(work_col)
+                    work_col = [dsp]
+
+        # Tile columns on to the plane with vertical centering
+        col_sizes = [self.column_size(col) for col in columns]
+        max_col_h = max([sz[1] for sz in col_sizes])
+        col_left_tops = []
+        current_left = 0
+        for sz in col_sizes:
+            col_left_tops.append(
+                current_left,
+                round((max_col_h - sz[1])/2)
+            )
+            current_left += sz[0]
+
+        # Tile displays in columns onto the plane with horizontal centering
+        # within the column. Anchor columns to col_left_tops.
+        for col, col_anchor in zip(columns, col_left_tops):
+            current_top = 0
+            max_dsp_w = max([dsp.ppi_norm_resolution[0] for dsp in col])
+            for dsp in col:
+                dsp.ppi_norm_offset = (
+                    col_anchor[0]
+                    + round((max_dsp_w - dsp.ppi_norm_resolution[0])/2),
+                    col_anchor[1] + current_top
+                )
+                current_top += dsp.ppi_norm_resolution[1]
+
+
+
+    def update_ppinorm_offsets(self, offsets):
+        """Write ppi_norm resolution offsets as determined
+        in the GUI into Displays."""
+        for dsp, offs in zip(self.disp_list, offsets):
+            dsp.ppi_norm_offset = offs
+
+    def save_system(self):
+        """Save the user given input tied to the current instance
+        in a central file."""
+        # TODO look for file
+        #      - look for match for current instance in file
+        #           - if match, save with updated data
+        #      - if no match, save a new entry
+        #      - values to save:
+        #           - ppi_norm offsets
+        #           - bezel (BGB) sizes
         pass
+
+    def load_system(self):
+        """Try to load system data from database based on initialization data,
+        i.e. the Display list. If no pre-existing system is found, try to guess
+        the system topology and update disp_list"""
+        # TODO figure out saving first
+        found_match = False
+        if found_match:
+            # read values
+            # and push them into self.disp_list
+            pass
+        else:
+            # Continue without data
+            self.compute_initial_preview_offsets()
+            pass
+
 
 
 
