@@ -64,8 +64,9 @@ class WallpaperSettingsPanel(wx.Panel):
 
         # top half
         self.resized = False
-        display_data = wpproc.get_display_data()
-        # display_data_full = DisplaySetupData(wpproc.get_display_data()) # TODO
+        # display_data = wpproc.get_display_data()
+        self.display_sys = wpproc.DisplaySystem()
+        display_data = self.display_sys.get_disp_list()
         self.wpprev_pnl = WallpaperPreviewPanel(self.frame, display_data)
         self.sizer_top_half.Add(self.wpprev_pnl, 1, wx.CENTER|wx.EXPAND, 5)
         # self.sizer_top_half.SetMinSize((400,200))
@@ -538,6 +539,7 @@ class WallpaperSettingsPanel(wx.Panel):
         else:
             event.Skip()
 
+
     def onSpanRadio(self, event):
         selection = self.radiobox_spanmode.GetSelection()
         if selection == 1:
@@ -551,6 +553,13 @@ class WallpaperSettingsPanel(wx.Panel):
             self.use_multiple_image = False
         self.show_adv_setting_sizer(self.show_advanced_settings)
         self.refresh_path_listctrl(self.use_multiple_image)
+        if self.show_advanced_settings:
+            display_data = self.display_sys.get_disp_list(True)
+        else:
+            display_data = self.display_sys.get_disp_list(False)
+        print([str(dsp) for dsp in display_data])
+        self.wpprev_pnl.update_display_data(display_data)
+
 
     def onCheckboxSlideshow(self, event):
         cb_state = self.cb_slideshow.GetValue()
@@ -561,7 +570,6 @@ class WallpaperSettingsPanel(wx.Panel):
         cb_state = self.cb_hotkey.GetValue()
         sizer = self.hotkey_bind_sizer
         self.sizer_toggle_children(sizer, cb_state)
-
 
     def onCheckboxBezels(self, event):
         cb_state = self.cb_bezels.GetValue()
@@ -821,9 +829,7 @@ class WallpaperPreviewPanel(wx.Panel):
         # Display data and sizes
         self.display_data = display_data
         self.dtop_canvas_px = self.get_canvas(self.display_data)
-        print("canvas", self.dtop_canvas_px)
         self.dtop_canvas_relsz, self.dtop_canvas_pos, scaling_fac = self.fit_canvas_wrkarea(self.dtop_canvas_px)
-        print("canvas_rel", self.dtop_canvas_relsz)
         self.display_rel_sizes = self.displays_on_canvas(self.display_data, self.dtop_canvas_pos, scaling_fac)
 
         # bitmaps to be shown
@@ -904,7 +910,6 @@ class WallpaperPreviewPanel(wx.Panel):
             else:
                 self.resize_displays()
 
-
     def preview_wallpaper(self, image_list, use_ppi_px = False, use_multi_image = False):
         self.current_preview_images = image_list
         if use_multi_image:
@@ -946,6 +951,16 @@ class WallpaperPreviewPanel(wx.Panel):
             imgenh.SetData(pilenh.convert("RGB").tobytes())
             return (img.ConvertToBitmap(), imgenh.ConvertToBitmap())
         return img.ConvertToBitmap()
+
+    def update_display_data(self, display_data):
+        self.display_data = display_data
+        self.dtop_canvas_px = self.get_canvas(self.display_data)
+        print("canvas", self.dtop_canvas_px)
+        self.dtop_canvas_relsz, self.dtop_canvas_pos, scaling_fac = self.fit_canvas_wrkarea(self.dtop_canvas_px)
+        print("canvas_rel", self.dtop_canvas_relsz)
+        self.display_rel_sizes = self.displays_on_canvas(self.display_data, self.dtop_canvas_pos, scaling_fac)
+        self.full_refresh_preview(True, False, False)   # TODO remove these arguments if they're redundant
+
 
     #
     # Data analysis methods
