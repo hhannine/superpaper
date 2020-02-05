@@ -173,6 +173,21 @@ class Display():
                 str(self)
             )
 
+class DisplayLight():
+    """Small class to store resolution and position data a kin to full Display."""
+    def __init__(self, res, off):
+        self.resolution = res
+        self.digital_offset = off
+
+    def __str__(self):
+        return (
+            f"DisplayLight("
+            f"resolution={self.resolution}, "
+            f"digital_offset={self.digital_offset} "
+            f")"
+        )
+
+
 class DisplaySystem():
     """
     Handle the display system as a whole, applying user data such as
@@ -183,6 +198,7 @@ class DisplaySystem():
 
     def __init__(self):
         self.disp_list = get_display_data()
+        self.compute_ppinorm_resolutions()
 
         # Data
         self.bezel_px = []
@@ -200,7 +216,7 @@ class DisplaySystem():
         return [disp.ppi/max_ppi for disp in self.disp_list]
 
     def compute_ppinorm_resolutions(self):
-        """Return PPI density normalized sizes of the real resolutions."""
+        """Update disp_list PPI density normalized sizes of the real resolutions."""
         rel_ppis = self.get_normalized_ppis()
         for r_ppi, dsp in zip(rel_ppis, self.disp_list):
             dsp.ppi_norm_resolution = (
@@ -266,6 +282,10 @@ class DisplaySystem():
                 else:
                     columns.append(work_col)
                     work_col = [dsp]
+                    if dsp == self.disp_list[-1]:
+                        columns.append(work_col)
+
+        print("columns", columns)
 
         # Tile columns on to the plane with vertical centering
         col_sizes = [self.column_size(col) for col in columns]
@@ -274,10 +294,13 @@ class DisplaySystem():
         current_left = 0
         for sz in col_sizes:
             col_left_tops.append(
-                current_left,
-                round((max_col_h - sz[1])/2)
+                (
+                    current_left,
+                    round((max_col_h - sz[1])/2)
+                )
             )
             current_left += sz[0]
+        print("col_left_tops", col_left_tops)
 
         # Tile displays in columns onto the plane with horizontal centering
         # within the column. Anchor columns to col_left_tops.
@@ -290,8 +313,29 @@ class DisplaySystem():
                     + round((max_dsp_w - dsp.ppi_norm_resolution[0])/2),
                     col_anchor[1] + current_top
                 )
+                print(dsp.ppi_norm_offset)
                 current_top += dsp.ppi_norm_resolution[1]
+        # Update offsets to disp_list
+        flattened_cols = [dsp for col in columns for dsp in col]
+        for scope_dsp, dsp in zip(flattened_cols, self.disp_list):
+            dsp.ppi_norm_offset = scope_dsp.ppi_norm_offset
+        print("PPI NORM RESOLUTIONS AND OFFSETS")
+        print([(dsp.ppi_norm_resolution, dsp.ppi_norm_offset) for dsp in self.disp_list])
 
+    def get_disp_list(self, use_ppi_norm = False):
+        if use_ppi_norm:
+            disp_l = []
+            for dsp in self.disp_list:
+                disp_l.append(
+                    DisplayLight(
+                        dsp.ppi_norm_resolution,
+                        dsp.ppi_norm_offset
+                    )
+                )
+            print(disp_l)
+            return disp_l
+        else:
+            return self.disp_list
 
 
     def update_ppinorm_offsets(self, offsets):
@@ -325,7 +369,6 @@ class DisplaySystem():
         else:
             # Continue without data
             self.compute_initial_preview_offsets()
-            pass
 
 
 
