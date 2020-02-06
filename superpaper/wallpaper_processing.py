@@ -332,7 +332,6 @@ class DisplaySystem():
                         dsp.ppi_norm_offset
                     )
                 )
-            print(disp_l)
             return disp_l
         else:
             return self.disp_list

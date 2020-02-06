@@ -57,7 +57,7 @@ class WallpaperSettingsPanel(wx.Panel):
         # settings GUI properties
         self.tc_width = 160  # standard width for wx.TextCtrl etc elements.
         self.show_advanced_settings = False
-        self.use_multiple_image = False
+        self.use_multi_image = False
         BMP_SIZE = 32
         self.tsize = (BMP_SIZE, BMP_SIZE)
         self.image_list = wx.ImageList(BMP_SIZE, BMP_SIZE)
@@ -216,7 +216,7 @@ class WallpaperSettingsPanel(wx.Panel):
         self.sizer_setting_paths = wx.StaticBoxSizer(wx.VERTICAL, self, "Wallpaper Paths")
         self.statbox_parent_paths = self.sizer_setting_paths.GetStaticBox()
         st_paths_info = wx.StaticText(self.statbox_parent_paths, -1, "Browse to add your wallpaper files or source folders here:")
-        if self.use_multiple_image:
+        if self.use_multi_image:
             self.path_listctrl = wx.ListCtrl(self.statbox_parent_paths, -1,
                                               style=wx.LC_REPORT
                                               | wx.BORDER_SIMPLE
@@ -358,7 +358,7 @@ class WallpaperSettingsPanel(wx.Panel):
         self.tc_name.ChangeValue(profile.name)
 
         self.show_advanced_settings = False
-        self.use_multiple_image = False
+        self.use_multi_image = False
         legacy_advanced = bool(
             profile.spanmode == "single" and
             bool(
@@ -375,7 +375,7 @@ class WallpaperSettingsPanel(wx.Panel):
             self.show_advanced_settings = True
             self.radiobox_spanmode.SetSelection(1)
         elif profile.spanmode == "multi":
-            self.use_multiple_image = True
+            self.use_multi_image = True
             self.radiobox_spanmode.SetSelection(2)
         else:
             # default to simple span
@@ -426,16 +426,21 @@ class WallpaperSettingsPanel(wx.Panel):
         self.paths_array_to_listctrl(profile.paths_array)
 
         # Update wallpaper preview from selected profile
+        if self.show_advanced_settings:
+            display_data = self.display_sys.get_disp_list(True)
+        else:
+            display_data = self.display_sys.get_disp_list(False)
         self.wpprev_pnl.preview_wallpaper(
             profile.next_wallpaper_files(),
             self.show_advanced_settings,
-            self.use_multiple_image
+            self.use_multi_image,
+            display_data
         )
 
 
     def paths_array_to_listctrl(self, paths_array):
-        self.refresh_path_listctrl(self.use_multiple_image)
-        if self.use_multiple_image:
+        self.refresh_path_listctrl(self.use_multi_image)
+        if self.use_multi_image:
             for plist, idx in zip(paths_array, range(len(paths_array))):
                 for pth in plist:
                     self.append_to_listctrl(
@@ -534,7 +539,7 @@ class WallpaperSettingsPanel(wx.Panel):
         leftdown = wx.GetMouseState().LeftIsDown()
         update = bool(self.resized and not leftdown)
         if update:
-            self.wpprev_pnl.full_refresh_preview(update, self.show_advanced_settings, self.use_multiple_image)
+            self.wpprev_pnl.full_refresh_preview(update, self.show_advanced_settings, self.use_multi_image)
             self.resized = False
         else:
             event.Skip()
@@ -544,21 +549,24 @@ class WallpaperSettingsPanel(wx.Panel):
         selection = self.radiobox_spanmode.GetSelection()
         if selection == 1:
             self.show_advanced_settings = True
-            self.use_multiple_image = False
+            self.use_multi_image = False
         elif selection == 2:
             self.show_advanced_settings = False
-            self.use_multiple_image = True
+            self.use_multi_image = True
         else:
             self.show_advanced_settings = False
-            self.use_multiple_image = False
+            self.use_multi_image = False
         self.show_adv_setting_sizer(self.show_advanced_settings)
-        self.refresh_path_listctrl(self.use_multiple_image)
+        self.refresh_path_listctrl(self.use_multi_image)
         if self.show_advanced_settings:
             display_data = self.display_sys.get_disp_list(True)
         else:
             display_data = self.display_sys.get_disp_list(False)
-        print([str(dsp) for dsp in display_data])
-        self.wpprev_pnl.update_display_data(display_data)
+        self.wpprev_pnl.update_display_data(
+            display_data,
+            self.show_advanced_settings,
+            self.use_multi_image
+        )
 
 
     def onCheckboxSlideshow(self, event):
@@ -591,15 +599,15 @@ class WallpaperSettingsPanel(wx.Panel):
     #
 
     def append_to_listctrl(self, data_row):
-        if (self.use_multiple_image and len(data_row) == 2):
+        if (self.use_multi_image and len(data_row) == 2):
             img_id = self.add_to_imagelist(data_row[1])
             index = self.path_listctrl.InsertItem(self.path_listctrl.GetItemCount(), data_row[0], img_id)
             self.path_listctrl.SetItem(index, 1, data_row[1])
-        elif (not self.use_multiple_image and len(data_row) == 1):
+        elif (not self.use_multi_image and len(data_row) == 1):
             img_id = self.add_to_imagelist(data_row[0])
             index = self.path_listctrl.InsertItem(self.path_listctrl.GetItemCount(), data_row[0], img_id)
         else:
-            print("UseMultImg: {}. Bad data_row: {}".format(self.use_multiple_image, data_row))
+            print("UseMultImg: {}. Bad data_row: {}".format(self.use_multi_image, data_row))
 
     def add_to_imagelist(self, path):
         folder_bmp =  wx.ArtProvider.GetBitmap(wx.ART_FOLDER, wx.ART_TOOLBAR, self.tsize)
@@ -637,7 +645,7 @@ class WallpaperSettingsPanel(wx.Panel):
 
     def onBrowsePaths(self, event):
         """Opens the pick paths dialog."""
-        dlg = BrowsePaths(self, self.use_multiple_image, self.defdir)
+        dlg = BrowsePaths(self, self.use_multi_image, self.defdir)
         res = dlg.ShowModal()
         if res == wx.ID_OK:
             path_list_data = dlg.path_list_data
@@ -889,6 +897,9 @@ class WallpaperPreviewPanel(wx.Panel):
             del dc
             st_bmp.SetBitmap(bmp)
 
+    def draw_monitor_sizes(self):
+        pass
+
     def refresh_preview(self):
         self.dtop_canvas_px = self.get_canvas(self.display_data)
         self.dtop_canvas_relsz, self.dtop_canvas_pos, scaling_fac = self.fit_canvas_wrkarea(self.dtop_canvas_px)
@@ -905,12 +916,16 @@ class WallpaperPreviewPanel(wx.Panel):
     def full_refresh_preview(self, is_resized, use_ppi_px, use_multi_image):
         if is_resized:
             dtop_canvas_relsz, dtop_canvas_pos, scaling_fac = self.fit_canvas_wrkarea(self.dtop_canvas_px)
-            if (self.current_preview_images and dtop_canvas_relsz is not self.dtop_canvas_relsz):
+            # if (self.current_preview_images and dtop_canvas_relsz is not self.dtop_canvas_relsz):
+            if (self.current_preview_images):
                 self.preview_wallpaper(self.current_preview_images, use_ppi_px, use_multi_image)
             else:
                 self.resize_displays()
 
-    def preview_wallpaper(self, image_list, use_ppi_px = False, use_multi_image = False):
+    def preview_wallpaper(self, image_list, use_ppi_px = False, use_multi_image = False, display_data = None):
+        if display_data:
+            self.display_data = display_data
+            self.refresh_preview()
         self.current_preview_images = image_list
         if use_multi_image:
             # hide canvas and set images to monitor previews
@@ -952,14 +967,10 @@ class WallpaperPreviewPanel(wx.Panel):
             return (img.ConvertToBitmap(), imgenh.ConvertToBitmap())
         return img.ConvertToBitmap()
 
-    def update_display_data(self, display_data):
+    def update_display_data(self, display_data, use_ppi_px, use_multi_image):
         self.display_data = display_data
-        self.dtop_canvas_px = self.get_canvas(self.display_data)
-        print("canvas", self.dtop_canvas_px)
-        self.dtop_canvas_relsz, self.dtop_canvas_pos, scaling_fac = self.fit_canvas_wrkarea(self.dtop_canvas_px)
-        print("canvas_rel", self.dtop_canvas_relsz)
-        self.display_rel_sizes = self.displays_on_canvas(self.display_data, self.dtop_canvas_pos, scaling_fac)
-        self.full_refresh_preview(True, False, False)   # TODO remove these arguments if they're redundant
+        self.refresh_preview()
+        self.full_refresh_preview(True, use_ppi_px, use_multi_image)
 
 
     #
