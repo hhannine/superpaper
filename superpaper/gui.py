@@ -350,6 +350,8 @@ class WallpaperSettingsPanel(wx.Panel):
         self.sizer_bottom_buttonrow.Add(self.button_apply, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
         self.sizer_bottom_buttonrow.Add(self.button_close, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
 
+
+
     #
     # Profile loading and display methods
     #
@@ -436,6 +438,11 @@ class WallpaperSettingsPanel(wx.Panel):
             self.use_multi_image,
             display_data
         )
+        self.wpprev_pnl.toggle_buttons(
+            show_config = self.show_advanced_settings,
+            in_config = False
+        )
+
 
 
     def paths_array_to_listctrl(self, paths_array):
@@ -566,6 +573,10 @@ class WallpaperSettingsPanel(wx.Panel):
             display_data,
             self.show_advanced_settings,
             self.use_multi_image
+        )
+        self.wpprev_pnl.toggle_buttons(
+            show_config = self.show_advanced_settings,
+            in_config = False
         )
 
 
@@ -814,6 +825,9 @@ display, serparated by a semicolon ';'."
 
 
 
+
+
+
 class WallpaperPreviewPanel(wx.Panel):
     """
     Wallpaper & monitor preview panel.
@@ -828,6 +842,9 @@ class WallpaperPreviewPanel(wx.Panel):
         self.preview_size = (1200,450)
         wx.Panel.__init__(self, parent, size=self.preview_size)
         self.frame = parent
+
+        # Buttons
+        self.create_buttons(use_ppi_px)
 
         # Colour definitions
         self.clr_prw_mntr = wx.Colour(0, 0, 0, alpha=wx.ALPHA_OPAQUE)
@@ -912,6 +929,8 @@ class WallpaperPreviewPanel(wx.Panel):
             offs = disp[1]
             st_bmp.SetPosition(offs)
             st_bmp.SetSize(size)
+
+        self.move_buttons()
 
     def full_refresh_preview(self, is_resized, use_ppi_px, use_multi_image):
         if is_resized:
@@ -1034,3 +1053,80 @@ class WallpaperPreviewPanel(wx.Panel):
                 )
             )
         return display_szs_pos
+
+
+
+    #
+    # Buttons
+    #
+    def create_buttons(self, use_ppi_px):
+        # Buttons - show only if use_ppi_px == True
+        self.button_config = wx.Button(self, label="Configure")
+        self.button_save = wx.Button(self, label="Save")
+        self.button_cancel = wx.Button(self, label="Cancel")
+
+        self.button_config.Bind(wx.EVT_BUTTON, self.onConfigure)
+        self.button_save.Bind(wx.EVT_BUTTON, self.onSave)
+        self.button_cancel.Bind(wx.EVT_BUTTON, self.onCancel)
+
+        self.move_buttons()
+
+        self.button_config.Show(use_ppi_px)
+        self.button_save.Show(False)
+        self.button_cancel.Show(False)
+
+    def move_buttons(self):
+        sz_area = self.GetSize()
+        sz_butt = self.button_config.GetDefaultSize()
+        self.butt_gap = 5
+        self.button_config.SetPosition(
+            (
+                sz_area[0] - sz_butt[0] - self.butt_gap,
+                sz_area[1] - sz_butt[1] - self.butt_gap
+            )
+        )
+        self.button_save.SetPosition(
+            (
+                sz_area[0] - 2*(sz_butt[0] + self.butt_gap),
+                sz_area[1] - sz_butt[1] - self.butt_gap
+            )
+        )
+        self.button_cancel.SetPosition(
+            (
+                sz_area[0] - sz_butt[0] - self.butt_gap,
+                sz_area[1] - sz_butt[1] - self.butt_gap
+            )
+        )
+
+    def toggle_buttons(self, show_config, in_config):
+        self.button_config.Show(show_config)
+        self.button_save.Show(in_config)
+        self.button_cancel.Show(in_config)
+
+    def onConfigure(self, evt):
+        self.toggle_buttons(False, True)
+        self.show_staticbmps(False)
+
+    def onSave(self, evt):
+        self.toggle_buttons(True, False)
+        # TODO pass on positional data to DisplaySystem and trigger a full redraw.
+
+    def onCancel(self, evt):
+        self.toggle_buttons(True, False)
+        # TODO destroy DragShapes
+        self.show_staticbmps(True)
+
+
+
+
+
+    #
+    # DragImage methods
+    #
+    def show_staticbmps(show):
+        for st_bmp in self.preview_img_list:
+            st_bmp.Show(show)
+
+    def create_shapes(self):
+        """Create draggable objects from display previews."""
+        pass
