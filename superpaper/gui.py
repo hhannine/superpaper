@@ -844,6 +844,7 @@ class WallpaperPreviewPanel(wx.Panel):
         self.frame = parent
 
         # Buttons
+        self.config_mode = False
         self.create_buttons(use_ppi_px)
 
         # Colour definitions
@@ -918,22 +919,23 @@ class WallpaperPreviewPanel(wx.Panel):
         pass
 
     def refresh_preview(self):
-        self.dtop_canvas_px = self.get_canvas(self.display_data)
-        self.dtop_canvas_relsz, self.dtop_canvas_pos, scaling_fac = self.fit_canvas_wrkarea(self.dtop_canvas_px)
-        self.st_bmp_canvas.SetPosition(self.dtop_canvas_pos)
-        self.st_bmp_canvas.SetSize(self.dtop_canvas_relsz)
+        if not self.config_mode:
+            self.dtop_canvas_px = self.get_canvas(self.display_data)
+            self.dtop_canvas_relsz, self.dtop_canvas_pos, scaling_fac = self.fit_canvas_wrkarea(self.dtop_canvas_px)
+            self.st_bmp_canvas.SetPosition(self.dtop_canvas_pos)
+            self.st_bmp_canvas.SetSize(self.dtop_canvas_relsz)
 
-        self.display_rel_sizes = self.displays_on_canvas(self.display_data, self.dtop_canvas_pos, scaling_fac)
-        for disp, st_bmp in zip(self.display_rel_sizes, self.preview_img_list):
-            size = disp[0]
-            offs = disp[1]
-            st_bmp.SetPosition(offs)
-            st_bmp.SetSize(size)
+            self.display_rel_sizes = self.displays_on_canvas(self.display_data, self.dtop_canvas_pos, scaling_fac)
+            for disp, st_bmp in zip(self.display_rel_sizes, self.preview_img_list):
+                size = disp[0]
+                offs = disp[1]
+                st_bmp.SetPosition(offs)
+                st_bmp.SetSize(size)
 
         self.move_buttons()
 
     def full_refresh_preview(self, is_resized, use_ppi_px, use_multi_image):
-        if is_resized:
+        if is_resized and not self.config_mode:
             dtop_canvas_relsz, dtop_canvas_pos, scaling_fac = self.fit_canvas_wrkarea(self.dtop_canvas_px)
             # if (self.current_preview_images and dtop_canvas_relsz is not self.dtop_canvas_relsz):
             if (self.current_preview_images):
@@ -1104,33 +1106,72 @@ class WallpaperPreviewPanel(wx.Panel):
         self.button_cancel.Show(in_config)
 
     def onConfigure(self, evt):
+        self.config_mode = True
         self.toggle_buttons(False, True)
         self.show_staticbmps(False)
         self.create_shapes()
 
     def onSave(self, evt):
+        self.config_mode = False
         self.toggle_buttons(True, False)
-        # TODO pass on positional data to DisplaySystem and trigger a full redraw.
+        display_sys = wpproc.DisplaySystem()
+        self.export_offsets(display_sys)
+        display_sys.save_system()
+        display_data = display_sys.get_disp_list(use_ppi_norm = True)
+        # Full redraw of preview with new offset data
+        self.preview_wallpaper(self.current_preview_images, True, False, display_data=display_data)
         self.draggable_shapes = []  # Destroys DragShapes
-
 
     def onCancel(self, evt):
+        self.config_mode = False
         self.toggle_buttons(True, False)
-        #TODO save offsets
         self.draggable_shapes = []  # Destroys DragShapes
+        self.refresh_preview()
+        self.full_refresh_preview(True, True, False)
         self.show_staticbmps(True)
 
 
+    def show_staticbmps(self, show):
+        """Show/Hide StaticBitmaps."""
+        self.st_bmp_canvas.Show(show)
+        for st_bmp in self.preview_img_list:
+            st_bmp.Show(show)
 
+    def export_offsets(self, display_sys):
+        """Read dragged preview positions, normalize them to be positive,
+        and scale sizes up to old canvas size."""
+        # DragShape sizes and positions need to be scaled up by true_canvas_old_w/preview_canv_w
+        prev_canv_w = self.st_bmp_canvas.GetSize()[0]
+        true_canv_w = self.get_canvas(display_sys.get_disp_list(True))[0]
+        scaling = true_canv_w / prev_canv_w
+        sanitzed_offs = self.sanitize_shape_offs()
+        ppi_norm_offsets = []
+        for off in sanitzed_offs:
+            ppi_norm_offsets.append(
+                (
+                    off[0]*scaling,
+                    off[1]*scaling
+                )
+            )
+        display_sys.update_ppinorm_offsets(ppi_norm_offsets, bezels_included = False)
 
+    def sanitize_shape_offs(self):
+        """Return shapes' relative offsets, anchoring to (0,0)."""
+        sanitized_offs = []
+        leftmost_offset = min([shape.pos[0] for shape in self.draggable_shapes])
+        topmost_offset = min([shape.pos[1] for shape in self.draggable_shapes])
+        for shape in self.draggable_shapes:
+            sanitized_offs.append(
+                (
+                    shape.pos[0] - leftmost_offset,
+                    shape.pos[1] - topmost_offset
+                )
+            )
+        return sanitized_offs
 
     #
     # DragImage methods
     #
-    def show_staticbmps(self, show):
-        self.st_bmp_canvas.Show(show)
-        for st_bmp in self.preview_img_list:
-            st_bmp.Show(show)
 
     class DragShape:
         def __init__(self, bmp):
@@ -1267,5 +1308,5 @@ class WallpaperPreviewPanel(wx.Panel):
 
 
     def OnLeaveWindow(self, evt):
-        # TODO drop dragged image if cursor leaves window.
-        pass
+        """On leavewindow event drop dragged image by simulating a left up event."""
+        self.OnLeftUp(evt)
