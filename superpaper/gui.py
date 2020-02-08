@@ -1106,14 +1106,18 @@ class WallpaperPreviewPanel(wx.Panel):
     def onConfigure(self, evt):
         self.toggle_buttons(False, True)
         self.show_staticbmps(False)
+        self.create_shapes()
 
     def onSave(self, evt):
         self.toggle_buttons(True, False)
         # TODO pass on positional data to DisplaySystem and trigger a full redraw.
+        self.draggable_shapes = []  # Destroys DragShapes
+
 
     def onCancel(self, evt):
         self.toggle_buttons(True, False)
-        # TODO destroy DragShapes
+        #TODO save offsets
+        self.draggable_shapes = []  # Destroys DragShapes
         self.show_staticbmps(True)
 
 
@@ -1123,10 +1127,145 @@ class WallpaperPreviewPanel(wx.Panel):
     #
     # DragImage methods
     #
-    def show_staticbmps(show):
+    def show_staticbmps(self, show):
+        self.st_bmp_canvas.Show(show)
         for st_bmp in self.preview_img_list:
             st_bmp.Show(show)
 
+    class DragShape:
+        def __init__(self, bmp):
+            self.bmp = bmp
+            self.pos = (0,0)
+            self.shown = True
+            self.text = None
+            self.fullscreen = False
+
+        def HitTest(self, pt):
+            rect = self.GetRect()
+            return rect.Contains(pt)
+
+        def GetRect(self):
+            return wx.Rect(self.pos[0], self.pos[1],
+                        self.bmp.GetWidth(), self.bmp.GetHeight())
+
+        def Draw(self, dc, op = wx.COPY):
+            if self.bmp.IsOk():
+                memDC = wx.MemoryDC()
+                memDC.SelectObject(self.bmp)
+
+                dc.Blit(self.pos[0], self.pos[1],
+                        self.bmp.GetWidth(), self.bmp.GetHeight(),
+                        memDC, 0, 0, op, True)
+
+                return True
+            else:
+                return False
+
+
+
     def create_shapes(self):
         """Create draggable objects from display previews."""
+        self.draggable_shapes = []
+        self.drag_image = None
+        self.drag_shape = None
+
+        for st_bmp in self.preview_img_list:
+            shape = self.DragShape(st_bmp.GetBitmap())
+            shape.pos = st_bmp.GetPosition()
+            self.draggable_shapes.append(shape)
+
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+        self.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
+        self.Bind(wx.EVT_LEFT_UP, self.OnLeftUp)
+        self.Bind(wx.EVT_MOTION, self.OnMotion)
+        self.Bind(wx.EVT_LEAVE_WINDOW, self.OnLeaveWindow)
+
+
+    def draw_shapes(self, dc):
+        for shape in self.draggable_shapes:
+            if shape.shown:
+                shape.Draw(dc)
+
+    def find_shape(self, pt):
+        for shape in self.draggable_shapes:
+            if shape.HitTest(pt):
+                return shape
+        return None
+
+    def OnPaint(self, evt):
+        dc = wx.PaintDC(self)
+        self.draw_shapes(dc)
+
+    def OnLeftDown(self, evt):
+        # Did the mouse go down on one of our shapes?
+        shape = self.find_shape(evt.GetPosition())
+
+        # If a shape was 'hit', then set that as the shape we're going to
+        # drag around. Get our start position. Dragging has not yet started.
+        # That will happen once the mouse moves, OR the mouse is released.
+        if shape:
+            self.drag_shape = shape
+            self.dragStartPos = evt.GetPosition()
+
+    def OnLeftUp(self, evt):
+        if not self.drag_image or not self.drag_shape:
+            self.drag_image = None
+            self.drag_shape = None
+            return
+
+        # Hide the image, end dragging, and nuke out the drag image.
+        self.drag_image.Hide()
+        self.drag_image.EndDrag()
+        self.drag_image = None
+
+        self.drag_shape.pos = (
+            self.drag_shape.pos[0] + evt.GetPosition()[0] - self.dragStartPos[0],
+            self.drag_shape.pos[1] + evt.GetPosition()[1] - self.dragStartPos[1]
+            )
+
+        self.drag_shape.shown = True
+        self.RefreshRect(self.drag_shape.GetRect())
+        self.drag_shape = None
+
+
+    def OnMotion(self, evt):
+        # Ignore mouse movement if we're not dragging.
+        if not self.drag_shape or not evt.Dragging() or not evt.LeftIsDown():
+            return
+
+        # if we have a shape, but haven't started dragging yet
+        if self.drag_shape and not self.drag_image:
+
+            # only start the drag after having moved a couple pixels
+            tolerance = 2
+            pt = evt.GetPosition()
+            dx = abs(pt.x - self.dragStartPos.x)
+            dy = abs(pt.y - self.dragStartPos.y)
+            if dx <= tolerance and dy <= tolerance:
+                return
+
+            # refresh the area of the window where the shape was so it
+            # will get erased.
+            self.drag_shape.shown = False
+            self.RefreshRect(self.drag_shape.GetRect(), True)
+            self.Update()
+
+            item = self.drag_shape.text if self.drag_shape.text else self.drag_shape.bmp
+            self.drag_image = wx.DragImage(item,
+                                         wx.Cursor(wx.CURSOR_HAND))
+
+            hotspot = self.dragStartPos - self.drag_shape.pos
+            self.drag_image.BeginDrag(hotspot, self, self.drag_shape.fullscreen)
+
+            self.drag_image.Move(pt)
+            self.drag_image.Show()
+
+        # if we have shape and image then move it, posibly highlighting another shape.
+        elif self.drag_shape and self.drag_image:
+            # now move it and show it again if needed
+            self.drag_image.Move(evt.GetPosition())
+
+
+    def OnLeaveWindow(self, evt):
+        # TODO drop dragged image if cursor leaves window.
         pass
