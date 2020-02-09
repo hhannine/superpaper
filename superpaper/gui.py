@@ -891,7 +891,7 @@ class WallpaperPreviewPanel(wx.Panel):
 
         self.draw_monitor_numbers(use_ppi_px)
 
-    def resize_displays(self):
+    def resize_displays(self, use_ppi_px):
         for disp, st_bmp in zip(self.display_rel_sizes, self.preview_img_list):
             size = disp[0]
             offs = disp[1]
@@ -899,10 +899,10 @@ class WallpaperPreviewPanel(wx.Panel):
             st_bmp.SetBitmap(bmp)
             st_bmp.SetPosition(offs)
             st_bmp.SetSize(size)
-        self.draw_monitor_numbers(False)
+        self.draw_monitor_numbers(use_ppi_px)
 
     def draw_monitor_numbers(self, use_ppi_px):
-        font = wx.Font(24, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        font = wx.Font(24, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
         font_clr = wx.Colour(60, 60, 60, alpha=wx.ALPHA_OPAQUE)
 
         for st_bmp in self.preview_img_list:
@@ -919,19 +919,19 @@ class WallpaperPreviewPanel(wx.Panel):
             self.draw_monitor_sizes()
 
     def draw_monitor_sizes(self):
-        font = wx.Font(24, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        font = wx.Font(24, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_LIGHT)
         font_clr = wx.Colour(60, 60, 60, alpha=wx.ALPHA_OPAQUE)
 
         for st_bmp, dsp in zip(self.preview_img_list, self.display_sys.disp_list):
             bmp = st_bmp.GetBitmap()
             dc = wx.MemoryDC(bmp)
-            text = str(dsp.diagonal_size()[1])
+            text = str(dsp.diagonal_size()[1]) + '"'
             dc.SetTextForeground(font_clr)
             dc.SetFont(font)
             bmp_w, bmp_h = dc.GetSize()
             text_w, text_h = dc.GetTextExtent(text)
             pos_w = bmp_w - text_w - 5
-            pos_h = bmp_h - text_h - 5
+            pos_h = 5
             dc.DrawText(text, pos_w, pos_h)
             del dc
             st_bmp.SetBitmap(bmp)
@@ -960,7 +960,7 @@ class WallpaperPreviewPanel(wx.Panel):
             if (self.current_preview_images):
                 self.preview_wallpaper(self.current_preview_images, use_ppi_px, use_multi_image)
             else:
-                self.resize_displays()
+                self.resize_displays(use_ppi_px)
 
     def preview_wallpaper(self, image_list, use_ppi_px = False, use_multi_image = False, display_data = None):
         if display_data:
