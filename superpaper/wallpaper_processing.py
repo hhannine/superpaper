@@ -111,6 +111,11 @@ class Display():
             f")"
         )
 
+    def diagonal_size(self):
+        diag_mm = math.sqrt( self.phys_size_mm[0]**2 + self.phys_size_mm[1]**2 )
+        diag_in = round(diag_mm / 25.4, 1)
+        return (round(diag_mm), diag_in)
+
     def compute_ppi(self):
         if self.phys_size_mm[0]:
             ppmm_horiz = self.resolution[0]/self.phys_size_mm[0]

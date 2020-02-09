@@ -66,8 +66,7 @@ class WallpaperSettingsPanel(wx.Panel):
         self.resized = False
         # display_data = wpproc.get_display_data()
         self.display_sys = wpproc.DisplaySystem()
-        display_data = self.display_sys.get_disp_list()
-        self.wpprev_pnl = WallpaperPreviewPanel(self.frame, display_data)
+        self.wpprev_pnl = WallpaperPreviewPanel(self.frame, self.display_sys)
         self.sizer_top_half.Add(self.wpprev_pnl, 1, wx.CENTER|wx.EXPAND, 5)
         # self.sizer_top_half.SetMinSize((400,200))
         # self.sizer_top_half.SetMinSize()
@@ -838,7 +837,7 @@ class WallpaperPreviewPanel(wx.Panel):
     configuration. Method looks up saved setups to see if one
     exists that matches the given resolutions, offsets and sizes.
     """
-    def __init__(self, parent, display_data, image_list = None, use_ppi_px = False, use_multi_image = False):
+    def __init__(self, parent, display_sys, image_list = None, use_ppi_px = False, use_multi_image = False):
         self.preview_size = (1200,450)
         wx.Panel.__init__(self, parent, size=self.preview_size)
         self.frame = parent
@@ -853,7 +852,8 @@ class WallpaperPreviewPanel(wx.Panel):
         self.SetBackgroundColour(self.clr_prw_bkg)
         
         # Display data and sizes
-        self.display_data = display_data
+        self.display_sys = display_sys
+        self.display_data = self.display_sys.get_disp_list()
         self.dtop_canvas_px = self.get_canvas(self.display_data)
         self.dtop_canvas_relsz, self.dtop_canvas_pos, scaling_fac = self.fit_canvas_wrkarea(self.dtop_canvas_px)
         self.display_rel_sizes = self.displays_on_canvas(self.display_data, self.dtop_canvas_pos, scaling_fac)
@@ -889,7 +889,7 @@ class WallpaperPreviewPanel(wx.Panel):
             st_bmp.SetPosition(offs)
             self.preview_img_list.append(st_bmp)
 
-        self.draw_monitor_numbers()
+        self.draw_monitor_numbers(use_ppi_px)
 
     def resize_displays(self):
         for disp, st_bmp in zip(self.display_rel_sizes, self.preview_img_list):
@@ -899,9 +899,9 @@ class WallpaperPreviewPanel(wx.Panel):
             st_bmp.SetBitmap(bmp)
             st_bmp.SetPosition(offs)
             st_bmp.SetSize(size)
-        self.draw_monitor_numbers()
+        self.draw_monitor_numbers(False)
 
-    def draw_monitor_numbers(self):
+    def draw_monitor_numbers(self, use_ppi_px):
         font = wx.Font(24, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         font_clr = wx.Colour(60, 60, 60, alpha=wx.ALPHA_OPAQUE)
 
@@ -915,8 +915,27 @@ class WallpaperPreviewPanel(wx.Panel):
             del dc
             st_bmp.SetBitmap(bmp)
 
+        if use_ppi_px:
+            self.draw_monitor_sizes()
+
     def draw_monitor_sizes(self):
-        pass
+        font = wx.Font(24, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        font_clr = wx.Colour(60, 60, 60, alpha=wx.ALPHA_OPAQUE)
+
+        for st_bmp, dsp in zip(self.preview_img_list, self.display_sys.disp_list):
+            bmp = st_bmp.GetBitmap()
+            dc = wx.MemoryDC(bmp)
+            text = str(dsp.diagonal_size()[1])
+            dc.SetTextForeground(font_clr)
+            dc.SetFont(font)
+            bmp_w, bmp_h = dc.GetSize()
+            text_w, text_h = dc.GetTextExtent(text)
+            pos_w = bmp_w - text_w - 5
+            pos_h = bmp_h - text_h - 5
+            dc.DrawText(text, pos_w, pos_h)
+            del dc
+            st_bmp.SetBitmap(bmp)
+
 
     def refresh_preview(self):
         if not self.config_mode:
@@ -971,7 +990,7 @@ class WallpaperPreviewPanel(wx.Panel):
                 crop = bmp_clr.GetSubBitmap(wx.Rect(pos, sz))
                 st_bmp.SetBitmap(crop)
                 st_bmp.Show()
-        self.draw_monitor_numbers()
+        self.draw_monitor_numbers(use_ppi_px)
 
     def resize_and_bitmap(self, fname, size, enhance_color = False):
         """Take filename of an image and resize and center crop it to size."""
