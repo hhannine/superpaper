@@ -351,7 +351,11 @@ class DisplaySystem():
                 )
             return disp_l
         else:
-            return self.disp_list
+            disp_l = self.disp_list
+            # Make sure that bezels are not included if they should not be used.
+            for dsp in disp_l:
+                dsp.ppi_norm_bezels = (0, 0)
+            return disp_l
 
 
     def update_ppinorm_offsets(self, offsets, bezels_included = False):

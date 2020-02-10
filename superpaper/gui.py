@@ -937,14 +937,24 @@ class WallpaperPreviewPanel(wx.Panel):
             st_bmp.SetBitmap(bmp)
 
 
-    def refresh_preview(self):
+    def refresh_preview(self, use_ppi_px = False):
         if not self.config_mode:
-            self.dtop_canvas_px = self.get_canvas(self.display_data)
+            self.dtop_canvas_px = self.get_canvas(self.display_data, use_ppi_px)
             self.dtop_canvas_relsz, self.dtop_canvas_pos, scaling_fac = self.fit_canvas_wrkarea(self.dtop_canvas_px)
             self.st_bmp_canvas.SetPosition(self.dtop_canvas_pos)
             self.st_bmp_canvas.SetSize(self.dtop_canvas_relsz)
 
-            self.display_rel_sizes = self.displays_on_canvas(self.display_data, self.dtop_canvas_pos, scaling_fac)
+            if use_ppi_px:
+                (self.display_rel_sizes,
+                    self.img_rel_sizes,
+                    self.bz_rel_sizes) = self.displays_on_canvas(
+                        self.display_data, self.dtop_canvas_pos,
+                        scaling_fac, use_ppi_px
+                    )
+            else:
+                self.display_rel_sizes = self.displays_on_canvas(
+                    self.display_data, self.dtop_canvas_pos, scaling_fac
+                )
             for disp, st_bmp in zip(self.display_rel_sizes, self.preview_img_list):
                 size = disp[0]
                 offs = disp[1]
@@ -965,7 +975,7 @@ class WallpaperPreviewPanel(wx.Panel):
     def preview_wallpaper(self, image_list, use_ppi_px = False, use_multi_image = False, display_data = None):
         if display_data:
             self.display_data = display_data
-            self.refresh_preview()
+            self.refresh_preview(use_ppi_px)
         self.current_preview_images = image_list
         if use_multi_image:
             # hide canvas and set images to monitor previews
@@ -1018,16 +1028,20 @@ class WallpaperPreviewPanel(wx.Panel):
     #
     def get_canvas(self, disp_data, use_ppi_px = False):
         """Returns a size tuple for the desktop are in pixels or millimeters."""
-        if use_ppi_px:
-            rightmost_edge = None
-            bottommost_edge = None
-        else:
-            rightmost_edge = max(
-                [disp.resolution[0] + disp.digital_offset[0] for disp in disp_data]
-            )
-            bottommost_edge = max(
-                [disp.resolution[1] + disp.digital_offset[1] for disp in disp_data]
-            )
+        # if use_ppi_px: # TODO This is unnecessary if digital offsets contain the bezels
+        #     rightmost_edge = max(
+        #         [disp.resolution[0] + disp.digital_offset[0] + disp.ppi_norm_bezels[0] for disp in disp_data]
+        #     )
+        #     bottommost_edge = max(
+        #         [disp.resolution[1] + disp.digital_offset[1] + disp.ppi_norm_bezels[1] for disp in disp_data]
+        #     )
+        # else:
+        rightmost_edge = max(
+            [disp.resolution[0] + disp.digital_offset[0] for disp in disp_data]
+        )
+        bottommost_edge = max(
+            [disp.resolution[1] + disp.digital_offset[1] for disp in disp_data]
+        )
         return (rightmost_edge, bottommost_edge)
 
     def fit_canvas_wrkarea(self, canvas_px):
@@ -1063,17 +1077,60 @@ class WallpaperPreviewPanel(wx.Panel):
         return (canvas_rel, canvas_rel_pos, scaling_fac)
 
     def displays_on_canvas(self, disp_data, canvas_pos, scaling_fac, use_ppi_px=False):
-        display_szs_pos = []
-        for disp in disp_data:
-            doff = disp.digital_offset
-            off = canvas_pos
-            display_szs_pos.append(
-                (
-                    tuple([px*scaling_fac for px in disp.resolution]),
-                    tuple([doff[0]*scaling_fac + off[0], doff[1]*scaling_fac + off[1]])
+        """Return sizes and positions of displays in disp_data on the working area.
+
+        if use_ppi_px == True, returned display sizes contain bezels and lists of
+        image sizes and bezel rectangles are returned separately.
+        bz_szs is a list of size tuples pairs, each in pair for each possible bezel.
+        """
+        if use_ppi_px:
+            display_szs_pos = []
+            image_szs = []
+            bz_szs = []
+            for disp in disp_data:
+                res = disp.resolution
+                doff = disp.digital_offset
+                off = canvas_pos
+                bez = disp.ppi_norm_bezels
+                display_szs_pos.append(
+                    (
+                        # tuple 1: size = res + bez
+                        (
+                            scaling_fac * (res[0] + bez[0]),
+                            scaling_fac * (res[1] + bez[1])
+                        ),
+                        # tuple 2: pos
+                        (
+                            (scaling_fac * doff[0]) + off[0], # TODO do you add bezel here?
+                            (scaling_fac * doff[1]) + off[1]
+                        )
+                    )
                 )
-            )
-        return display_szs_pos
+                image_szs.append(
+                    (
+                        scaling_fac * res[0],
+                        scaling_fac * res[1]
+                    )
+                )
+                right_bez = (scaling_fac * bez[0],
+                             scaling_fac * (res[1] + bez[1]))
+                bottom_bez = (scaling_fac * res[0], scaling_fac * bez[1])
+                bz_szs.append(
+                    (right_bez, bottom_bez)
+                )
+            return [display_szs_pos, image_szs, bz_szs]
+        else:
+            display_szs_pos = []
+            for disp in disp_data:
+                doff = disp.digital_offset
+                off = canvas_pos
+                display_szs_pos.append(
+                    (
+                        tuple([px*scaling_fac for px in disp.resolution]),
+                        tuple([doff[0]*scaling_fac + off[0], doff[1]*scaling_fac + off[1]])
+                    )
+                )
+            return display_szs_pos
 
 
 
