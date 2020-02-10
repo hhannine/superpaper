@@ -95,6 +95,7 @@ class Display():
         self.ppi = None
         self.ppi_norm_resolution = None
         self.ppi_norm_offset = None
+        self.ppi_norm_bezels = (0, 0)
         self.name = monitor.name
         if self.resolution and self.phys_size_mm:
             self.ppi = self.compute_ppi()
@@ -107,6 +108,9 @@ class Display():
             f"phys_size_mm={self.phys_size_mm}, "
             f"phys_offsets={self.phys_offsets}, "
             f"ppi={self.ppi}, "
+            f"ppi_norm_resolution={self.ppi_norm_resolution}, "
+            f"ppi_norm_offset={self.ppi_norm_offset}, "
+            f"ppi_norm_bezels={self.ppi_norm_bezels}, "
             f"name={self.name!r}"
             f")"
         )
@@ -180,15 +184,20 @@ class Display():
 
 class DisplayLight():
     """Small class to store resolution and position data a kin to full Display."""
-    def __init__(self, res, off):
+    def __init__(self, res, off, bez):
         self.resolution = res
         self.digital_offset = off
+        if bez:
+            self.ppi_norm_bezels = bez
+        else:
+            self.ppi_norm_bezels = (0, 0)
 
     def __str__(self):
         return (
             f"DisplayLight("
             f"resolution={self.resolution}, "
-            f"digital_offset={self.digital_offset} "
+            f"digital_offset={self.digital_offset}, "
+            f"ppi_norm_bezels={self.ppi_norm_bezels} "
             f")"
         )
 
@@ -209,6 +218,7 @@ class DisplaySystem():
         self.bezel_px = []
         self.user_offsets = []
 
+        self.update_bezels([(10, 20), (15, 0)]) # TODO usage in load
         self.load_system()
 
 
@@ -236,7 +246,7 @@ class DisplaySystem():
         """
         crops = []
         for dsp in self.disp_list:
-            left_top = dsp.ppi_norm_offset
+            left_top = dsp.ppi_norm_offset[0]
             right_btm = (
                 dsp.ppi_norm_resolution[0] + dsp.ppi_norm_offset[0],
                 dsp.ppi_norm_resolution[1] + dsp.ppi_norm_offset[1],
@@ -245,7 +255,7 @@ class DisplaySystem():
         return crops
 
     def fits_in_column(self, disp, col):
-        """Test if the horiz center of disp is below the last disp in the col."""
+        """Test if IN DEKSTOP RES the horiz center of disp is below the last disp in the col."""
         col_last_disp = col[-1]
         disp_cntr = (disp.digital_offset[0] + disp.digital_offset[0] + disp.resolution[0])/2 #(left+right)/2
         col_last_left = col_last_disp.digital_offset[0]
@@ -256,8 +266,8 @@ class DisplaySystem():
             return False
 
     def column_size(self, col):
-        width = max([dsp.ppi_norm_resolution[0] for dsp in col])
-        height = sum([dsp.ppi_norm_resolution[1] for dsp in col])
+        width = max([dsp.ppi_norm_resolution[0] + dsp.ppi_norm_bezels[0] for dsp in col])
+        height = sum([dsp.ppi_norm_resolution[1] + dsp.ppi_norm_bezels[1] for dsp in col])
         return (width, height)
 
 
@@ -311,15 +321,16 @@ class DisplaySystem():
         # within the column. Anchor columns to col_left_tops.
         for col, col_anchor in zip(columns, col_left_tops):
             current_top = 0
-            max_dsp_w = max([dsp.ppi_norm_resolution[0] for dsp in col])
+            max_dsp_w = max([dsp.ppi_norm_resolution[0] + dsp.ppi_norm_bezels[0] for dsp in col])
             for dsp in col:
+                dsp_w = dsp.ppi_norm_resolution[0] + dsp.ppi_norm_bezels[0]
                 dsp.ppi_norm_offset = (
                     col_anchor[0]
-                    + round((max_dsp_w - dsp.ppi_norm_resolution[0])/2),
+                    + round((max_dsp_w - dsp_w)/2),
                     col_anchor[1] + current_top
                 )
                 print(dsp.ppi_norm_offset)
-                current_top += dsp.ppi_norm_resolution[1]
+                current_top += dsp.ppi_norm_resolution[1] + dsp.ppi_norm_bezels[1]
         # Update offsets to disp_list
         flattened_cols = [dsp for col in columns for dsp in col]
         for scope_dsp, dsp in zip(flattened_cols, self.disp_list):
@@ -334,7 +345,8 @@ class DisplaySystem():
                 disp_l.append(
                     DisplayLight(
                         dsp.ppi_norm_resolution,
-                        dsp.ppi_norm_offset
+                        dsp.ppi_norm_offset,
+                        dsp.ppi_norm_bezels
                     )
                 )
             return disp_l
@@ -348,6 +360,15 @@ class DisplaySystem():
         self.offsets_include_bezels = bezels_included
         for dsp, offs in zip(self.disp_list, offsets):
             dsp.ppi_norm_offset = offs
+
+    def update_bezels(self, bezels_mm):
+        bezels_mm = [(10, 20), (15, 0)] # TODO temp input
+        max_ppmm = self.max_ppi() / 25.4
+        bezels_ppi_norm = [(bz[0] * max_ppmm, bz[1] * max_ppmm) for bz in bezels_mm]
+        for bz_px, dsp in zip(bezels_ppi_norm, self.disp_list):
+            dsp.ppi_norm_bezels = bz_px
+
+
 
     def save_system(self):
         """Save the user given input tied to the current instance
