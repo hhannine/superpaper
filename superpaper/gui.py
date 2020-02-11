@@ -975,8 +975,9 @@ class WallpaperPreviewPanel(wx.Panel):
     def preview_wallpaper(self, image_list, use_ppi_px = False, use_multi_image = False, display_data = None):
         if display_data:
             self.display_data = display_data
-            self.refresh_preview(use_ppi_px)
+        self.refresh_preview(use_ppi_px)
         self.current_preview_images = image_list
+
         if use_multi_image:
             # hide canvas and set images to monitor previews
             self.st_bmp_canvas.Hide()
@@ -984,6 +985,30 @@ class WallpaperPreviewPanel(wx.Panel):
                 prev_sz = dprev.GetSize()
                 dprev.SetBitmap(self.resize_and_bitmap(img_nm, prev_sz))
                 dprev.Show()
+        elif use_ppi_px:
+            img = image_list[0]
+            # set canvas to fit with keeping aspect the image, with dim/blur
+            # and crop pieces to show on monitor previews unaltered.
+            # With use_ppi_px any provided bezels will be drawn.
+            canv_sz = self.st_bmp_canvas.GetSize()
+            bmp_clr, bmp_bw = self.resize_and_bitmap(img, canv_sz, True)
+            self.st_bmp_canvas.SetBitmap(bmp_bw)
+            self.st_bmp_canvas.Show()
+
+            canvas_pos = self.dtop_canvas_pos
+            for (disp,
+                 img_sz,
+                 bez_szs,
+                 st_bmp) in zip(self.display_rel_sizes,
+                                self.img_rel_sizes,
+                                self.bz_rel_sizes,
+                                self.preview_img_list):
+                sz = disp[0]
+                pos = (disp[1][0] - canvas_pos[0], disp[1][1] - canvas_pos[1])
+                crop = bmp_clr.GetSubBitmap(wx.Rect(pos, img_sz))
+                crop_w_bez = self.bezels_to_bitmap(crop, sz, bez_szs)
+                st_bmp.SetBitmap(crop_w_bez)
+                st_bmp.Show()
         else:
             img = image_list[0]
             # set canvas to fit with keeping aspect the image, with dim/blur
@@ -1011,11 +1036,42 @@ class WallpaperPreviewPanel(wx.Panel):
             converter = ImageEnhance.Color(pil)
             pilenh_bw = converter.enhance(0.25)
             brightns = ImageEnhance.Brightness(pilenh_bw)
-            pilenh = brightns.enhance(0.25)
+            pilenh = brightns.enhance(0.45)
             imgenh = wx.Image(pil.size[0], pil.size[1])
             imgenh.SetData(pilenh.convert("RGB").tobytes())
             return (img.ConvertToBitmap(), imgenh.ConvertToBitmap())
         return img.ConvertToBitmap()
+
+    def bezels_to_bitmap(self, bmp, disp_sz, bez_rects):
+        """Add bezel rectangles ( right_bez , bottom_bez ) to given bitmap."""
+        print("bez_rects", bez_rects)
+        right_bez, bottom_bez = bez_rects
+        if (right_bez == (0, 0) and bottom_bez == (0, 0)):
+            return bmp
+        # bmp into wx.Image and new output
+        img = wx.ImageFromBitmap(bmp)
+        img_sz = img.GetSize()
+        img_out = wx.Image(disp_sz[0], disp_sz[1])
+        img_out.Paste(img, 0, 0)
+
+        # Add bezels sequentially to the Image
+        # bottom bez
+        if bottom_bez != (0, 0):
+            b_bez_bmp = wx.Bitmap.FromRGBA(bottom_bez[0], bottom_bez[1],
+                                           red=0, green=0, blue=0, alpha=192)
+            b_bez_img = wx.ImageFromBitmap(b_bez_bmp)
+            img_out.Paste(b_bez_img, 0, img_sz[1])
+
+        # right bez: is longer if bottom bez is present
+        if right_bez != (0, 0):
+            r_bez_bmp = wx.Bitmap.FromRGBA(right_bez[0], right_bez[1],
+                                           red=0, green=0, blue=0, alpha=192)
+            r_bez_img = wx.ImageFromBitmap(r_bez_bmp)
+            img_out.Paste(r_bez_img, img_sz[0], 0)
+
+        # Convert Image back to wx.Bitmap
+        return img_out.ConvertToBitmap()
+
 
     def update_display_data(self, display_data, use_ppi_px, use_multi_image):
         self.display_data = display_data
@@ -1028,20 +1084,20 @@ class WallpaperPreviewPanel(wx.Panel):
     #
     def get_canvas(self, disp_data, use_ppi_px = False):
         """Returns a size tuple for the desktop are in pixels or millimeters."""
-        # if use_ppi_px: # TODO This is unnecessary if digital offsets contain the bezels
-        #     rightmost_edge = max(
-        #         [disp.resolution[0] + disp.digital_offset[0] + disp.ppi_norm_bezels[0] for disp in disp_data]
-        #     )
-        #     bottommost_edge = max(
-        #         [disp.resolution[1] + disp.digital_offset[1] + disp.ppi_norm_bezels[1] for disp in disp_data]
-        #     )
-        # else:
-        rightmost_edge = max(
-            [disp.resolution[0] + disp.digital_offset[0] for disp in disp_data]
-        )
-        bottommost_edge = max(
-            [disp.resolution[1] + disp.digital_offset[1] for disp in disp_data]
-        )
+        if use_ppi_px: # TODO This is unnecessary if digital offsets contain the bezels
+            rightmost_edge = max(
+                [disp.resolution[0] + disp.digital_offset[0] + disp.ppi_norm_bezels[0] for disp in disp_data]
+            )
+            bottommost_edge = max(
+                [disp.resolution[1] + disp.digital_offset[1] + disp.ppi_norm_bezels[1] for disp in disp_data]
+            )
+        else:
+            rightmost_edge = max(
+                [disp.resolution[0] + disp.digital_offset[0] for disp in disp_data]
+            )
+            bottommost_edge = max(
+                [disp.resolution[1] + disp.digital_offset[1] for disp in disp_data]
+            )
         return (rightmost_edge, bottommost_edge)
 
     def fit_canvas_wrkarea(self, canvas_px):
@@ -1112,9 +1168,15 @@ class WallpaperPreviewPanel(wx.Panel):
                         scaling_fac * res[1]
                     )
                 )
-                right_bez = (scaling_fac * bez[0],
-                             scaling_fac * (res[1] + bez[1]))
-                bottom_bez = (scaling_fac * res[0], scaling_fac * bez[1])
+                if bez[0] != 0:
+                    right_bez = (scaling_fac * bez[0],
+                                 scaling_fac * (res[1] + bez[1]))
+                else:
+                    right_bez = (0, 0)
+                if bez[1] != 0:
+                    bottom_bez = (scaling_fac * res[0], scaling_fac * bez[1])
+                else:
+                    bottom_bez = (0, 0)
                 bz_szs.append(
                     (right_bez, bottom_bez)
                 )

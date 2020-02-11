@@ -349,12 +349,10 @@ class DisplaySystem():
                         dsp.ppi_norm_bezels
                     )
                 )
+                print("dsp.ppi_norm_bezels", dsp.ppi_norm_bezels)
             return disp_l
         else:
             disp_l = self.disp_list
-            # Make sure that bezels are not included if they should not be used.
-            for dsp in disp_l:
-                dsp.ppi_norm_bezels = (0, 0)
             return disp_l
 
 
@@ -366,11 +364,12 @@ class DisplaySystem():
             dsp.ppi_norm_offset = offs
 
     def update_bezels(self, bezels_mm):
-        bezels_mm = [(10, 20), (15, 0)] # TODO temp input
+        bezels_mm = [(30, 20), (15, 0)] # TODO temp input
         max_ppmm = self.max_ppi() / 25.4
         bezels_ppi_norm = [(bz[0] * max_ppmm, bz[1] * max_ppmm) for bz in bezels_mm]
         for bz_px, dsp in zip(bezels_ppi_norm, self.disp_list):
             dsp.ppi_norm_bezels = bz_px
+            print("update_bezels", bz_px)
 
 
 
