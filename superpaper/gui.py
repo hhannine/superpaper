@@ -269,19 +269,23 @@ class WallpaperSettingsPanel(wx.Panel):
         statbox_parent_bezels = self.sizer_setting_bezels.GetStaticBox()
         self.cb_bezels = wx.CheckBox(statbox_parent_bezels, -1, "Apply bezel correction")
         self.cb_bezels.Bind(wx.EVT_CHECKBOX, self.onCheckboxBezels)
-        st_bezels = wx.StaticText(
-            statbox_parent_bezels, -1,
-            "Bezel pair thicknesses, incl. gap (millimeters):"
-        )
-        st_bezels.Disable()
+        # st_bezels = wx.StaticText(
+        #     statbox_parent_bezels, -1,
+        #     "Bezel pair thicknesses, incl. gap (millimeters):"
+        # )
+        # st_bezels.Disable()
+        self.button_bezels = wx.Button(statbox_parent_bezels, -1, label="Configure bezels")
+        self.button_bezels.Bind(wx.EVT_BUTTON, self.onConfigureBezels)
+        self.button_bezels.Disable()
         self.sizer_setting_bezels.Add(self.cb_bezels, 0, wx.ALIGN_LEFT|wx.LEFT, 5)
-        self.sizer_setting_bezels.Add(st_bezels, 0, wx.ALIGN_LEFT|wx.LEFT, 5)
-        tc_list_sizer_bez = wx.BoxSizer(wx.HORIZONTAL)
-        self.tc_list_bezels = self.list_of_textctrl(statbox_parent_bezels, wpproc.NUM_DISPLAYS-1)
-        for tc in self.tc_list_bezels:
-            tc_list_sizer_bez.Add(tc, 0, wx.ALIGN_LEFT|wx.ALL, 5)
-            tc.Disable()
-        self.sizer_setting_bezels.Add(tc_list_sizer_bez, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        self.sizer_setting_bezels.Add(self.button_bezels, 0, wx.CENTER|wx.ALL, 5)
+        # self.sizer_setting_bezels.Add(st_bezels, 0, wx.ALIGN_LEFT|wx.LEFT, 5)
+        # tc_list_sizer_bez = wx.BoxSizer(wx.HORIZONTAL)
+        # self.tc_list_bezels = self.list_of_textctrl(statbox_parent_bezels, wpproc.NUM_DISPLAYS-1)
+        # for tc in self.tc_list_bezels:
+        #     tc_list_sizer_bez.Add(tc, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        #     tc.Disable()
+        # self.sizer_setting_bezels.Add(tc_list_sizer_bez, 0, wx.ALIGN_LEFT|wx.ALL, 5)
 
         # Offsets
         self.sizer_setting_offsets = wx.StaticBoxSizer(wx.VERTICAL, self, "Manual Display Offsets")
@@ -498,7 +502,8 @@ class WallpaperSettingsPanel(wx.Panel):
                 if (
                     isinstance(widget, wx.TextCtrl) or
                     isinstance(widget, wx.StaticText) or
-                    isinstance(widget, wx.Choice)
+                    isinstance(widget, wx.Choice) or
+                    isinstance(widget, wx.Button)
                 ):
                     widget.Enable(bool_state)
 
@@ -652,6 +657,9 @@ class WallpaperSettingsPanel(wx.Panel):
     #
     def onOverrideSizes(self, event):
         self.create_sizer_diaginch_override()
+
+    def onConfigureBezels(self, event):
+        self.wpprev_pnl.start_bezel_config()
 
     def onBrowsePaths(self, event):
         """Opens the pick paths dialog."""
@@ -1476,3 +1484,12 @@ class WallpaperPreviewPanel(wx.Panel):
     def OnLeaveWindow(self, evt):
         """On leavewindow event drop dragged image by simulating a left up event."""
         self.OnLeftUp(evt)
+
+
+    #
+    # Bezel Configuration mode
+    #
+    def start_bezel_config(self):
+        """Creates buttons on each display right and bottom edges
+        to allow adding bezels"""
+        pass
