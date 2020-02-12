@@ -922,13 +922,16 @@ class WallpaperPreviewPanel(wx.Panel):
         font = wx.Font(24, wx.FONTFAMILY_SWISS, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_LIGHT)
         font_clr = wx.Colour(60, 60, 60, alpha=wx.ALPHA_OPAQUE)
 
-        for st_bmp, dsp in zip(self.preview_img_list, self.display_sys.disp_list):
+        for st_bmp, img_sz, dsp in zip(self.preview_img_list,
+                                       self.img_rel_sizes,
+                                       self.display_sys.disp_list):
             bmp = st_bmp.GetBitmap()
             dc = wx.MemoryDC(bmp)
             text = str(dsp.diagonal_size()[1]) + '"'
             dc.SetTextForeground(font_clr)
             dc.SetFont(font)
-            bmp_w, bmp_h = dc.GetSize()
+            # bmp_w, bmp_h = dc.GetSize()
+            bmp_w, bmp_h = img_sz
             text_w, text_h = dc.GetTextExtent(text)
             pos_w = bmp_w - text_w - 5
             pos_h = 5
@@ -970,6 +973,7 @@ class WallpaperPreviewPanel(wx.Panel):
             if (self.current_preview_images):
                 self.preview_wallpaper(self.current_preview_images, use_ppi_px, use_multi_image)
             else:
+                self.refresh_preview(use_ppi_px)
                 self.resize_displays(use_ppi_px)
 
     def preview_wallpaper(self, image_list, use_ppi_px = False, use_multi_image = False, display_data = None):
@@ -1058,14 +1062,14 @@ class WallpaperPreviewPanel(wx.Panel):
         # bottom bez
         if bottom_bez != (0, 0):
             b_bez_bmp = wx.Bitmap.FromRGBA(bottom_bez[0], bottom_bez[1],
-                                           red=0, green=0, blue=0, alpha=192)
+                                           red=0, green=0, blue=0, alpha=132)
             b_bez_img = wx.ImageFromBitmap(b_bez_bmp)
             img_out.Paste(b_bez_img, 0, img_sz[1])
 
         # right bez: is longer if bottom bez is present
         if right_bez != (0, 0):
             r_bez_bmp = wx.Bitmap.FromRGBA(right_bez[0], right_bez[1],
-                                           red=0, green=0, blue=0, alpha=192)
+                                           red=0, green=0, blue=0, alpha=132)
             r_bez_img = wx.ImageFromBitmap(r_bez_bmp)
             img_out.Paste(r_bez_img, img_sz[0], 0)
 
