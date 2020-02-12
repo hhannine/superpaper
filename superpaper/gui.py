@@ -1276,7 +1276,13 @@ class WallpaperPreviewPanel(wx.Panel):
         display_sys.save_system()
         display_data = display_sys.get_disp_list(use_ppi_norm = True)
         # Full redraw of preview with new offset data
-        self.preview_wallpaper(self.current_preview_images, True, False, display_data=display_data)
+        if self.current_preview_images:
+            self.preview_wallpaper(self.current_preview_images, True, False, display_data=display_data)
+        else:
+            self.display_data = display_data
+            self.refresh_preview(True)
+            self.resize_displays(True)
+            self.show_staticbmps(True)
         self.draggable_shapes = []  # Destroys DragShapes
 
     def onCancel(self, evt):
@@ -1290,7 +1296,10 @@ class WallpaperPreviewPanel(wx.Panel):
 
     def show_staticbmps(self, show):
         """Show/Hide StaticBitmaps."""
-        self.st_bmp_canvas.Show(show)
+        if self.current_preview_images:
+            self.st_bmp_canvas.Show(show)
+        else:
+            self.st_bmp_canvas.Show(False)
         for st_bmp in self.preview_img_list:
             st_bmp.Show(show)
 
