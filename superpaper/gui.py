@@ -892,13 +892,28 @@ class WallpaperPreviewPanel(wx.Panel):
         self.draw_monitor_numbers(use_ppi_px)
 
     def resize_displays(self, use_ppi_px):
-        for disp, st_bmp in zip(self.display_rel_sizes, self.preview_img_list):
-            size = disp[0]
-            offs = disp[1]
-            bmp = wx.Bitmap.FromRGBA(size[0], size[1], red=0, green=0, blue=0, alpha=255)
-            st_bmp.SetBitmap(bmp)
-            st_bmp.SetPosition(offs)
-            st_bmp.SetSize(size)
+        if use_ppi_px:
+            for (disp,
+                 img_sz,
+                 bez_szs,
+                 st_bmp) in zip(self.display_rel_sizes,
+                                self.img_rel_sizes,
+                                self.bz_rel_sizes,
+                                self.preview_img_list):
+                size, offs = disp
+                bmp = wx.Bitmap.FromRGBA(img_sz[0], img_sz[1], red=0, green=0, blue=0, alpha=255)
+                bmp_w_bez = self.bezels_to_bitmap(bmp, size, bez_szs)
+                st_bmp.SetSize(size)
+                st_bmp.SetPosition(offs)
+                st_bmp.SetBitmap(bmp_w_bez)
+        else:
+            for disp, st_bmp in zip(self.display_rel_sizes, self.preview_img_list):
+                size = disp[0]
+                offs = disp[1]
+                bmp = wx.Bitmap.FromRGBA(size[0], size[1], red=0, green=0, blue=0, alpha=255)
+                st_bmp.SetBitmap(bmp)
+                st_bmp.SetPosition(offs)
+                st_bmp.SetSize(size)
         self.draw_monitor_numbers(use_ppi_px)
 
     def draw_monitor_numbers(self, use_ppi_px):
