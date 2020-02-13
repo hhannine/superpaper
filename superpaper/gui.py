@@ -18,7 +18,8 @@ try:
 except ImportError:
     exit()
 
-TRAY_ICON = os.path.join(PATH, "superpaper/resources/superpaper.png")
+RESOURCES_PATH = os.path.join(PATH, "superpaper/resources")
+TRAY_ICON = os.path.join(RESOURCES_PATH, "superpaper.png")
 
 class ConfigFrame(wx.Frame):
     """Wallpaper configuration dialog frame base class."""
@@ -852,6 +853,7 @@ class WallpaperPreviewPanel(wx.Panel):
 
         # Buttons
         self.config_mode = False
+        self.bezel_conifg_mode = False
         self.create_buttons(use_ppi_px)
 
         # Colour definitions
@@ -988,6 +990,7 @@ class WallpaperPreviewPanel(wx.Panel):
                 st_bmp.SetSize(size)
 
         self.move_buttons()
+        self.move_bezel_buttons()
 
     def full_refresh_preview(self, is_resized, use_ppi_px, use_multi_image):
         if is_resized and not self.config_mode:
@@ -1492,4 +1495,55 @@ class WallpaperPreviewPanel(wx.Panel):
     def start_bezel_config(self):
         """Creates buttons on each display right and bottom edges
         to allow adding bezels"""
-        pass
+        # TODO Change background color?
+        self.bezel_conifg_mode = True
+        self.bez_buttons = []
+        self.create_bezel_buttons()
+
+
+    def create_bezel_buttons(self):
+        # load icons into bitmaps
+        rb_png = os.path.join(RESOURCES_PATH, "icons8-merge-vertical-96.png")
+        bb_png = os.path.join(RESOURCES_PATH, "icons8-merge-horizontal-96.png")
+        rb_img = wx.Image(rb_png, type=wx.BITMAP_TYPE_ANY)
+        bb_img = wx.Image(bb_png, type=wx.BITMAP_TYPE_ANY)
+        rb_bmp = rb_img.Scale(20, 20).Resize((20, 20), (0, 0)).ConvertToBitmap()
+        bb_bmp = bb_img.Scale(20, 20).Resize((20, 20), (0, 0)).ConvertToBitmap()
+
+        # create bitmap buttons
+        for st_bmp in self.preview_img_list:
+            butts = []
+            butt_rb = wx.BitmapButton(self, bitmap=rb_bmp)
+            butt_bb = wx.BitmapButton(self, bitmap=bb_bmp)
+            self.bez_butt_sz = butt_rb.GetSize()
+            pos_rb, pos_bb = self.bezel_button_positions(st_bmp)
+            butt_rb.SetPosition((pos_rb[0], pos_rb[1]))
+            butt_bb.SetPosition((pos_bb[0], pos_bb[1]))
+            # butt_rb.Bind(wx.EVT_BUTTON, self.onConfigure)
+            self.bez_buttons.append(
+                (
+                    butt_rb,
+                    butt_bb
+                )
+            )
+
+
+    def bezel_button_positions(self, st_bmp):
+        """Return the mid points on the screen of the right and bottom edges
+        of the given StaticBitmap."""
+        sz = st_bmp.GetSize()
+        pos = st_bmp.GetPosition()
+        bsz = self.bez_butt_sz
+        pos_rb = (sz[0] + pos[0] - bsz[0]/2, sz[1]/2 + pos[1] - bsz[1]/2)
+        pos_bb = (sz[0]/2 + pos[0] - bsz[0]/2, sz[1] + pos[1] - bsz[1]/2)
+        return [pos_rb, pos_bb]
+
+    def move_bezel_buttons(self):
+        """Move bezel buttons after a resize."""
+        if self.bezel_conifg_mode:
+            for butts, st_bmp in zip(self.bez_buttons, self.preview_img_list):
+                pos_rb, pos_bb = self.bezel_button_positions(st_bmp)
+                butts[0].SetPosition((pos_rb[0], pos_rb[1]))
+                butts[1].SetPosition((pos_bb[0], pos_bb[1]))
+        else:
+            pass
