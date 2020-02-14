@@ -873,7 +873,13 @@ class WallpaperPreviewPanel(wx.Panel):
         self.preview_img_list = []
         self.bmp_list = []
 
+        # Draw preview
         self.draw_displays()
+
+        # Create bezel buttons for displays in preview
+        self.bez_buttons = []
+        self.create_bezel_buttons()
+
 
     #
     # UI drawing methods
@@ -1497,8 +1503,7 @@ class WallpaperPreviewPanel(wx.Panel):
         to allow adding bezels"""
         # TODO Change background color?
         self.bezel_conifg_mode = True
-        self.bez_buttons = []
-        self.create_bezel_buttons()
+        self.show_bezel_buttons(True)
 
 
     def create_bezel_buttons(self):
@@ -1526,7 +1531,13 @@ class WallpaperPreviewPanel(wx.Panel):
                     butt_bb
                 )
             )
+        self.show_bezel_buttons(False)
 
+    def show_bezel_buttons(self, show):
+        """Show/Hide the bezel buttons."""
+        for butt in self.bez_buttons:
+            butt[0].Show(show)
+            butt[1].Show(show)
 
     def bezel_button_positions(self, st_bmp):
         """Return the mid points on the screen of the right and bottom edges
@@ -1540,10 +1551,7 @@ class WallpaperPreviewPanel(wx.Panel):
 
     def move_bezel_buttons(self):
         """Move bezel buttons after a resize."""
-        if self.bezel_conifg_mode:
-            for butts, st_bmp in zip(self.bez_buttons, self.preview_img_list):
-                pos_rb, pos_bb = self.bezel_button_positions(st_bmp)
-                butts[0].SetPosition((pos_rb[0], pos_rb[1]))
-                butts[1].SetPosition((pos_bb[0], pos_bb[1]))
-        else:
-            pass
+        for butts, st_bmp in zip(self.bez_buttons, self.preview_img_list):
+            pos_rb, pos_bb = self.bezel_button_positions(st_bmp)
+            butts[0].SetPosition((pos_rb[0], pos_rb[1]))
+            butts[1].SetPosition((pos_bb[0], pos_bb[1]))
