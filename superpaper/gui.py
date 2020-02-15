@@ -67,7 +67,8 @@ class WallpaperSettingsPanel(wx.Panel):
         self.resized = False
         # display_data = wpproc.get_display_data()
         self.display_sys = wpproc.DisplaySystem()
-        self.wpprev_pnl = WallpaperPreviewPanel(self.frame, self.display_sys)
+        # self.wpprev_pnl = WallpaperPreviewPanel(self.frame, self.display_sys)
+        self.wpprev_pnl = WallpaperPreviewPanel(self, self.display_sys)
         self.sizer_top_half.Add(self.wpprev_pnl, 1, wx.CENTER|wx.EXPAND, 5)
         # self.sizer_top_half.SetMinSize((400,200))
         # self.sizer_top_half.SetMinSize()
@@ -1524,7 +1525,8 @@ class WallpaperPreviewPanel(wx.Panel):
             pos_rb, pos_bb = self.bezel_button_positions(st_bmp)
             butt_rb.SetPosition((pos_rb[0], pos_rb[1]))
             butt_bb.SetPosition((pos_bb[0], pos_bb[1]))
-            # butt_rb.Bind(wx.EVT_BUTTON, self.onConfigure)
+            butt_rb.Bind(wx.EVT_BUTTON, self.onBezelButton)
+            butt_bb.Bind(wx.EVT_BUTTON, self.onBezelButton)
             self.bez_buttons.append(
                 (
                     butt_rb,
@@ -1555,3 +1557,59 @@ class WallpaperPreviewPanel(wx.Panel):
             pos_rb, pos_bb = self.bezel_button_positions(st_bmp)
             butts[0].SetPosition((pos_rb[0], pos_rb[1]))
             butts[1].SetPosition((pos_bb[0], pos_bb[1]))
+
+    def onBezelButton(self, event):
+        # pop = self.BezelEntryPopup(self, wx.SIMPLE_BORDER)
+        pop = self.BezelEntryPopup(self.frame, wx.SIMPLE_BORDER)
+
+        butt = event.GetEventObject()
+        pos = butt.ClientToScreen( (0, 0) )
+        butt_sz = butt.GetSize()
+        pop.Position(pos, (0, butt_sz[1]))
+        pop.Popup()
+
+    #
+    # Bezel entry pop-up
+    #
+
+    class BezelEntryPopup(wx.PopupTransientWindow):
+        """Adds a bit of text and mouse movement to the wx.PopupWindow"""
+        def __init__(self, parent, style):
+            wx.PopupTransientWindow.__init__(self, parent, style)
+            pnl = wx.Panel(self)
+            # pnl.SetBackgroundColour("CADET BLUE")
+
+            st = wx.StaticText(pnl, -1,
+                            "Enter the size of adjacent bezels\n"
+                            "and gap in millimeters:")
+            tc_bez = wx.TextCtrl(pnl, -1, size=(100, -1))
+            butt_save = wx.Button(pnl, label="Save")
+            butt_canc = wx.Button(pnl, label="Cancel")
+            butt_save.Bind(wx.EVT_BUTTON, self.onSave)
+            butt_canc.Bind(wx.EVT_BUTTON, self.onCancel)
+            butt_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            butt_sizer.AddStretchSpacer()
+            butt_sizer.Add(butt_save, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
+            butt_sizer.Add(butt_canc, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
+
+            sizer = wx.BoxSizer(wx.VERTICAL)
+            sizer.Add(st, 0, wx.ALL, 5)
+            sizer.Add(tc_bez, 0, wx.ALL, 5)
+            sizer.Add(butt_sizer, 0, wx.ALL|wx.EXPAND, 0)
+            pnl.SetSizer(sizer)
+
+            sizer.Fit(pnl)
+            sizer.Fit(self)
+            self.Layout()
+
+        def ProcessLeftDown(self, evt):
+            return wx.PopupTransientWindow.ProcessLeftDown(self, evt)
+
+        def OnDismiss(self):
+            print("Dismiss")
+
+        def onSave(self, event):
+            pass
+
+        def onCancel(self, event):
+            self.Dismiss()
