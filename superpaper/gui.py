@@ -1534,6 +1534,54 @@ class WallpaperPreviewPanel(wx.Panel):
                 )
             )
         self.show_bezel_buttons(False)
+        self.create_bezel_popups()
+
+    def create_bezel_popups(self):
+        self.bezel_popups = []
+        self.tc_count = 0
+        for butts in self.bez_buttons:
+            pop_rb = self.popup_at_button(butts[0])
+            pop_bb = self.popup_at_button(butts[1])
+            self.bezel_popups.append(
+                (
+                    pop_rb,
+                    pop_bb
+                )
+            )
+
+    def popup_at_button(self, button):
+        """Initialize a popup at button position."""
+        pop = self.BezelEntryPopup(self, wx.SIMPLE_BORDER)
+
+        butt_name = button.GetName()
+        pos = button.ClientToScreen( (0, 0) )
+        butt_sz = button.GetSize()
+        pop_sz = pop.GetSize()
+        if butt_name == "butt_bez_r":
+            # Center pop vertically to button
+            y_cntr = (- pop_sz[1] + butt_sz[1])/2
+            pop.Position(pos, (- pop_sz[0], y_cntr))
+        else:
+            # Center pop horizontally to button
+            x_cntr = (- pop_sz[0] + butt_sz[0])/2
+            pop.Position(pos, (x_cntr, - pop_sz[1]))
+        pop.set_bezel_value(self.tc_count)
+        self.tc_count += 1
+        return pop
+
+    def move_popup_to_button(self, pop, button):
+        butt_name = button.GetName()
+        pos = button.ClientToScreen( (0, 0) )
+        butt_sz = button.GetSize()
+        pop_sz = pop.GetSize()
+        if butt_name == "butt_bez_r":
+            # Center pop vertically to button
+            y_cntr = (- pop_sz[1] + butt_sz[1])/2
+            pop.Position(pos, (- pop_sz[0], y_cntr))
+        else:
+            # Center pop horizontally to button
+            x_cntr = (- pop_sz[0] + butt_sz[0])/2
+            pop.Position(pos, (x_cntr, - pop_sz[1]))
 
     def show_bezel_buttons(self, show):
         """Show/Hide the bezel buttons."""
@@ -1557,26 +1605,17 @@ class WallpaperPreviewPanel(wx.Panel):
             pos_rb, pos_bb = self.bezel_button_positions(st_bmp)
             butts[0].SetPosition((pos_rb[0], pos_rb[1]))
             butts[1].SetPosition((pos_bb[0], pos_bb[1]))
+        # move POPUPS as well.
+        for butts, pops in zip(self.bez_buttons, self.bezel_popups):
+            self.move_popup_to_button(pops[0], butts[0])
+            self.move_popup_to_button(pops[1], butts[1])
+
 
     def onBezelButton(self, event):
-        # pop = self.BezelEntryPopup(self, wx.SIMPLE_BORDER)
-        pop = self.BezelEntryPopup(self.frame, wx.SIMPLE_BORDER)
-
-        butt = event.GetEventObject()
-        butt_name = butt.GetName()
-        pos = butt.ClientToScreen( (0, 0) )
-        butt_sz = butt.GetSize()
-        pop_sz = pop.GetSize()
-        if butt_name == "butt_bez_r":
-            # Center pop vertically to button
-            y_cntr = (- pop_sz[1] + butt_sz[1])/2
-            pop.Position(pos, (- pop_sz[0], y_cntr))
-        else:
-            # Center pop horizontally to button
-            x_cntr = (- pop_sz[0] + butt_sz[0])/2
-            pop.Position(pos, (x_cntr, - pop_sz[1]))
-
+        #TODO
+        pop = self.bezel_popups[1][1]
         pop.Popup()
+
 
     #
     # Bezel entry pop-up
@@ -1590,21 +1629,24 @@ class WallpaperPreviewPanel(wx.Panel):
             # pnl.SetBackgroundColour("CADET BLUE")
 
             st = wx.StaticText(pnl, -1,
-                            "Enter the size of adjacent bezels\n"
-                            "and gap in millimeters:")
-            self.tc_bez = wx.TextCtrl(pnl, -1, size=(100, -1))
+                            "Enter the size of adjacent bezels and gap\n"
+                            "in millimeters:")
+            # self.tc_bez = wx.TextCtrl(pnl, -1, size=(100, -1))
+            self.tc_bez = wx.TextCtrl(pnl, -1, style=wx.TE_RIGHT)
+            self.current_bez_val = None
             butt_save = wx.Button(pnl, label="Save")
             butt_canc = wx.Button(pnl, label="Cancel")
             butt_save.Bind(wx.EVT_BUTTON, self.onSave)
             butt_canc.Bind(wx.EVT_BUTTON, self.onCancel)
             butt_sizer = wx.BoxSizer(wx.HORIZONTAL)
-            butt_sizer.AddStretchSpacer()
-            butt_sizer.Add(butt_save, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
-            butt_sizer.Add(butt_canc, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
+            # butt_sizer.AddStretchSpacer()
+            butt_sizer.Add(self.tc_bez, 0, wx.ALL, 5)
+            butt_sizer.Add(butt_save, 0, wx.ALL, 5)
+            butt_sizer.Add(butt_canc, 0, wx.ALL, 5)
 
             sizer = wx.BoxSizer(wx.VERTICAL)
             sizer.Add(st, 0, wx.ALL, 5)
-            sizer.Add(self.tc_bez, 0, wx.ALL, 5)
+            # sizer.Add(self.tc_bez, 0, wx.ALL, 5)
             sizer.Add(butt_sizer, 0, wx.ALL|wx.EXPAND, 0)
             pnl.SetSizer(sizer)
 
@@ -1628,3 +1670,8 @@ class WallpaperPreviewPanel(wx.Panel):
             """Return the entered bezel thickness as a float."""
             bez = self.tc_bez.GetValue()
             return float(bez)
+
+        def set_bezel_value(self, val):
+            """Write val to TextCtrl."""
+            self.tc_bez.SetValue(str(val))
+            self.current_bez_val = str(val)
