@@ -1519,8 +1519,8 @@ class WallpaperPreviewPanel(wx.Panel):
         # create bitmap buttons
         for st_bmp in self.preview_img_list:
             butts = []
-            butt_rb = wx.BitmapButton(self, bitmap=rb_bmp)
-            butt_bb = wx.BitmapButton(self, bitmap=bb_bmp)
+            butt_rb = wx.BitmapButton(self, bitmap=rb_bmp, name="butt_bez_r")
+            butt_bb = wx.BitmapButton(self, bitmap=bb_bmp, name="butt_bez_b")
             self.bez_butt_sz = butt_rb.GetSize()
             pos_rb, pos_bb = self.bezel_button_positions(st_bmp)
             butt_rb.SetPosition((pos_rb[0], pos_rb[1]))
@@ -1563,9 +1563,19 @@ class WallpaperPreviewPanel(wx.Panel):
         pop = self.BezelEntryPopup(self.frame, wx.SIMPLE_BORDER)
 
         butt = event.GetEventObject()
+        butt_name = butt.GetName()
         pos = butt.ClientToScreen( (0, 0) )
         butt_sz = butt.GetSize()
-        pop.Position(pos, (0, butt_sz[1]))
+        pop_sz = pop.GetSize()
+        if butt_name == "butt_bez_r":
+            # Center pop vertically to button
+            y_cntr = (- pop_sz[1] + butt_sz[1])/2
+            pop.Position(pos, (- pop_sz[0], y_cntr))
+        else:
+            # Center pop horizontally to button
+            x_cntr = (- pop_sz[0] + butt_sz[0])/2
+            pop.Position(pos, (x_cntr, - pop_sz[1]))
+
         pop.Popup()
 
     #
@@ -1582,7 +1592,7 @@ class WallpaperPreviewPanel(wx.Panel):
             st = wx.StaticText(pnl, -1,
                             "Enter the size of adjacent bezels\n"
                             "and gap in millimeters:")
-            tc_bez = wx.TextCtrl(pnl, -1, size=(100, -1))
+            self.tc_bez = wx.TextCtrl(pnl, -1, size=(100, -1))
             butt_save = wx.Button(pnl, label="Save")
             butt_canc = wx.Button(pnl, label="Cancel")
             butt_save.Bind(wx.EVT_BUTTON, self.onSave)
@@ -1594,7 +1604,7 @@ class WallpaperPreviewPanel(wx.Panel):
 
             sizer = wx.BoxSizer(wx.VERTICAL)
             sizer.Add(st, 0, wx.ALL, 5)
-            sizer.Add(tc_bez, 0, wx.ALL, 5)
+            sizer.Add(self.tc_bez, 0, wx.ALL, 5)
             sizer.Add(butt_sizer, 0, wx.ALL|wx.EXPAND, 0)
             pnl.SetSizer(sizer)
 
@@ -1613,3 +1623,8 @@ class WallpaperPreviewPanel(wx.Panel):
 
         def onCancel(self, event):
             self.Dismiss()
+
+        def bezel_value(self):
+            """Return the entered bezel thickness as a float."""
+            bez = self.tc_bez.GetValue()
+            return float(bez)
