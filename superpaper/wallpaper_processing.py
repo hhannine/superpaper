@@ -371,6 +371,18 @@ class DisplaySystem():
             dsp.ppi_norm_bezels = bz_px
             print("update_bezels", bz_px)
 
+    def bezels_in_mm(self):
+        """Return list of bezel thicknesses in millimeters."""
+        bezels_mm = []
+        max_ppmm = self.max_ppi() / 25.4
+        for dsp in self.disp_list:
+            bezels_mm.append(
+                (
+                    dsp.ppi_norm_bezels[0] / max_ppmm,
+                    dsp.ppi_norm_bezels[1] / max_ppmm
+                )
+            )
+        return bezels_mm
 
 
     def save_system(self):
