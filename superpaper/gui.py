@@ -1005,9 +1005,11 @@ class WallpaperPreviewPanel(wx.Panel):
             # if (self.current_preview_images and dtop_canvas_relsz is not self.dtop_canvas_relsz):
             if (self.current_preview_images):
                 self.preview_wallpaper(self.current_preview_images, use_ppi_px, use_multi_image)
+                self.move_bezel_buttons()
             else:
                 self.refresh_preview(use_ppi_px)
                 self.resize_displays(use_ppi_px)
+                self.move_bezel_buttons()
 
     def preview_wallpaper(self, image_list, use_ppi_px = False, use_multi_image = False, display_data = None):
         if display_data:
@@ -1086,7 +1088,7 @@ class WallpaperPreviewPanel(wx.Panel):
         if (right_bez == (0, 0) and bottom_bez == (0, 0)):
             return bmp
         # bmp into wx.Image and new output
-        img = wx.ImageFromBitmap(bmp)
+        img = bmp.ConvertToImage()
         img_sz = img.GetSize()
         img_out = wx.Image(disp_sz[0], disp_sz[1])
         img_out.Paste(img, 0, 0)
@@ -1096,14 +1098,14 @@ class WallpaperPreviewPanel(wx.Panel):
         if bottom_bez != (0, 0):
             b_bez_bmp = wx.Bitmap.FromRGBA(bottom_bez[0], bottom_bez[1],
                                            red=0, green=0, blue=0, alpha=132)
-            b_bez_img = wx.ImageFromBitmap(b_bez_bmp)
+            b_bez_img = b_bez_bmp.ConvertToImage()
             img_out.Paste(b_bez_img, 0, img_sz[1])
 
         # right bez: is longer if bottom bez is present
         if right_bez != (0, 0):
             r_bez_bmp = wx.Bitmap.FromRGBA(right_bez[0], right_bez[1],
                                            red=0, green=0, blue=0, alpha=132)
-            r_bez_img = wx.ImageFromBitmap(r_bez_bmp)
+            r_bez_img = r_bez_bmp.ConvertToImage()
             img_out.Paste(r_bez_img, img_sz[0], 0)
 
         # Convert Image back to wx.Bitmap
@@ -1538,10 +1540,12 @@ class WallpaperPreviewPanel(wx.Panel):
 
     def create_bezel_popups(self):
         self.bezel_popups = []
-        self.tc_count = 0
-        for butts in self.bez_buttons:
+        bezel_mm = self.display_sys.bezels_in_mm()
+        for butts, bez_mm in zip(self.bez_buttons, bezel_mm):
             pop_rb = self.popup_at_button(butts[0])
+            pop_rb.set_bezel_value(bez_mm[0])
             pop_bb = self.popup_at_button(butts[1])
+            pop_bb.set_bezel_value(bez_mm[1])
             self.bezel_popups.append(
                 (
                     pop_rb,
@@ -1565,8 +1569,6 @@ class WallpaperPreviewPanel(wx.Panel):
             # Center pop horizontally to button
             x_cntr = (- pop_sz[0] + butt_sz[0])/2
             pop.Position(pos, (x_cntr, - pop_sz[1]))
-        pop.set_bezel_value(self.tc_count)
-        self.tc_count += 1
         return pop
 
     def move_popup_to_button(self, pop, button):
@@ -1606,12 +1608,17 @@ class WallpaperPreviewPanel(wx.Panel):
             butts[0].SetPosition((pos_rb[0], pos_rb[1]))
             butts[1].SetPosition((pos_bb[0], pos_bb[1]))
         # move POPUPS as well.
+        self.move_bezel_popups()
+
+    def move_bezel_popups(self):
+        """Move bezel popups to their respective buttons."""
         for butts, pops in zip(self.bez_buttons, self.bezel_popups):
             self.move_popup_to_button(pops[0], butts[0])
             self.move_popup_to_button(pops[1], butts[1])
 
 
     def onBezelButton(self, event):
+        self.move_bezel_popups()
         #Get button instance and find it in list
         button = event.GetEventObject()
         for butt_pair in self.bez_buttons:
@@ -1664,7 +1671,8 @@ class WallpaperPreviewPanel(wx.Panel):
             return wx.PopupTransientWindow.ProcessLeftDown(self, evt)
 
         def OnDismiss(self):
-            print("Dismiss")
+            # print("Dismiss")
+            pass
 
         def onSave(self, event):
             pass
