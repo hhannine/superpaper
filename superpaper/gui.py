@@ -1612,8 +1612,14 @@ class WallpaperPreviewPanel(wx.Panel):
 
 
     def onBezelButton(self, event):
-        #TODO
-        pop = self.bezel_popups[1][1]
+        #Get button instance and find it in list
+        button = event.GetEventObject()
+        for butt_pair in self.bez_buttons:
+            if button in butt_pair:
+                button_pos = (self.bez_buttons.index(butt_pair), butt_pair.index(button))
+
+        # Pick and show respective popup
+        pop = self.bezel_popups[button_pos[0]][button_pos[1]]
         pop.Popup()
 
 
