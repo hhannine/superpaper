@@ -250,7 +250,9 @@ class WallpaperSettingsPanel(wx.Panel):
 
         self.sizer_settings_right.Add(self.sizer_setting_paths, 1, wx.CENTER|wx.EXPAND|wx.ALL, 5)
 
+
     def create_sizer_settings_advanced(self):
+        """Create sizer for advanced spanning settings."""
         self.sizer_setting_adv = wx.StaticBoxSizer(wx.VERTICAL, self, "Advanced Wallpaper Adjustment")
         statbox_parent_adv = self.sizer_setting_adv.GetStaticBox()
 
@@ -271,23 +273,20 @@ class WallpaperSettingsPanel(wx.Panel):
         statbox_parent_bezels = self.sizer_setting_bezels.GetStaticBox()
         self.cb_bezels = wx.CheckBox(statbox_parent_bezels, -1, "Apply bezel correction")
         self.cb_bezels.Bind(wx.EVT_CHECKBOX, self.onCheckboxBezels)
-        # st_bezels = wx.StaticText(
-        #     statbox_parent_bezels, -1,
-        #     "Bezel pair thicknesses, incl. gap (millimeters):"
-        # )
-        # st_bezels.Disable()
+
+        self.sizer_bezel_buttons = wx.BoxSizer(wx.HORIZONTAL)
         self.button_bezels = wx.Button(statbox_parent_bezels, -1, label="Configure bezels")
+        self.button_bezels_save = wx.Button(statbox_parent_bezels, -1, label="Save bezels")
+        self.button_bezels_canc = wx.Button(statbox_parent_bezels, -1, label="Cancel")
         self.button_bezels.Bind(wx.EVT_BUTTON, self.onConfigureBezels)
-        self.button_bezels.Disable()
+        self.button_bezels_save.Bind(wx.EVT_BUTTON, self.onConfigureBezelsSave)
+        self.button_bezels_canc.Bind(wx.EVT_BUTTON, self.onConfigureBezelsCanc)
         self.sizer_setting_bezels.Add(self.cb_bezels, 0, wx.ALIGN_LEFT|wx.LEFT, 5)
-        self.sizer_setting_bezels.Add(self.button_bezels, 0, wx.CENTER|wx.ALL, 5)
-        # self.sizer_setting_bezels.Add(st_bezels, 0, wx.ALIGN_LEFT|wx.LEFT, 5)
-        # tc_list_sizer_bez = wx.BoxSizer(wx.HORIZONTAL)
-        # self.tc_list_bezels = self.list_of_textctrl(statbox_parent_bezels, wpproc.NUM_DISPLAYS-1)
-        # for tc in self.tc_list_bezels:
-        #     tc_list_sizer_bez.Add(tc, 0, wx.ALIGN_LEFT|wx.ALL, 5)
-        #     tc.Disable()
-        # self.sizer_setting_bezels.Add(tc_list_sizer_bez, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        self.sizer_bezel_buttons.Add(self.button_bezels, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+        self.sizer_bezel_buttons.Add(self.button_bezels_save, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+        self.sizer_bezel_buttons.Add(self.button_bezels_canc, 0, wx.ALIGN_CENTER|wx.ALL, 5)
+        self.sizer_setting_bezels.Add(self.sizer_bezel_buttons, 0, wx.EXPAND, 0)
+        self.button_bezels.Disable()
 
         # Offsets
         self.sizer_setting_offsets = wx.StaticBoxSizer(wx.VERTICAL, self, "Manual Display Offsets")
@@ -510,10 +509,25 @@ class WallpaperSettingsPanel(wx.Panel):
                     widget.Enable(bool_state)
 
     def show_adv_setting_sizer(self, show_bool):
+        """Show/Hide the sizer for advanced spanning settings."""
         self.sizer_setting_sizers.Show(self.sizer_setting_adv, show=show_bool)
+        self.toggle_bezel_buttons(enable_config_butt=False)
         self.sizer_main.Layout()
         self.sizer_bottom_buttonrow.Show(self.button_align_test, show=show_bool)
         self.sizer_bottom_buttonrow.Layout()
+
+    def toggle_bezel_buttons(self, bezel_mode = False, enable_config_butt = True):
+        """Show/Hide bezel config buttons.
+
+        If not in bezel mode show config button, and if in it hide config and show
+        save and cancel buttons.
+        enable_config_butt optional controls whether the config button should be
+        enabled/disabled."""
+        self.sizer_bezel_buttons.Show(self.button_bezels, show=not bezel_mode)
+        self.sizer_bezel_buttons.Show(self.button_bezels_save, show=bezel_mode)
+        self.sizer_bezel_buttons.Show(self.button_bezels_canc, show=bezel_mode)
+        self.sizer_bezel_buttons.Layout()
+        self.button_bezels.Enable(enable_config_butt)
 
     def refresh_path_listctrl(self, mult_img_bool):
         self.path_listctrl.Destroy()
@@ -662,6 +676,21 @@ class WallpaperSettingsPanel(wx.Panel):
 
     def onConfigureBezels(self, event):
         self.wpprev_pnl.start_bezel_config()
+        self.button_bezels.Hide()
+        self.button_bezels_save.Show()
+        self.button_bezels_canc.Show()
+
+    def onConfigureBezelsSave(self, event):
+        self.wpprev_pnl.bezel_config_save()
+        self.button_bezels_save.Hide()
+        self.button_bezels_canc.Hide()
+        self.button_bezels.Show()
+
+    def onConfigureBezelsCanc(self, event):
+        self.wpprev_pnl.bezel_config_cancel()
+        self.button_bezels_save.Hide()
+        self.button_bezels_canc.Hide()
+        self.button_bezels.Show()
 
     def onBrowsePaths(self, event):
         """Opens the pick paths dialog."""
@@ -1278,6 +1307,7 @@ class WallpaperPreviewPanel(wx.Panel):
         )
 
     def toggle_buttons(self, show_config, in_config):
+        """Toggle visibility of display positioning config buttons."""
         self.button_config.Show(show_config)
         self.button_save.Show(in_config)
         self.button_cancel.Show(in_config)
@@ -1502,11 +1532,35 @@ class WallpaperPreviewPanel(wx.Panel):
     # Bezel Configuration mode
     #
     def start_bezel_config(self):
-        """Creates buttons on each display right and bottom edges
-        to allow adding bezels"""
+        """Enters bezel config mode.
+
+        Reveals buttons on each display right and bottom edges
+        to allow adding bezels. Additionally hides display
+        position config button(s)."""
         # TODO Change background color?
+        self.old_display_sys = self.display_sys
         self.bezel_conifg_mode = True
         self.show_bezel_buttons(True)
+        # Hide preview positioning config button
+        self.toggle_buttons(False, False)
+
+    def bezel_config_save(self):
+        """Saves bezel values for the active DisplaySystem."""
+        self.bezel_conifg_mode = False
+        self.show_bezel_buttons(False)
+        # Show preview positioning config button
+        self.toggle_buttons(True, False)
+        self.full_refresh_preview(True, True, False)
+        # TODO trigger a DisplaySystem save.
+
+    def bezel_config_cancel(self):
+        """Exits out of the bezel config mode without saving."""
+        self.bezel_conifg_mode = False
+        self.show_bezel_buttons(False)
+        # Show preview positioning config button
+        self.toggle_buttons(True, False)
+        self.display_sys = self.old_display_sys
+        self.full_refresh_preview(True, True, False)
 
 
     def create_bezel_buttons(self):
@@ -1624,6 +1678,7 @@ class WallpaperPreviewPanel(wx.Panel):
         """Adds a bit of text and mouse movement to the wx.PopupWindow"""
         def __init__(self, parent, style):
             wx.PopupTransientWindow.__init__(self, parent, style)
+            self.preview = parent
             pnl = wx.Panel(self)
             # pnl.SetBackgroundColour("CADET BLUE")
 
@@ -1633,9 +1688,9 @@ class WallpaperPreviewPanel(wx.Panel):
             # self.tc_bez = wx.TextCtrl(pnl, -1, size=(100, -1))
             self.tc_bez = wx.TextCtrl(pnl, -1, style=wx.TE_RIGHT)
             self.current_bez_val = None
-            butt_save = wx.Button(pnl, label="Save")
+            butt_save = wx.Button(pnl, label="Apply")
             butt_canc = wx.Button(pnl, label="Cancel")
-            butt_save.Bind(wx.EVT_BUTTON, self.onSave)
+            butt_save.Bind(wx.EVT_BUTTON, self.onApply)
             butt_canc.Bind(wx.EVT_BUTTON, self.onCancel)
             butt_sizer = wx.BoxSizer(wx.HORIZONTAL)
             # butt_sizer.AddStretchSpacer()
@@ -1660,10 +1715,22 @@ class WallpaperPreviewPanel(wx.Panel):
             # print("Dismiss")
             pass
 
-        def onSave(self, event):
-            pass
+        def onApply(self, event):
+            display_sys = self.preview.display_sys
+            pops = self.preview.bezel_popups
+            bezel_mms = []
+            for pop_pair in pops:
+                bezel_mms.append(
+                    (
+                        pop_pair[0].bezel_value(),
+                        pop_pair[1].bezel_value()
+                    )
+                )
+            self.preview.display_sys.update_bezels(bezel_mms)
+            self.preview.full_refresh_preview(True, True, False)
 
         def onCancel(self, event):
+            self.tc_bez.SetValue(self.current_bez_val)
             self.Dismiss()
 
         def bezel_value(self):
