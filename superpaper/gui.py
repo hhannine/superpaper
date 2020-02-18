@@ -1556,22 +1556,10 @@ class WallpaperPreviewPanel(wx.Panel):
     def popup_at_button(self, button):
         """Initialize a popup at button position."""
         pop = self.BezelEntryPopup(self, wx.SIMPLE_BORDER)
-
-        butt_name = button.GetName()
-        pos = button.ClientToScreen( (0, 0) )
-        butt_sz = button.GetSize()
-        pop_sz = pop.GetSize()
-        if butt_name == "butt_bez_r":
-            # Center pop vertically to button
-            y_cntr = (- pop_sz[1] + butt_sz[1])/2
-            pop.Position(pos, (- pop_sz[0], y_cntr))
-        else:
-            # Center pop horizontally to button
-            x_cntr = (- pop_sz[0] + butt_sz[0])/2
-            pop.Position(pos, (x_cntr, - pop_sz[1]))
         return pop
 
     def move_popup_to_button(self, pop, button):
+        """Move pop next to its associated button."""
         butt_name = button.GetName()
         pos = button.ClientToScreen( (0, 0) )
         butt_sz = button.GetSize()
@@ -1607,8 +1595,6 @@ class WallpaperPreviewPanel(wx.Panel):
             pos_rb, pos_bb = self.bezel_button_positions(st_bmp)
             butts[0].SetPosition((pos_rb[0], pos_rb[1]))
             butts[1].SetPosition((pos_bb[0], pos_bb[1]))
-        # move POPUPS as well.
-        self.move_bezel_popups()
 
     def move_bezel_popups(self):
         """Move bezel popups to their respective buttons."""
