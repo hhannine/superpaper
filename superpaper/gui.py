@@ -1727,7 +1727,9 @@ class WallpaperPreviewPanel(wx.Panel):
                     )
                 )
             self.preview.display_sys.update_bezels(bezel_mms)
+            self.preview.display_data = self.preview.display_sys.get_disp_list(True)
             self.preview.full_refresh_preview(True, True, False)
+            self.Dismiss()
 
         def onCancel(self, event):
             self.tc_bez.SetValue(self.current_bez_val)

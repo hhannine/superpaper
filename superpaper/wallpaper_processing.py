@@ -370,6 +370,7 @@ class DisplaySystem():
         for bz_px, dsp in zip(bezels_ppi_norm, self.disp_list):
             dsp.ppi_norm_bezels = bz_px
             print("update_bezels", bz_px)
+        self.compute_initial_preview_offsets()
 
     def bezels_in_mm(self):
         """Return list of bezel thicknesses in millimeters."""
