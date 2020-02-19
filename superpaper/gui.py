@@ -1538,7 +1538,7 @@ class WallpaperPreviewPanel(wx.Panel):
         to allow adding bezels. Additionally hides display
         position config button(s)."""
         # TODO Change background color?
-        self.old_display_sys = self.display_sys
+        self.old_bezels = self.display_sys.bezels_in_mm()
         self.bezel_conifg_mode = True
         self.show_bezel_buttons(True)
         # Hide preview positioning config button
@@ -1559,7 +1559,11 @@ class WallpaperPreviewPanel(wx.Panel):
         self.show_bezel_buttons(False)
         # Show preview positioning config button
         self.toggle_buttons(True, False)
-        self.display_sys = self.old_display_sys
+        self.display_sys.update_bezels(self.old_bezels)
+        for pops, bez_mms in zip(self.bezel_popups, self.old_bezels):
+            pops[0].set_bezel_value(bez_mms[0])
+            pops[1].set_bezel_value(bez_mms[1])
+        self.display_data = self.display_sys.get_disp_list(True)
         self.full_refresh_preview(True, True, False)
 
 
@@ -1716,6 +1720,7 @@ class WallpaperPreviewPanel(wx.Panel):
             pass
 
         def onApply(self, event):
+            self.current_bez_val = self.tc_bez.GetValue()
             display_sys = self.preview.display_sys
             pops = self.preview.bezel_popups
             bezel_mms = []
