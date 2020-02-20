@@ -511,7 +511,9 @@ class WallpaperSettingsPanel(wx.Panel):
     def show_adv_setting_sizer(self, show_bool):
         """Show/Hide the sizer for advanced spanning settings."""
         self.sizer_setting_sizers.Show(self.sizer_setting_adv, show=show_bool)
-        self.toggle_bezel_buttons(enable_config_butt=False)
+        self.toggle_bezel_buttons(
+            enable_config_butt=self.cb_bezels.GetValue()
+        )
         self.sizer_main.Layout()
         self.sizer_bottom_buttonrow.Show(self.button_align_test, show=show_bool)
         self.sizer_bottom_buttonrow.Layout()
