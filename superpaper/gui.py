@@ -508,6 +508,11 @@ class WallpaperSettingsPanel(wx.Panel):
                 ):
                     widget.Enable(bool_state)
 
+    def toggle_radio_and_profile_choice(self, enable):
+        """Toggle enabled state of span mode radiobox and profile sizer children."""
+        self.radiobox_spanmode.Enable(enable)
+        self.sizer_toggle_children(self.sizer_profiles, enable)
+
     def show_adv_setting_sizer(self, show_bool):
         """Show/Hide the sizer for advanced spanning settings."""
         self.sizer_setting_sizers.Show(self.sizer_setting_adv, show=show_bool)
@@ -587,10 +592,7 @@ class WallpaperSettingsPanel(wx.Panel):
             self.use_multi_image = False
         self.show_adv_setting_sizer(self.show_advanced_settings)
         self.refresh_path_listctrl(self.use_multi_image)
-        if self.show_advanced_settings:
-            display_data = self.display_sys.get_disp_list(True)
-        else:
-            display_data = self.display_sys.get_disp_list(False)
+        display_data = self.display_sys.get_disp_list(self.show_advanced_settings)
         self.wpprev_pnl.update_display_data(
             display_data,
             self.show_advanced_settings,
@@ -677,18 +679,24 @@ class WallpaperSettingsPanel(wx.Panel):
         self.create_sizer_diaginch_override()
 
     def onConfigureBezels(self, event):
+        """Start bezel size config mode."""
+        self.toggle_radio_and_profile_choice(False)
         self.wpprev_pnl.start_bezel_config()
         self.button_bezels.Hide()
         self.button_bezels_save.Show()
         self.button_bezels_canc.Show()
 
     def onConfigureBezelsSave(self, event):
+        """Save out of bezel size config mode."""
+        self.toggle_radio_and_profile_choice(True)
         self.wpprev_pnl.bezel_config_save()
         self.button_bezels_save.Hide()
         self.button_bezels_canc.Hide()
         self.button_bezels.Show()
 
     def onConfigureBezelsCanc(self, event):
+        """Cancel out of bezel size config mode."""
+        self.toggle_radio_and_profile_choice(True)
         self.wpprev_pnl.bezel_config_cancel()
         self.button_bezels_save.Hide()
         self.button_bezels_canc.Hide()
@@ -1315,12 +1323,15 @@ class WallpaperPreviewPanel(wx.Panel):
         self.button_cancel.Show(in_config)
 
     def onConfigure(self, evt):
+        """Start diplay position config mode."""
+        self.frame.toggle_radio_and_profile_choice(False)
         self.config_mode = True
         self.toggle_buttons(False, True)
         self.show_staticbmps(False)
         self.create_shapes()
 
     def onSave(self, evt):
+        """Save current Display offsets into DisplaySystem."""
         self.config_mode = False
         self.toggle_buttons(True, False)
         display_sys = wpproc.DisplaySystem()
@@ -1336,14 +1347,17 @@ class WallpaperPreviewPanel(wx.Panel):
             self.resize_displays(True)
             self.show_staticbmps(True)
         self.draggable_shapes = []  # Destroys DragShapes
+        self.frame.toggle_radio_and_profile_choice(True)
 
     def onCancel(self, evt):
+        """Cancel out of diplay position config mode."""
         self.config_mode = False
         self.toggle_buttons(True, False)
         self.draggable_shapes = []  # Destroys DragShapes
         self.refresh_preview()
         self.full_refresh_preview(True, True, False)
         self.show_staticbmps(True)
+        self.frame.toggle_radio_and_profile_choice(True)
 
 
     def show_staticbmps(self, show):
