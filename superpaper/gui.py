@@ -333,8 +333,11 @@ class WallpaperSettingsPanel(wx.Panel):
         self.tc_list_diaginch = self.list_of_textctrl(statbox_parent_diaginch, wpproc.NUM_DISPLAYS)
         for tc, diag in zip(self.tc_list_diaginch, diags):
             tc_list_sizer_diag.Add(tc, 0, wx.ALIGN_LEFT|wx.ALL, 5)
-            tc.SetValue(diag)
+            tc.ChangeValue(diag)
             tc.Disable()
+        self.button_diaginch_save = wx.Button(statbox_parent_diaginch, label="Save")
+        tc_list_sizer_diag.Add(self.button_diaginch_save, 0, wx.ALL, 5)
+        self.button_diaginch_save.Disable()
         self.sizer_setting_diaginch.Add(tc_list_sizer_diag, 0, wx.ALIGN_LEFT|wx.ALL, 0)
         self.sizer_setting_adv.Layout()
         self.sizer_main.Fit(self.frame)
