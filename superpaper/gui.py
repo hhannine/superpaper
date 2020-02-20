@@ -494,7 +494,7 @@ class WallpaperSettingsPanel(wx.Panel):
             )
         return tcrtl_list
 
-    def sizer_toggle_children(self, sizer, bool_state):
+    def sizer_toggle_children(self, sizer, bool_state, toggle_cb=False):
         for child in sizer.GetChildren():
             if child.IsSizer():
                 self.sizer_toggle_children(child.GetSizer(), bool_state)
@@ -504,7 +504,8 @@ class WallpaperSettingsPanel(wx.Panel):
                     isinstance(widget, wx.TextCtrl) or
                     isinstance(widget, wx.StaticText) or
                     isinstance(widget, wx.Choice) or
-                    isinstance(widget, wx.Button)
+                    isinstance(widget, wx.Button) or
+                    isinstance(widget, wx.CheckBox) and toggle_cb
                 ):
                     widget.Enable(bool_state)
 
@@ -512,6 +513,13 @@ class WallpaperSettingsPanel(wx.Panel):
         """Toggle enabled state of span mode radiobox and profile sizer children."""
         self.radiobox_spanmode.Enable(enable)
         self.sizer_toggle_children(self.sizer_profiles, enable)
+        self.sizer_toggle_children(self.sizer_setting_diaginch, enable, True)
+        if enable:
+            try:
+                diag_cb_state = self.cb_diaginch.GetValue()
+                self.sizer_toggle_children(self.sizer_setting_diaginch, diag_cb_state)
+            except AttributeError:
+                pass
 
     def show_adv_setting_sizer(self, show_bool):
         """Show/Hide the sizer for advanced spanning settings."""
@@ -1278,8 +1286,9 @@ class WallpaperPreviewPanel(wx.Panel):
     # Buttons
     #
     def create_buttons(self, use_ppi_px):
+        """Create buttons for display preview positioning config."""
         # Buttons - show only if use_ppi_px == True
-        self.button_config = wx.Button(self, label="Configure")
+        self.button_config = wx.Button(self, label="Positions")
         self.button_save = wx.Button(self, label="Save")
         self.button_cancel = wx.Button(self, label="Cancel")
 
@@ -1294,9 +1303,10 @@ class WallpaperPreviewPanel(wx.Panel):
         self.button_cancel.Show(False)
 
     def move_buttons(self):
+        """Position display config buttons to bottom right corner."""
         sz_area = self.GetSize()
         sz_butt = self.button_config.GetDefaultSize()
-        self.butt_gap = 5
+        self.butt_gap = 10
         self.button_config.SetPosition(
             (
                 sz_area[0] - sz_butt[0] - self.butt_gap,
