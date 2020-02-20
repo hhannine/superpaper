@@ -326,10 +326,14 @@ class WallpaperSettingsPanel(wx.Panel):
         st_diaginch.Disable()
         self.sizer_setting_diaginch.Add(self.cb_diaginch, 0, wx.ALIGN_LEFT|wx.LEFT, 5)
         self.sizer_setting_diaginch.Add(st_diaginch, 0, wx.ALIGN_LEFT|wx.LEFT, 5)
+        # diag size data for fields
+        diags = [str(dsp.diagonal_size()[1]) for dsp in self.display_sys.disp_list]
+        # sizer for textctrls
         tc_list_sizer_diag = wx.BoxSizer(wx.HORIZONTAL)
         self.tc_list_diaginch = self.list_of_textctrl(statbox_parent_diaginch, wpproc.NUM_DISPLAYS)
-        for tc in self.tc_list_diaginch:
+        for tc, diag in zip(self.tc_list_diaginch, diags):
             tc_list_sizer_diag.Add(tc, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+            tc.SetValue(diag)
             tc.Disable()
         self.sizer_setting_diaginch.Add(tc_list_sizer_diag, 0, wx.ALIGN_LEFT|wx.ALL, 0)
         self.sizer_setting_adv.Layout()
