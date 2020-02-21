@@ -217,6 +217,7 @@ class DisplaySystem():
         # Data
         self.bezel_px = []
         self.user_offsets = []
+        self.use_user_diags = False
 
         self.update_bezels([(10, 20), (15, 0)]) # TODO usage in load
         self.load_system()
@@ -385,6 +386,14 @@ class DisplaySystem():
             )
         return bezels_mm
 
+    def update_display_diags(self, diag_inches):
+        """Overwrite detected display sizes with user input."""
+        self.use_user_diags = True
+        for dsp, diag in zip(self.disp_list, diag_inches):
+            dsp.ppi_and_physsize_from_diagonal_inch(diag)
+        #TODO trigger save here?
+        self.compute_ppinorm_resolutions()
+        self.compute_initial_preview_offsets()
 
     def save_system(self):
         """Save the user given input tied to the current instance

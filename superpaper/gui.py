@@ -336,6 +336,7 @@ class WallpaperSettingsPanel(wx.Panel):
             tc.ChangeValue(diag)
             tc.Disable()
         self.button_diaginch_save = wx.Button(statbox_parent_diaginch, label="Save")
+        self.button_diaginch_save.Bind(wx.EVT_BUTTON, self.onSaveDiagInch)
         tc_list_sizer_diag.Add(self.button_diaginch_save, 0, wx.ALL, 5)
         self.button_diaginch_save.Disable()
         self.sizer_setting_diaginch.Add(tc_list_sizer_diag, 0, wx.ALIGN_LEFT|wx.ALL, 0)
@@ -692,6 +693,24 @@ class WallpaperSettingsPanel(wx.Panel):
     #
     def onOverrideSizes(self, event):
         self.create_sizer_diaginch_override()
+
+    def onSaveDiagInch(self, event):
+        """Save user modified display sizes to DisplaySystem."""
+        inches = []
+        for tc in self.tc_list_diaginch:
+            user_inch = float(tc.GetValue())
+            if not user_inch < 1.0:
+                inches.append(user_inch)
+            else:
+                inches.append(1.0)
+                # TODO error msg
+        self.display_sys.update_display_diags(inches)
+        display_data = self.display_sys.get_disp_list(self.show_advanced_settings)
+        self.wpprev_pnl.update_display_data(
+            display_data,
+            self.show_advanced_settings,
+            self.use_multi_image
+        )
 
     def onConfigureBezels(self, event):
         """Start bezel size config mode."""
