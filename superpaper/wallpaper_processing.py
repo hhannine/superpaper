@@ -91,11 +91,11 @@ class Display():
                 reverse=bool(self.resolution[0]>self.resolution[1])
             )
         )   # Take care that physical rotation matches resolution.
-        self.phys_offsets = None    # Determined through GUI input. Anchored to top-left? TODO
         self.ppi = None
         self.ppi_norm_resolution = None
         self.ppi_norm_offset = None
         self.ppi_norm_bezels = (0, 0)
+        self.perspective_angles = None
         self.name = monitor.name
         if self.resolution and self.phys_size_mm:
             self.ppi = self.compute_ppi()
@@ -106,11 +106,11 @@ class Display():
             f"resolution={self.resolution}, "
             f"digital_offset={self.digital_offset}, "
             f"phys_size_mm={self.phys_size_mm}, "
-            f"phys_offsets={self.phys_offsets}, "
             f"ppi={self.ppi}, "
             f"ppi_norm_resolution={self.ppi_norm_resolution}, "
             f"ppi_norm_offset={self.ppi_norm_offset}, "
             f"ppi_norm_bezels={self.ppi_norm_bezels}, "
+            f"perspective_angles={self.perspective_angles}, "
             f"name={self.name!r}"
             f")"
         )
@@ -394,6 +394,19 @@ class DisplaySystem():
         #TODO trigger save here?
         self.compute_ppinorm_resolutions()
         self.compute_initial_preview_offsets()
+
+    def update_perspective_angles(self, angles):
+        """Write perspective angle pairs to their respective Displays.
+
+        After this writing process every Display is assumed to have
+        a persepective angle pair (float, float), where floats are
+        horizontal and vertical rotations of the display. Display with
+        angles (0, 0) defines the reference plane of perspective
+        corrections.
+        """
+        # self.use_perspective = True # TODO is a boolean needed for toggling?
+        for dsp, angl in zip(self.disp_list, angles):
+            dsp.perspective_angles = angl
 
     def save_system(self):
         """Save the user given input tied to the current instance
