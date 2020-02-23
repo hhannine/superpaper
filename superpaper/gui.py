@@ -658,7 +658,8 @@ class WallpaperSettingsPanel(wx.Panel):
             img_id = self.add_to_imagelist(data_row[0])
             index = self.path_listctrl.InsertItem(self.path_listctrl.GetItemCount(), data_row[0], img_id)
         else:
-            print("UseMultImg: {}. Bad data_row: {}".format(self.use_multi_image, data_row))
+            sp_logging.G_LOGGER.info("UseMultImg: %s. Bad data_row: %s",
+                                     self.use_multi_image, data_row)
 
     def add_to_imagelist(self, path):
         folder_bmp =  wx.ArtProvider.GetBitmap(wx.ART_FOLDER, wx.ART_TOOLBAR, self.tsize)
@@ -772,8 +773,8 @@ class WallpaperSettingsPanel(wx.Panel):
     def onApply(self, event):
         """Applies the currently open profile. Saves it first."""
         saved_file = self.onSave(event)
-        print(saved_file)
-        if saved_file is not None:
+        sp_logging.G_LOGGER.info("onApply profile: saved %s", saved_file)
+        if saved_file:
             saved_profile = ProfileData(saved_file)
             self.parent_tray_obj.reload_profiles(event)
             self.parent_tray_obj.start_profile(event, saved_profile)
@@ -870,7 +871,6 @@ class WallpaperSettingsPanel(wx.Panel):
         # Use the settings currently written out in the fields!
         testimage = [os.path.join(PATH, "superpaper/resources/test.png")]
         if not os.path.isfile(testimage[0]):
-            print(testimage)
             msg = "Test image not found in {}.".format(testimage)
             show_message_dialog(msg, "Error")
         ppi = None
@@ -880,7 +880,6 @@ class WallpaperSettingsPanel(wx.Panel):
 display, serparated by a semicolon ';'."
             show_message_dialog(msg, "Error")
 
-        # print(inches)
         inches = [float(i) for i in inches]
         bezels = self.tc_bez.GetLineText(0).split(";")
         bezels = [float(b) for b in bezels]
@@ -890,7 +889,7 @@ display, serparated by a semicolon ';'."
         for off in offsets:
             for pix in off:
                 flat_offsets.append(pix)
-        # print("flat_offsets= ", flat_offsets)
+
         # Use the simplified CLI profile class
         get_display_data()
         profile = CLIProfileData(testimage,
@@ -1156,7 +1155,7 @@ class WallpaperPreviewPanel(wx.Panel):
 
     def bezels_to_bitmap(self, bmp, disp_sz, bez_rects):
         """Add bezel rectangles ( right_bez , bottom_bez ) to given bitmap."""
-        print("bez_rects", bez_rects)
+        sp_logging.G_LOGGER.info("bezels_to_bitmap: bez_rects: %s", bez_rects)
         right_bez, bottom_bez = bez_rects
         if (right_bez == (0, 0) and bottom_bez == (0, 0)):
             return bmp
@@ -1769,7 +1768,6 @@ class WallpaperPreviewPanel(wx.Panel):
             return wx.PopupTransientWindow.ProcessLeftDown(self, evt)
 
         def OnDismiss(self):
-            # print("Dismiss")
             pass
 
         def onApply(self, event):

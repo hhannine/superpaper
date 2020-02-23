@@ -317,7 +317,7 @@ class DisplaySystem():
                     if dsp == self.disp_list[-1]:
                         columns.append(work_col)
 
-        print("columns", columns)
+        # print("columns", columns)
 
         # Tile columns on to the plane with vertical centering
         col_sizes = [self.column_size(col) for col in columns]
@@ -332,7 +332,7 @@ class DisplaySystem():
                 )
             )
             current_left += sz[0]
-        print("col_left_tops", col_left_tops)
+        # print("col_left_tops", col_left_tops)
 
         # Tile displays in columns onto the plane with horizontal centering
         # within the column. Anchor columns to col_left_tops.
@@ -346,14 +346,14 @@ class DisplaySystem():
                     + round((max_dsp_w - dsp_w)/2),
                     col_anchor[1] + current_top
                 )
-                print(dsp.ppi_norm_offset)
+                # print(dsp.ppi_norm_offset)
                 current_top += dsp.ppi_norm_resolution[1] + dsp.ppi_norm_bezels[1]
         # Update offsets to disp_list
         flattened_cols = [dsp for col in columns for dsp in col]
         for scope_dsp, dsp in zip(flattened_cols, self.disp_list):
             dsp.ppi_norm_offset = scope_dsp.ppi_norm_offset
-        print("PPI NORM RESOLUTIONS AND OFFSETS")
-        print([(dsp.ppi_norm_resolution, dsp.ppi_norm_offset) for dsp in self.disp_list])
+        # print("PPI NORM RESOLUTIONS AND OFFSETS")
+        # print([(dsp.ppi_norm_resolution, dsp.ppi_norm_offset) for dsp in self.disp_list])
 
     def get_disp_list(self, use_ppi_norm = False):
         if use_ppi_norm:
@@ -366,7 +366,6 @@ class DisplaySystem():
                         dsp.ppi_norm_bezels
                     )
                 )
-                print("dsp.ppi_norm_bezels", dsp.ppi_norm_bezels)
             return disp_l
         else:
             disp_l = self.disp_list
@@ -386,7 +385,7 @@ class DisplaySystem():
         bezels_ppi_norm = [(bz[0] * max_ppmm, bz[1] * max_ppmm) for bz in bezels_mm]
         for bz_px, dsp in zip(bezels_ppi_norm, self.disp_list):
             dsp.ppi_norm_bezels = bz_px
-            print("update_bezels", bz_px)
+            sp_logging.G_LOGGER.info("update_bezels: %s", bz_px)
         self.compute_initial_preview_offsets()
 
     def bezels_in_mm(self):
@@ -396,8 +395,8 @@ class DisplaySystem():
         for dsp in self.disp_list:
             bezels_mm.append(
                 (
-                    dsp.ppi_norm_bezels[0] / max_ppmm,
-                    dsp.ppi_norm_bezels[1] / max_ppmm
+                    round(dsp.ppi_norm_bezels[0] / max_ppmm, 2),
+                    round(dsp.ppi_norm_bezels[1] / max_ppmm, 2)
                 )
             )
         return bezels_mm
@@ -464,6 +463,16 @@ class DisplaySystem():
             "perspective_angles": list_to_str(perspective_angles, item_len=2)
         }
 
+        sp_logging.G_LOGGER.info(
+            "Saving DisplaySystem: key: %s, ppi_norm_offsets: %s, "
+            "bezel_mms: %s, user_diagonal_inches: %s, perspective_angles: %s",
+            instance_key,
+            ppi_norm_offsets,
+            bezel_mms,
+            diagonal_inches,
+            perspective_angles
+        )
+
         # write config to file
         with open(archive_file, 'w') as configfile:
             config.write(configfile)
@@ -475,18 +484,19 @@ class DisplaySystem():
         the system topology and update disp_list"""
         archive_file = os.path.join(CONFIG_PATH, "display_systems.dat")
         instance_key = str(hash(self))
-        print("Loading for DisplaySystem with hash: {}".format(instance_key))
         found_match = False
 
         # check if file exists and if the current key exists in it
         if os.path.exists(archive_file):
             config = configparser.ConfigParser()
             config.read(archive_file)
-            print("config.sections:", config.sections())
+            sp_logging.G_LOGGER.info("config.sections: %s", config.sections())
             if instance_key in config:
                 found_match = True
             else:
-                print("load: system not found with hash {}".format(instance_key))
+                sp_logging.G_LOGGER.info("load: system not found with hash %s", instance_key)
+        else:
+            sp_logging.G_LOGGER.info("load_system: archive_file not found: %s", archive_file)
 
         if found_match:
             # read values
@@ -496,17 +506,18 @@ class DisplaySystem():
                                            item_len=2)
             bezel_mms = str_to_list(instance_data["bezel_mms"],
                                     item_len=2)
+            bezel_mms = [(round(bez[0], 2), round(bez[1], 2)) for bez in bezel_mms]
             diagonal_inches = str_to_list(instance_data["user_diagonal_inches"],
                                           item_len=1)
             perspective_angles = str_to_list(instance_data["perspective_angles"],
                                              item_len=2)
-            print("DisplaySystem loaded: P.N.Offs: {}, "
-                  "bezel_mmṣ: {}, "
-                  "user_diagonal_inches: {}, "
-                  "perspective_angles: {}".format(ppi_norm_offsets,
-                                                  bezel_mms,
-                                                  diagonal_inches,
-                                                  perspective_angles))
+            sp_logging.G_LOGGER.info(
+                "DisplaySystem loaded: P.N.Offs: %s, "
+                "bezel_mmṣ: %s, "
+                "user_diagonal_inches: %s, "
+                "perspective_angles: %s",
+                ppi_norm_offsets, bezel_mms, diagonal_inches, perspective_angles
+            )
             self.update_ppinorm_offsets(ppi_norm_offsets) # Bezels & user diagonals always included.
             self.update_bezels(bezel_mms)
             if diagonal_inches:
