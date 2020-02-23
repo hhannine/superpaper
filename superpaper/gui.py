@@ -1370,10 +1370,10 @@ class WallpaperPreviewPanel(wx.Panel):
         """Save current Display offsets into DisplaySystem."""
         self.config_mode = False
         self.toggle_buttons(True, False)
-        display_sys = wpproc.DisplaySystem()
-        self.export_offsets(display_sys)
-        display_sys.save_system()
-        display_data = display_sys.get_disp_list(use_ppi_norm = True)
+        # Export and save offsets to DisplaySystem
+        self.export_offsets(self.display_sys)
+        self.display_sys.save_system()
+        display_data = self.display_sys.get_disp_list(use_ppi_norm = True)
         # Full redraw of preview with new offset data
         if self.current_preview_images:
             self.preview_wallpaper(self.current_preview_images, True, False, display_data=display_data)
@@ -1603,7 +1603,8 @@ class WallpaperPreviewPanel(wx.Panel):
         # Show preview positioning config button
         self.toggle_buttons(True, False)
         self.full_refresh_preview(True, True, False)
-        # TODO trigger a DisplaySystem save.
+        # trigger a DisplaySystem save.
+        self.display_sys.save_system()
 
     def bezel_config_cancel(self):
         """Exits out of the bezel config mode without saving."""

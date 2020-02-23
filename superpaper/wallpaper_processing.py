@@ -7,6 +7,7 @@ with native platform methods whenever possible.
 Written by Henri Hänninen, copyright 2019 under MIT licence.
 """
 
+import configparser
 import math
 import os
 import platform
@@ -20,7 +21,7 @@ from screeninfo import get_monitors
 
 import superpaper.sp_logging as sp_logging
 from superpaper.message_dialog import show_message_dialog
-from superpaper.sp_paths import TEMP_PATH
+from superpaper.sp_paths import CONFIG_PATH, TEMP_PATH
 
 if platform.system() == "Windows":
     import ctypes
@@ -91,11 +92,12 @@ class Display():
                 reverse=bool(self.resolution[0]>self.resolution[1])
             )
         )   # Take care that physical rotation matches resolution.
+        self.detected_phys_size_mm = self.phys_size_mm
         self.ppi = None
         self.ppi_norm_resolution = None
         self.ppi_norm_offset = None
         self.ppi_norm_bezels = (0, 0)
-        self.perspective_angles = None
+        self.perspective_angles = (0, 0)
         self.name = monitor.name
         if self.resolution and self.phys_size_mm:
             self.ppi = self.compute_ppi()
@@ -106,6 +108,7 @@ class Display():
             f"resolution={self.resolution}, "
             f"digital_offset={self.digital_offset}, "
             f"phys_size_mm={self.phys_size_mm}, "
+            f"detected_phys_size_mm={self.detected_phys_size_mm}, "
             f"ppi={self.ppi}, "
             f"ppi_norm_resolution={self.ppi_norm_resolution}, "
             f"ppi_norm_offset={self.ppi_norm_offset}, "
@@ -114,6 +117,16 @@ class Display():
             f"name={self.name!r}"
             f")"
         )
+
+    def __eq__(self, other):
+        return bool(
+            self.resolution == other.resolution and
+            self.digital_offset == other.digital_offset and
+            self.detected_phys_size_mm == other.detected_phys_size_mm
+        )
+
+    def __hash__(self):
+        return hash((self.resolution, self.digital_offset, self.detected_phys_size_mm))
 
     def diagonal_size(self):
         diag_mm = math.sqrt( self.phys_size_mm[0]**2 + self.phys_size_mm[1]**2 )
@@ -215,13 +228,16 @@ class DisplaySystem():
         self.compute_ppinorm_resolutions()
 
         # Data
-        self.bezel_px = []
-        self.user_offsets = []
         self.use_user_diags = False
 
-        self.update_bezels([(10, 20), (15, 0)]) # TODO usage in load
+        # self.update_bezels([(10, 20), (15, 0)]) # TODO usage in load
         self.load_system()
 
+    def __eq__(self, other):
+        return bool(tuple(self.disp_list) == tuple(other.disp_list))
+
+    def __hash__(self):
+        return hash(tuple(self.disp_list))
 
     def max_ppi(self):
         return max([disp.ppi for disp in self.disp_list])
@@ -391,9 +407,9 @@ class DisplaySystem():
         self.use_user_diags = True
         for dsp, diag in zip(self.disp_list, diag_inches):
             dsp.ppi_and_physsize_from_diagonal_inch(diag)
-        #TODO trigger save here?
         self.compute_ppinorm_resolutions()
         self.compute_initial_preview_offsets()
+        self.save_system()
 
     def update_perspective_angles(self, angles):
         """Write perspective angle pairs to their respective Displays.
@@ -408,34 +424,148 @@ class DisplaySystem():
         for dsp, angl in zip(self.disp_list, angles):
             dsp.perspective_angles = angl
 
+
     def save_system(self):
-        """Save the user given input tied to the current instance
-        in a central file."""
-        # TODO look for file
-        #      - look for match for current instance in file
-        #           - if match, save with updated data
-        #      - if no match, save a new entry
-        #      - values to save:
-        #           - ppi_norm offsets
-        #           - bezel (BGB) sizes
-        pass
+        """Save the current DisplaySystem instance user given data
+        in a central file (CONFIG_PATH/display_systems.dat).
+
+        Data is saved with a DisplaySystem specific has as the key,
+        and data saved include:
+            - ppi_norm offsets which contain any given bezel thicknesses
+            - bezel (bez+gap+bez) sizes for (right_b, bottom_b)
+            - display diagonal sizes if any of them are manually changed
+            - rotation angles of displays for perspective correction
+        """
+        archive_file = os.path.join(CONFIG_PATH, "display_systems.dat")
+        instance_key = hash(self)
+
+        # collect data for saving
+        ppi_norm_offsets = []
+        bezel_mms = self.bezels_in_mm()
+        diagonal_inches = []
+        perspective_angles = []
+        for dsp in self.disp_list:
+            ppi_norm_offsets.append(dsp.ppi_norm_offset)
+            diagonal_inches.append(dsp.diagonal_size()[1])
+            perspective_angles.append(dsp.perspective_angles)
+        if not self.use_user_diags:
+            diagonal_inches = None
+
+        # load previous configs if file is found
+        config = configparser.ConfigParser()
+        if os.path.exists(archive_file):
+            config.read(archive_file)
+
+        # entering data to config under instance_key
+        config[instance_key] = {
+            "ppi_norm_offsets": list_to_str(ppi_norm_offsets, item_len=2),
+            "bezel_mms": list_to_str(bezel_mms, item_len=2),
+            "user_diagonal_inches": list_to_str(diagonal_inches, item_len=1),
+            "perspective_angles": list_to_str(perspective_angles, item_len=2)
+        }
+
+        # write config to file
+        with open(archive_file, 'w') as configfile:
+            config.write(configfile)
+
 
     def load_system(self):
         """Try to load system data from database based on initialization data,
         i.e. the Display list. If no pre-existing system is found, try to guess
         the system topology and update disp_list"""
-        # TODO figure out saving first
+        archive_file = os.path.join(CONFIG_PATH, "display_systems.dat")
+        instance_key = str(hash(self))
+        print("Loading for DisplaySystem with hash: {}".format(instance_key))
         found_match = False
+
+        # check if file exists and if the current key exists in it
+        if os.path.exists(archive_file):
+            config = configparser.ConfigParser()
+            config.read(archive_file)
+            print("config.sections:", config.sections())
+            if instance_key in config:
+                found_match = True
+            else:
+                print("load: system not found with hash {}".format(instance_key))
+
         if found_match:
             # read values
             # and push them into self.disp_list
-            pass
+            instance_data = config[instance_key]
+            ppi_norm_offsets = str_to_list(instance_data["ppi_norm_offsets"],
+                                           item_len=2)
+            bezel_mms = str_to_list(instance_data["bezel_mms"],
+                                    item_len=2)
+            diagonal_inches = str_to_list(instance_data["user_diagonal_inches"],
+                                          item_len=1)
+            perspective_angles = str_to_list(instance_data["perspective_angles"],
+                                             item_len=2)
+            print("DisplaySystem loaded: P.N.Offs: {}, "
+                  "bezel_mmṣ: {}, "
+                  "user_diagonal_inches: {}, "
+                  "perspective_angles: {}".format(ppi_norm_offsets,
+                                                  bezel_mms,
+                                                  diagonal_inches,
+                                                  perspective_angles))
+            self.update_ppinorm_offsets(ppi_norm_offsets) # Bezels & user diagonals always included.
+            self.update_bezels(bezel_mms)
+            if diagonal_inches:
+                self.update_display_diags(diagonal_inches)
+                self.compute_ppinorm_resolutions()
+            self.update_perspective_angles(perspective_angles)
         else:
             # Continue without data
             self.compute_initial_preview_offsets()
 
 
 
+def list_to_str(lst, item_len=1):
+    """Format lists as ,(;) separated strings."""
+    if item_len == 1:
+        if lst:
+            return ",".join(lst)
+        else:
+            return "None"
+    else:
+        joined_items = []
+        for sub_lst in lst:
+            joined_items.append(",".join(str(sub_itm) for sub_itm in sub_lst))
+        return ";".join(joined_items)
+
+def str_to_list(joined_list, item_len=1):
+    """Extract list from joined_list."""
+    if item_len == 1:
+        if joined_list in [None, "None"]:
+            return None
+        split_list = joined_list.split(",")
+        conv_list = []
+        for item in split_list:
+            try:
+                val = int(item)
+            except ValueError:
+                try:
+                    val = float(item)
+                except ValueError:
+                    print("str_to_list: ValueError: not int or float", item)
+            conv_list.append(val)
+        return conv_list
+    else:
+        split_list = joined_list.split(";")
+        conv_list = []
+        for item in split_list:
+            split_item = item.split(",")
+            conv_item = []
+            for sub_item in split_item:
+                try:
+                    val = int(sub_item)
+                except ValueError:
+                    try:
+                        val = float(sub_item)
+                    except ValueError:
+                        print("str_to_list: ValueError: not int or float", sub_item)
+                conv_item.append(val)
+            conv_list.append(tuple(conv_item))
+        return conv_list
 
 def extract_global_vars(disp_list):
     res_arr = []
