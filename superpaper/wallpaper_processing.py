@@ -380,7 +380,16 @@ class DisplaySystem():
             dsp.ppi_norm_offset = offs
 
     def update_bezels(self, bezels_mm):
-        # bezels_mm = [(30, 20), (15, 0)] # TODO temp input
+
+        # test that input values are positive
+        for bez_pair in bezels_mm:
+            for bez in bez_pair:
+                if bez < 0:
+                    msg = "Bezel thickness must be a non-negative number, {} was entered.".format(bez)
+                    sp_logging.G_LOGGER.info(msg)
+                    show_message_dialog(msg, "Error")
+                    return -1
+        # convert to normalized pixel units
         max_ppmm = self.max_ppi() / 25.4
         bezels_ppi_norm = [(bz[0] * max_ppmm, bz[1] * max_ppmm) for bz in bezels_mm]
         for bz_px, dsp in zip(bezels_ppi_norm, self.disp_list):

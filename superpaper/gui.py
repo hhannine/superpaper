@@ -1768,10 +1768,22 @@ class WallpaperPreviewPanel(wx.Panel):
             return wx.PopupTransientWindow.ProcessLeftDown(self, evt)
 
         def OnDismiss(self):
-            pass
+            self.onCancel(None)
 
         def onApply(self, event):
-            self.current_bez_val = self.tc_bez.GetValue()
+            entered_val = self.test_bezel_value()
+            if entered_val is False:
+                # Abort applying and alert user but don't
+                # Dismiss popup to fascilitate fixing.
+                msg = ("Bezel thickness must be a non-negative number, "
+                       "'{}' was entered.".format(self.tc_bez.GetValue()))
+                sp_logging.G_LOGGER.info(msg)
+                self.Hide()
+                dial = wx.MessageDialog(self, msg, "Error", wx.OK|wx.STAY_ON_TOP|wx.CENTRE)
+                dial.ShowModal()
+                self.Show()
+                return -1
+            self.current_bez_val = entered_val
             display_sys = self.preview.display_sys
             pops = self.preview.bezel_popups
             bezel_mms = []
@@ -1782,13 +1794,17 @@ class WallpaperPreviewPanel(wx.Panel):
                         pop_pair[1].bezel_value()
                     )
                 )
+            self.Dismiss()
+            # propagate values and refresh preview
             self.preview.display_sys.update_bezels(bezel_mms)
             self.preview.display_data = self.preview.display_sys.get_disp_list(True)
             self.preview.full_refresh_preview(True, True, False)
-            self.Dismiss()
 
         def onCancel(self, event):
-            self.tc_bez.SetValue(self.current_bez_val)
+            if self.current_bez_val:
+                self.tc_bez.SetValue(str(self.current_bez_val))
+            else:
+                self.tc_bez.SetValue("0.0")
             self.Dismiss()
 
         def bezel_value(self):
@@ -1800,3 +1816,15 @@ class WallpaperPreviewPanel(wx.Panel):
             """Write val to TextCtrl."""
             self.tc_bez.SetValue(str(val))
             self.current_bez_val = str(val)
+
+        def test_bezel_value(self):
+            """Test that entered value in tc_bez is valid and return it."""
+            val = self.tc_bez.GetValue()
+            try:
+                num = float(val)
+                if num >= 0:
+                    return num
+                else:
+                    return False
+            except ValueError:
+                return False
