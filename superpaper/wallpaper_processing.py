@@ -557,7 +557,9 @@ def str_to_list(joined_list, item_len=1):
                 try:
                     val = float(item)
                 except ValueError:
-                    print("str_to_list: ValueError: not int or float", item)
+                    sp_logging.G_LOGGER.info(
+                        "str_to_list: ValueError: not int or float: %s", item
+                    )
             conv_list.append(val)
         return conv_list
     else:
@@ -573,7 +575,9 @@ def str_to_list(joined_list, item_len=1):
                     try:
                         val = float(sub_item)
                     except ValueError:
-                        print("str_to_list: ValueError: not int or float", sub_item)
+                        sp_logging.G_LOGGER.info(
+                            "str_to_list: ValueError: not int or float: %s", sub_item
+                        )
                 conv_item.append(val)
             conv_list.append(tuple(conv_item))
         return conv_list
