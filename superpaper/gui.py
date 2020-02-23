@@ -1742,7 +1742,8 @@ class WallpaperPreviewPanel(wx.Panel):
                             "Enter the size of adjacent bezels and gap\n"
                             "in millimeters:")
             # self.tc_bez = wx.TextCtrl(pnl, -1, size=(100, -1))
-            self.tc_bez = wx.TextCtrl(pnl, -1, style=wx.TE_RIGHT)
+            self.tc_bez = wx.TextCtrl(pnl, -1, style=wx.TE_RIGHT|wx.TE_PROCESS_ENTER)
+            self.tc_bez.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
             self.current_bez_val = None
             butt_save = wx.Button(pnl, label="Apply")
             butt_canc = wx.Button(pnl, label="Cancel")
@@ -1766,6 +1767,10 @@ class WallpaperPreviewPanel(wx.Panel):
 
         def ProcessLeftDown(self, evt):
             return wx.PopupTransientWindow.ProcessLeftDown(self, evt)
+
+        def OnEnter(self, evt):
+            """Bind pressing Enter in the txtctrl to apply entered value."""
+            self.onApply(evt)
 
         def OnDismiss(self):
             self.onCancel(None)
