@@ -342,6 +342,10 @@ class WallpaperSettingsPanel(wx.Panel):
         self.sizer_setting_diaginch.Add(tc_list_sizer_diag, 0, wx.ALIGN_LEFT|wx.ALL, 0)
         self.sizer_setting_adv.Layout()
         self.sizer_main.Fit(self.frame)
+        # Check cb according to DisplaySystem 'use_user_diags'
+        self.cb_diaginch.SetValue(self.display_sys.use_user_diags)
+        # Update sizer content based on new cb state
+        self.onCheckboxDiaginch(None)
 
     def create_sizer_bottom_buttonrow(self):
         self.button_help = wx.Button(self, label="Help")
@@ -652,6 +656,18 @@ class WallpaperSettingsPanel(wx.Panel):
         cb_state = self.cb_diaginch.GetValue()
         sizer = self.sizer_setting_diaginch
         self.sizer_toggle_children(sizer, cb_state)
+        if cb_state == False:
+            # revert to automatic detection and save
+            self.display_sys.update_display_diags("auto")
+            diags = [str(dsp.diagonal_size()[1]) for dsp in self.display_sys.disp_list]
+            for tc, diag in zip(self.tc_list_diaginch, diags):
+                tc.ChangeValue(diag)
+            display_data = self.display_sys.get_disp_list(self.show_advanced_settings)
+            self.wpprev_pnl.update_display_data(
+                display_data,
+                self.show_advanced_settings,
+                self.use_multi_image
+            )
 
     #
     # ListCtrl methods
