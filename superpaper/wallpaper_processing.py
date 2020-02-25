@@ -43,6 +43,9 @@ G_WALLPAPER_CHANGE_LOCK = Lock()
 G_SUPPORTED_IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".webp")
 G_SET_COMMAND_STRING = ""
 
+# global to take care that failure message is not shown more than once at launch
+USER_TOLD_OF_PHYS_FAIL = False
+
 
 
 class RepeatedTimer(object):
@@ -86,12 +89,24 @@ class Display():
     def __init__(self, monitor):
         self.resolution = (monitor.width, monitor.height)
         self.digital_offset = (monitor.x, monitor.y)
-        self.phys_size_mm = tuple(
-            sorted(
-                [monitor.width_mm, monitor.height_mm],
-                reverse=bool(self.resolution[0]>self.resolution[1])
-            )
-        )   # Take care that physical rotation matches resolution.
+        if monitor.width_mm and monitor.height_mm:
+            self.phys_size_mm = tuple(
+                sorted(
+                    [monitor.width_mm, monitor.height_mm],
+                    reverse=bool(self.resolution[0]>self.resolution[1])
+                )
+            )   # Take care that physical rotation matches resolution.
+            self.phys_size_failed = False
+        else:
+            # if physical size detection has failed, assume display is 23" diagonal
+            # to have it stand out
+            self.phys_size_mm = tuple(
+                sorted(
+                    [509, 286],
+                    reverse=bool(self.resolution[0]>self.resolution[1])
+                )
+            )   # Take care that physical rotation matches resolution.
+            self.phys_size_failed = True
         self.detected_phys_size_mm = self.phys_size_mm
         self.ppi = None
         self.ppi_norm_resolution = None
@@ -232,6 +247,18 @@ class DisplaySystem():
 
         # self.update_bezels([(10, 20), (15, 0)]) # TODO usage in load
         self.load_system()
+
+        # if user diags are not entered, tell about failed physical sizes
+        global USER_TOLD_OF_PHYS_FAIL
+        if not self.use_user_diags:
+            for dsp in self.disp_list:
+                if dsp.phys_size_failed and not USER_TOLD_OF_PHYS_FAIL:
+                    msg = ("Detection of the diagonal size of a display has failed. "
+                           "It will show up as a 23 inch display in advanced mode. "
+                           "Enter the correct diagonal size with the Override Detected "
+                           "Sizes tool.")
+                    show_message_dialog(msg)
+                    USER_TOLD_OF_PHYS_FAIL = True
 
     def __eq__(self, other):
         return bool(tuple(self.disp_list) == tuple(other.disp_list))
