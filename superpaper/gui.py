@@ -271,8 +271,9 @@ class WallpaperSettingsPanel(wx.Panel):
         # Bezels
         self.sizer_setting_bezels = wx.StaticBoxSizer(wx.VERTICAL, self, "Bezel Correction")
         statbox_parent_bezels = self.sizer_setting_bezels.GetStaticBox()
-        self.cb_bezels = wx.CheckBox(statbox_parent_bezels, -1, "Apply bezel correction")
-        self.cb_bezels.Bind(wx.EVT_CHECKBOX, self.onCheckboxBezels)
+        # self.cb_bezels = wx.CheckBox(statbox_parent_bezels, -1, "Apply bezel correction")
+        # self.cb_bezels.Bind(wx.EVT_CHECKBOX, self.onCheckboxBezels)
+        # self.sizer_setting_bezels.Add(self.cb_bezels, 0, wx.ALIGN_LEFT|wx.LEFT, 5)
 
         self.sizer_bezel_buttons = wx.BoxSizer(wx.HORIZONTAL)
         self.button_bezels = wx.Button(statbox_parent_bezels, -1, label="Configure bezels")
@@ -281,12 +282,11 @@ class WallpaperSettingsPanel(wx.Panel):
         self.button_bezels.Bind(wx.EVT_BUTTON, self.onConfigureBezels)
         self.button_bezels_save.Bind(wx.EVT_BUTTON, self.onConfigureBezelsSave)
         self.button_bezels_canc.Bind(wx.EVT_BUTTON, self.onConfigureBezelsCanc)
-        self.sizer_setting_bezels.Add(self.cb_bezels, 0, wx.ALIGN_LEFT|wx.LEFT, 5)
         self.sizer_bezel_buttons.Add(self.button_bezels, 0, wx.ALIGN_CENTER|wx.ALL, 5)
         self.sizer_bezel_buttons.Add(self.button_bezels_save, 0, wx.ALIGN_CENTER|wx.ALL, 5)
         self.sizer_bezel_buttons.Add(self.button_bezels_canc, 0, wx.ALIGN_CENTER|wx.ALL, 5)
         self.sizer_setting_bezels.Add(self.sizer_bezel_buttons, 0, wx.EXPAND, 0)
-        self.button_bezels.Disable()
+        # self.button_bezels.Disable()
 
         # Offsets
         self.sizer_setting_offsets = wx.StaticBoxSizer(wx.VERTICAL, self, "Manual Display Offsets")
@@ -532,9 +532,7 @@ class WallpaperSettingsPanel(wx.Panel):
     def show_adv_setting_sizer(self, show_bool):
         """Show/Hide the sizer for advanced spanning settings."""
         self.sizer_setting_sizers.Show(self.sizer_setting_adv, show=show_bool)
-        self.toggle_bezel_buttons(
-            enable_config_butt=self.cb_bezels.GetValue()
-        )
+        self.toggle_bezel_buttons(enable_config_butt=True)
         self.sizer_main.Layout()
         self.sizer_bottom_buttonrow.Show(self.button_align_test, show=show_bool)
         self.sizer_bottom_buttonrow.Layout()
@@ -1185,14 +1183,14 @@ class WallpaperPreviewPanel(wx.Panel):
         # bottom bez
         if bottom_bez != (0, 0):
             b_bez_bmp = wx.Bitmap.FromRGBA(bottom_bez[0], bottom_bez[1],
-                                           red=0, green=0, blue=0, alpha=132)
+                                           red=5, green=5, blue=5, alpha=100)
             b_bez_img = b_bez_bmp.ConvertToImage()
             img_out.Paste(b_bez_img, 0, img_sz[1])
 
         # right bez: is longer if bottom bez is present
         if right_bez != (0, 0):
             r_bez_bmp = wx.Bitmap.FromRGBA(right_bez[0], right_bez[1],
-                                           red=0, green=0, blue=0, alpha=132)
+                                           red=5, green=5, blue=5, alpha=100)
             r_bez_img = r_bez_bmp.ConvertToImage()
             img_out.Paste(r_bez_img, img_sz[0], 0)
 
