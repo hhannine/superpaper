@@ -576,6 +576,16 @@ class WallpaperSettingsPanel(wx.Panel):
         self.path_listctrl.InvalidateBestSize()
         self.sizer_main.Layout()
 
+    def test_diag_value(self, inch_str):
+        """Test that entered inch_str is a valid size and return it."""
+        try:
+            num = float(inch_str)
+            if num > 0:
+                return num
+            else:
+                return False
+        except ValueError:
+            return False
 
 
     #
@@ -699,12 +709,18 @@ class WallpaperSettingsPanel(wx.Panel):
         """Save user modified display sizes to DisplaySystem."""
         inches = []
         for tc in self.tc_list_diaginch:
-            user_inch = float(tc.GetValue())
-            if not user_inch < 1.0:
+            tc_val = tc.GetValue()
+            user_inch = self.test_diag_value(tc_val)
+            if user_inch:
                 inches.append(user_inch)
             else:
-                inches.append(1.0)
-                # TODO error msg
+                # error msg
+                msg = ("Display size must be a positive number, "
+                       "'{}' was entered.".format(tc_val))
+                sp_logging.G_LOGGER.info(msg)
+                dial = wx.MessageDialog(self, msg, "Error", wx.OK|wx.STAY_ON_TOP|wx.CENTRE)
+                dial.ShowModal()
+                return -1
         self.display_sys.update_display_diags(inches)
         display_data = self.display_sys.get_disp_list(self.show_advanced_settings)
         self.wpprev_pnl.update_display_data(

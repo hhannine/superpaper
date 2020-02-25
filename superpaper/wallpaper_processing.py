@@ -543,7 +543,7 @@ def list_to_str(lst, item_len=1):
     """Format lists as ,(;) separated strings."""
     if item_len == 1:
         if lst:
-            return ",".join(lst)
+            return ",".join(str(lst_itm) for lst_itm in lst)
         else:
             return "None"
     else:
