@@ -813,42 +813,48 @@ class WallpaperSettingsPanel(wx.Panel):
 
     def onSave(self, event):
         """Saves currently open profile into file. A test method is called to verify data."""
-        # tmp_profile = TempProfileData()
-        # tmp_profile.name = self.tc_name.GetLineText(0)
-        # tmp_profile.spanmode = self.ch_span.GetString(self.ch_span.GetSelection()).lower()
-        # tmp_profile.slideshow = self.cb_slideshow.GetValue()
-        # tmp_profile.delay = self.tc_delay.GetLineText(0) # TODO save value as seconds for compatibility!
-        # tmp_profile.sortmode = self.ch_sort.GetString(self.ch_sort.GetSelection()).lower()
-        # tmp_profile.inches = self.tc_inches.GetLineText(0)
-        # tmp_profile.manual_offsets = self.tc_offsets.GetLineText(0)
-        # tmp_profile.bezels = self.tc_bez.GetLineText(0)
-        # tmp_profile.hk_binding = self.tc_hotkey.GetLineText(0)
-        # for text_field in self.paths_controls:
+        tmp_profile = TempProfileData()
+        tmp_profile.name = self.tc_name.GetLineText(0)
+        tmp_profile.slideshow = self.cb_slideshow.GetValue()
+        tmp_profile.delay = str(60*float(self.tc_sshow_delay.GetLineText(0))) # save delay as seconds for compatibility!
+        tmp_profile.sortmode = self.ch_sshow_sort.GetString(self.ch_sshow_sort.GetSelection()).lower()
+        tmp_profile.hk_binding = self.tc_hotkey_bind.GetLineText(0)
+
+        # span mode
+        span_sel = self.radiobox_spanmode.GetSelection()
+        if span_sel == 0:
+            tmp_profile.spanmode = "single"
+        elif span_sel == 1:
+            tmp_profile.spanmode = "advanced"
+        elif span_sel == 2:
+            tmp_profile.spanmode = "multi"
+
+        # manual offsets
+        tmp_profile.manual_offsets = self.tc_offsets.GetLineText(0) # TODO
+
+        # paths
+        # for text_field in self.paths_controls: # TODO
         #     tmp_profile.paths_array.append(text_field.GetLineText(0))
 
-        # sp_logging.G_LOGGER.info(tmp_profile.name)
-        # sp_logging.G_LOGGER.info(tmp_profile.spanmode)
-        # sp_logging.G_LOGGER.info(tmp_profile.slideshow)
-        # sp_logging.G_LOGGER.info(tmp_profile.delay)
-        # sp_logging.G_LOGGER.info(tmp_profile.sortmode)
-        # sp_logging.G_LOGGER.info(tmp_profile.inches)
-        # sp_logging.G_LOGGER.info(tmp_profile.manual_offsets)
-        # sp_logging.G_LOGGER.info(tmp_profile.bezels)
-        # sp_logging.G_LOGGER.info(tmp_profile.hk_binding)
-        # sp_logging.G_LOGGER.info(tmp_profile.paths_array)
+        sp_logging.G_LOGGER.info(tmp_profile.name)
+        sp_logging.G_LOGGER.info(tmp_profile.spanmode)
+        sp_logging.G_LOGGER.info(tmp_profile.slideshow)
+        sp_logging.G_LOGGER.info(tmp_profile.delay)
+        sp_logging.G_LOGGER.info(tmp_profile.sortmode)
+        sp_logging.G_LOGGER.info(tmp_profile.manual_offsets)
+        sp_logging.G_LOGGER.info(tmp_profile.hk_binding)
+        sp_logging.G_LOGGER.info(tmp_profile.paths_array)
 
-        # if tmp_profile.test_save():
-        #     saved_file = tmp_profile.save()
-        #     self.update_choiceprofile()
-        #     self.parent_tray_obj.reload_profiles(event)
-        #     self.parent_tray_obj.register_hotkeys()
-        #     # self.parent_tray_obj.register_hotkeys()
-        #     self.choice_profiles.SetSelection(self.choice_profiles.FindString(tmp_profile.name))
-        #     return saved_file
-        # else:
-        #     sp_logging.G_LOGGER.info("test_save failed.")
-        #     return None
-        pass
+        if tmp_profile.test_save():
+            saved_file = tmp_profile.save()
+            self.update_choiceprofile()
+            self.parent_tray_obj.reload_profiles(event)
+            self.parent_tray_obj.register_hotkeys()
+            self.choice_profiles.SetSelection(self.choice_profiles.FindString(tmp_profile.name))
+            return saved_file
+        else:
+            sp_logging.G_LOGGER.info("test_save failed.")
+            return None
 
     def onCreateNewProfile(self, event):
         """Empties the config dialog fields."""
@@ -1430,7 +1436,6 @@ class WallpaperPreviewPanel(wx.Panel):
         ppinorm_offs = self.display_sys.get_ppinorm_offsets()
         # Compute and get reset offsets
         self.display_sys.compute_initial_preview_offsets()
-        # reset_offs = self.display_sys.get_ppinorm_offsets()
         display_data = self.display_sys.get_disp_list(use_ppi_norm = True)
         dtop_canvas_px = self.get_canvas(display_data, True)
         dtop_canvas_relsz, dtop_canvas_pos, scaling_fac = self.fit_canvas_wrkarea(dtop_canvas_px)

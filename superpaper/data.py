@@ -258,6 +258,8 @@ class ProfileData(object):
                     wrd1 = words[1].strip().lower()
                     if wrd1 == "single":
                         self.spanmode = wrd1
+                    elif wrd1 == "advanced":
+                        self.spanmode = wrd1
                     elif wrd1 == "multi":
                         self.spanmode = wrd1
                     else:
