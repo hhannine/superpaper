@@ -398,6 +398,14 @@ class DisplaySystem():
             disp_l = self.disp_list
             return disp_l
 
+    def get_ppinorm_offsets(self):
+        """Return ppi norm offsets."""
+        pnoffs = []
+        for dsp in self.disp_list:
+            pnoffs.append(
+                dsp.ppi_norm_offset
+            )
+        return pnoffs
 
     def update_ppinorm_offsets(self, offsets, bezels_included = False):
         """Write ppi_norm resolution offsets as determined

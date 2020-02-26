@@ -1345,16 +1345,19 @@ class WallpaperPreviewPanel(wx.Panel):
         # Buttons - show only if use_ppi_px == True
         self.button_config = wx.Button(self, label="Positions")
         self.button_save = wx.Button(self, label="Save")
+        self.button_reset = wx.Button(self, label="Reset")
         self.button_cancel = wx.Button(self, label="Cancel")
 
         self.button_config.Bind(wx.EVT_BUTTON, self.onConfigure)
         self.button_save.Bind(wx.EVT_BUTTON, self.onSave)
+        self.button_reset.Bind(wx.EVT_BUTTON, self.onReset)
         self.button_cancel.Bind(wx.EVT_BUTTON, self.onCancel)
 
         self.move_buttons()
 
         self.button_config.Show(use_ppi_px)
         self.button_save.Show(False)
+        self.button_reset.Show(False)
         self.button_cancel.Show(False)
 
     def move_buttons(self):
@@ -1374,6 +1377,12 @@ class WallpaperPreviewPanel(wx.Panel):
                 sz_area[1] - sz_butt[1] - self.butt_gap
             )
         )
+        self.button_reset.SetPosition(
+            (
+                sz_area[0] - sz_butt[0] - self.butt_gap,
+                sz_area[1] - 2*(sz_butt[1] + self.butt_gap)
+            )
+        )
         self.button_cancel.SetPosition(
             (
                 sz_area[0] - sz_butt[0] - self.butt_gap,
@@ -1385,6 +1394,7 @@ class WallpaperPreviewPanel(wx.Panel):
         """Toggle visibility of display positioning config buttons."""
         self.button_config.Show(show_config)
         self.button_save.Show(in_config)
+        self.button_reset.Show(in_config)
         self.button_cancel.Show(in_config)
 
     def onConfigure(self, evt):
@@ -1413,6 +1423,29 @@ class WallpaperPreviewPanel(wx.Panel):
             self.show_staticbmps(True)
         self.draggable_shapes = []  # Destroys DragShapes
         self.frame.toggle_radio_and_profile_choice(True)
+
+    def onReset(self, evt):
+        """Reset Display preview positions to the initial guess."""
+        # Back up current offsets
+        ppinorm_offs = self.display_sys.get_ppinorm_offsets()
+        # Compute and get reset offsets
+        self.display_sys.compute_initial_preview_offsets()
+        # reset_offs = self.display_sys.get_ppinorm_offsets()
+        display_data = self.display_sys.get_disp_list(use_ppi_norm = True)
+        dtop_canvas_px = self.get_canvas(display_data, True)
+        dtop_canvas_relsz, dtop_canvas_pos, scaling_fac = self.fit_canvas_wrkarea(dtop_canvas_px)
+        (display_rel_sizes,
+            img_rel_sizes,
+            bz_rel_sizes) = self.displays_on_canvas(
+                display_data, dtop_canvas_pos,
+                scaling_fac, True
+            )
+        # Move display preview draggable_shapes
+        for shp, off in zip(self.draggable_shapes, display_rel_sizes):
+            shp.pos = off[1]
+        # Restore backed up offsets
+        self.display_sys.update_ppinorm_offsets(ppinorm_offs)
+        self.Refresh()
 
     def onCancel(self, evt):
         """Cancel out of diplay position config mode."""
