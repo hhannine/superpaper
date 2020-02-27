@@ -2,6 +2,7 @@
 New wallpaper configuration GUI for Superpaper.
 """
 import os
+from operator import itemgetter
 from PIL import Image, ImageEnhance
 
 import superpaper.sp_logging as sp_logging
@@ -830,12 +831,39 @@ class WallpaperSettingsPanel(wx.Panel):
             tmp_profile.spanmode = "multi"
 
         # manual offsets
-        tmp_profile.manual_offsets = self.tc_offsets.GetLineText(0) # TODO
+        offs_strs = []
+        for tc in self.tc_list_offsets:
+            line = tc.GetLineText(0)
+            if line:
+                offs_strs.append(line)
+            else:
+                # if offset field is empty, assume user wants no offset
+                offs_strs.append("0,0")
+        tmp_profile.manual_offsets = ";".join(offs_strs)
 
-        # paths
+        # Paths
         # for text_field in self.paths_controls: # TODO
-        #     tmp_profile.paths_array.append(text_field.GetLineText(0))
+        # extract data from path_listctrl
+        path_lc_contents = []
+        columns = self.path_listctrl.GetColumnCount()
+        for idx in range(self.path_listctrl.GetItemCount()):
+            item_dat = []
+            for col in range(columns):
+                item_dat.append(self.path_listctrl.GetItemText(idx, col))
+            path_lc_contents.append(item_dat)
 
+        # format data
+        paths_array = []
+        if columns == 1:
+            flat_contents = [path for path in row for row in path_lc_contents]
+            semicol_sep_paths = ";".join(flat_contents)
+            tmp_profile.paths_array.append(semicol_sep_paths)
+        else:
+            path_lc_contents = sorted(path_lc_contents, key=itemgetter(0))
+            # TODO
+            # TODO safety so that every display gets some source
+
+        # log
         sp_logging.G_LOGGER.info(tmp_profile.name)
         sp_logging.G_LOGGER.info(tmp_profile.spanmode)
         sp_logging.G_LOGGER.info(tmp_profile.slideshow)
@@ -845,6 +873,7 @@ class WallpaperSettingsPanel(wx.Panel):
         sp_logging.G_LOGGER.info(tmp_profile.hk_binding)
         sp_logging.G_LOGGER.info(tmp_profile.paths_array)
 
+        # test collected data and save if it is valid, otherwise pass
         if tmp_profile.test_save():
             saved_file = tmp_profile.save()
             self.update_choiceprofile()
@@ -855,6 +884,7 @@ class WallpaperSettingsPanel(wx.Panel):
         else:
             sp_logging.G_LOGGER.info("test_save failed.")
             return None
+
 
     def onCreateNewProfile(self, event):
         """Empties the config dialog fields."""

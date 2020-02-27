@@ -646,7 +646,7 @@ class BrowsePaths(wx.Dialog):
             for col in range(columns):
                 item_dat.append(self.paths_listctrl.GetItemText(idx, col))
             self.path_list_data.append(item_dat)
-        print(self.path_list_data)
+        # print(self.path_list_data)
         # if listctrl is empty, onOk maybe could pass on the selected item? or disable OK if list is empty?
         self.EndModal(wx.ID_OK)
 
