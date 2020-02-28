@@ -817,8 +817,9 @@ class WallpaperSettingsPanel(wx.Panel):
         tmp_profile = TempProfileData()
         tmp_profile.name = self.tc_name.GetLineText(0)
         tmp_profile.slideshow = self.cb_slideshow.GetValue()
-        tmp_profile.delay = str(60*float(self.tc_sshow_delay.GetLineText(0))) # save delay as seconds for compatibility!
-        tmp_profile.sortmode = self.ch_sshow_sort.GetString(self.ch_sshow_sort.GetSelection()).lower()
+        if tmp_profile.slideshow:
+            tmp_profile.delay = str(60*float(self.tc_sshow_delay.GetLineText(0))) # save delay as seconds for compatibility!
+            tmp_profile.sortmode = self.ch_sshow_sort.GetString(self.ch_sshow_sort.GetSelection()).lower()
         if self.cb_hotkey.GetValue():
             tmp_profile.hk_binding = self.tc_hotkey_bind.GetLineText(0)
 
@@ -832,15 +833,16 @@ class WallpaperSettingsPanel(wx.Panel):
             tmp_profile.spanmode = "multi"
 
         # manual offsets
-        offs_strs = []
-        for tc in self.tc_list_offsets:
-            line = tc.GetLineText(0)
-            if line:
-                offs_strs.append(line)
-            else:
-                # if offset field is empty, assume user wants no offset
-                offs_strs.append("0,0")
-        tmp_profile.manual_offsets = ";".join(offs_strs)
+        if self.cb_offsets.GetValue():
+            offs_strs = []
+            for tc in self.tc_list_offsets:
+                line = tc.GetLineText(0)
+                if line:
+                    offs_strs.append(line)
+                else:
+                    # if offset field is empty, assume user wants no offset
+                    offs_strs.append("0,0")
+            tmp_profile.manual_offsets = ";".join(offs_strs)
 
         # Paths
         # for text_field in self.paths_controls: # TODO
@@ -856,7 +858,7 @@ class WallpaperSettingsPanel(wx.Panel):
         # format data
         paths_array = []
         if columns == 1:
-            flat_contents = [path for path in row for row in path_lc_contents]
+            flat_contents = [path for row in path_lc_contents for path in row]
             semicol_sep_paths = ";".join(flat_contents)
             tmp_profile.paths_array.append(semicol_sep_paths)
         else:

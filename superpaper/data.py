@@ -280,7 +280,7 @@ class ProfileData(object):
                     wrd1 = words[1].strip().lower()
                     if wrd1 == "shuffle":
                         self.sortmode = wrd1
-                    elif wrd1 == "sort":
+                    elif wrd1 == "alphabetical":
                         self.sortmode = wrd1
                     else:
                         sp_logging.G_LOGGER.info("Exception: unknown sortmode: %s \
