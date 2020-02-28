@@ -275,7 +275,7 @@ class ProfileData(object):
                     self.delay_list = []
                     delay_strings = words[1].strip().split(";")
                     for delstr in delay_strings:
-                        self.delay_list.append(int(delstr))
+                        self.delay_list.append(float(delstr))
                 elif words[0] == "sortmode":
                     wrd1 = words[1].strip().lower()
                     if wrd1 == "shuffle":
@@ -676,7 +676,7 @@ each display needs its own paths field."
                 return False
             if self.delay:
                 try:
-                    val = int(self.delay)
+                    val = float(self.delay)
                     if val < 20:
                         msg = "It is advisable to set the slideshow delay to \
 be at least 20 seconds due to the time the image processing takes."

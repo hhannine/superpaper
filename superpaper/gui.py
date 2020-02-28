@@ -149,8 +149,8 @@ class WallpaperSettingsPanel(wx.Panel):
         self.sizer_profiles.Add(st_name, 0, wx.CENTER|wx.ALL, 5)
         self.sizer_profiles.Add(self.tc_name, 0, wx.CENTER|wx.ALL, 5)
         self.sizer_profiles.Add(self.button_new, 0, wx.CENTER|wx.ALL, 5)
-        self.sizer_profiles.Add(self.button_delete, 0, wx.CENTER|wx.ALL, 5)
         self.sizer_profiles.Add(self.button_save, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_profiles.Add(self.button_delete, 0, wx.CENTER|wx.ALL, 5)
 
 
     def create_sizer_settings_left(self):
@@ -819,7 +819,8 @@ class WallpaperSettingsPanel(wx.Panel):
         tmp_profile.slideshow = self.cb_slideshow.GetValue()
         tmp_profile.delay = str(60*float(self.tc_sshow_delay.GetLineText(0))) # save delay as seconds for compatibility!
         tmp_profile.sortmode = self.ch_sshow_sort.GetString(self.ch_sshow_sort.GetSelection()).lower()
-        tmp_profile.hk_binding = self.tc_hotkey_bind.GetLineText(0)
+        if self.cb_hotkey.GetValue():
+            tmp_profile.hk_binding = self.tc_hotkey_bind.GetLineText(0)
 
         # span mode
         span_sel = self.radiobox_spanmode.GetSelection()
@@ -860,8 +861,17 @@ class WallpaperSettingsPanel(wx.Panel):
             tmp_profile.paths_array.append(semicol_sep_paths)
         else:
             path_lc_contents = sorted(path_lc_contents, key=itemgetter(0))
-            # TODO
-            # TODO safety so that every display gets some source
+            paths_dict = {}
+            for row in path_lc_contents:
+                disp_id, path_item = row
+                if disp_id in paths_dict:
+                    paths_dict[disp_id].append(path_item)
+                else:
+                    paths_dict[disp_id] = [path_item]
+            # print(paths_dict)
+            for disp_id in paths_dict:
+                semicol_sep_paths = ";".join(paths_dict[disp_id])
+                tmp_profile.paths_array.append(semicol_sep_paths)
 
         # log
         sp_logging.G_LOGGER.info(tmp_profile.name)
