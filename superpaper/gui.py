@@ -899,30 +899,35 @@ class WallpaperSettingsPanel(wx.Panel):
 
 
     def onCreateNewProfile(self, event):
-        """Empties the config dialog fields."""
-        # self.choice_profiles.SetSelection(
-        #     self.choice_profiles.FindString("Create a new profile")
-        #     )
+        """Empties the wallpaper profile config fields."""
+        self.choice_profiles.SetSelection(
+            self.choice_profiles.FindString("Create a new profile")
+            )
 
-        # self.tc_name.ChangeValue("")
-        # self.tc_delay.ChangeValue("")
-        # self.tc_offsets.ChangeValue("")
-        # self.tc_inches.ChangeValue("")
-        # self.tc_bez.ChangeValue("")
-        # self.tc_hotkey.ChangeValue("")
+        self.tc_name.ChangeValue("")
 
-        # # Paths displays: get number to show from profile.
-        # while len(self.paths_controls) < 1:
-        #     self.onAddDisplay(wx.EVT_BUTTON)
-        # while len(self.paths_controls) > 1:
-        #     self.onRemoveDisplay(wx.EVT_BUTTON)
-        # for text_field in self.paths_controls:
-        #     text_field.ChangeValue("")
+        self.radiobox_spanmode.SetSelection(0)
+        self.onSpanRadio(None)
 
-        # self.cb_slideshow.SetValue(False)
-        # self.ch_span.SetSelection(-1)
-        # self.ch_sort.SetSelection(-1)
-        pass
+        self.cb_slideshow.SetValue(False)
+        self.tc_sshow_delay.ChangeValue("")
+        self.ch_sshow_sort.SetSelection(wx.NOT_FOUND)
+        self.onCheckboxSlideshow(None)
+
+        self.cb_offsets.SetValue(False)
+        for tc in self.tc_list_offsets:
+            tc.SetValue("0,0")
+        self.onCheckboxOffsets(None)
+
+        self.cb_hotkey.SetValue(False)
+        self.tc_hotkey_bind.ChangeValue("")
+        self.onCheckboxHotkey(None)
+
+        self.refresh_path_listctrl(False)
+
+        # refresh wallpaper preview back to black previews
+        self.wpprev_pnl.draw_displays()
+
 
     def onDeleteProfile(self, event):
         """Deletes the currently selected profile after getting confirmation."""
@@ -1040,21 +1045,38 @@ class WallpaperPreviewPanel(wx.Panel):
 
         # draw canvas
         bmp_canv = wx.Bitmap.FromRGBA(self.dtop_canvas_relsz[0], self.dtop_canvas_relsz[1], red=0, green=0, blue=0, alpha=255)
-        self.bmp_list.append(bmp_canv)
-        self.st_bmp_canvas = wx.StaticBitmap(self, wx.ID_ANY, bmp_canv)
-        self.st_bmp_canvas.SetPosition(self.dtop_canvas_pos)
-        self.st_bmp_canvas.Hide()
-        
-        # draw monitor previews
-        for disp in self.display_rel_sizes:
-            size = disp[0]
-            offs = disp[1]
-            bmp = wx.Bitmap.FromRGBA(size[0], size[1], red=0, green=0, blue=0, alpha=255)
-            self.bmp_list.append(bmp)
-            st_bmp = wx.StaticBitmap(self, wx.ID_ANY, bmp)
-            # st_bmp.SetScaleMode(wx.Scale_AspectFill)  # New in wxpython 4.1
-            st_bmp.SetPosition(offs)
-            self.preview_img_list.append(st_bmp)
+        if not self.preview_img_list:
+            # preview StaticBitmaps don't exist yet
+            self.bmp_list.append(bmp_canv)
+            self.st_bmp_canvas = wx.StaticBitmap(self, wx.ID_ANY, bmp_canv)
+            self.st_bmp_canvas.SetPosition(self.dtop_canvas_pos)
+            self.st_bmp_canvas.Hide()
+
+            # draw monitor previews
+            for disp in self.display_rel_sizes:
+                size = disp[0]
+                offs = disp[1]
+                bmp = wx.Bitmap.FromRGBA(size[0], size[1], red=0, green=0, blue=0, alpha=255)
+                self.bmp_list.append(bmp)
+                st_bmp = wx.StaticBitmap(self, wx.ID_ANY, bmp)
+                # st_bmp.SetScaleMode(wx.Scale_AspectFill)  # New in wxpython 4.1
+                st_bmp.SetPosition(offs)
+                self.preview_img_list.append(st_bmp)
+        else:
+            # previews exist and should be blanked
+            self.current_preview_images = [] # drop chached image list
+
+            self.st_bmp_canvas.SetBitmap(bmp_canv)
+            self.st_bmp_canvas.SetPosition(self.dtop_canvas_pos)
+            self.st_bmp_canvas.Hide()
+
+            # blank monitor previews
+            for disp, st_bmp in zip(self.display_rel_sizes, self.preview_img_list):
+                size = disp[0]
+                offs = disp[1]
+                bmp = wx.Bitmap.FromRGBA(size[0], size[1], red=0, green=0, blue=0, alpha=255)
+                st_bmp.SetBitmap(bmp)
+                st_bmp.SetPosition(offs)
 
         self.draw_monitor_numbers(use_ppi_px)
 
