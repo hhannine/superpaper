@@ -932,7 +932,7 @@ class WallpaperSettingsPanel(wx.Panel):
     def onDeleteProfile(self, event):
         """Deletes the currently selected profile after getting confirmation."""
         profname = self.tc_name.GetLineText(0)
-        fname = PROFILES_PATH + profname + ".profile"
+        fname = os.path.join(PROFILES_PATH, profname + ".profile")
         file_exists = os.path.isfile(fname)
         if not file_exists:
             msg = "Selected profile is not saved."
@@ -940,12 +940,14 @@ class WallpaperSettingsPanel(wx.Panel):
             return
         # Open confirmation dialog
         dlg = wx.MessageDialog(None,
-                               "Do you want to delete profile:"+ profname +"?",
+                               "Do you want to delete profile: {}?".format(profname),
                                'Confirm Delete',
                                wx.YES_NO | wx.ICON_QUESTION)
         result = dlg.ShowModal()
         if result == wx.ID_YES and file_exists:
             os.remove(fname)
+            self.update_choiceprofile()
+            self.onCreateNewProfile(None)
         else:
             pass
 
