@@ -464,10 +464,16 @@ Use absolute paths for best reliabilty.".format(path)
                         continue
                     else:
                         # List only images that are of supported type.
-                        list_of_images += [os.path.join(path, f)
-                                           for f in os.listdir(path)
-                                           if f.endswith(wpproc.G_SUPPORTED_IMAGE_EXTENSIONS)
-                                          ]
+                        if os.path.isfile(path):
+                            if path.endswith(wpproc.G_SUPPORTED_IMAGE_EXTENSIONS):
+                                list_of_images += [path]
+                            else:
+                                pass
+                        else:
+                            list_of_images += [os.path.join(path, f)
+                                            for f in os.listdir(path)
+                                            if f.endswith(wpproc.G_SUPPORTED_IMAGE_EXTENSIONS)
+                                            ]
                 # Append the list of monitor_i specific files to the list of
                 # lists of images.
                 self.all_files_in_paths.append(list_of_images)
@@ -800,7 +806,7 @@ Valid modifiers are 'control', 'super', 'alt', 'shift'."
             show_message_dialog(msg, "Error")
             return False
         if "" in input_list:
-            msg = "Take care not to save a profile with an empty display paths field."
+            msg = "Add an image source for every display present."
             show_message_dialog(msg, "Error")
             return False
         for path_list_str in input_list:
@@ -813,6 +819,13 @@ Valid modifiers are 'control', 'super', 'alt', 'shift'."
                         continue
                     else:
                         msg = "Path '{}' does not contain supported image files.".format(path)
+                        show_message_dialog(msg, "Error")
+                        return False
+                elif os.path.isfile(path) is True:
+                    if path.endswith(wpproc.G_SUPPORTED_IMAGE_EXTENSIONS):
+                        continue
+                    else:
+                        msg = "Image '{}' is not a supported image file.".format(path)
                         show_message_dialog(msg, "Error")
                         return False
                 else:

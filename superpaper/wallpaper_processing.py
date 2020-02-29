@@ -1364,7 +1364,8 @@ def change_wallpaper_job(profile):
         if profile.spanmode.startswith("single") and profile.ppimode is False:
             thrd = Thread(target=span_single_image_simple, args=(profile,), daemon=True)
             thrd.start()
-        elif profile.spanmode.startswith("single") and profile.ppimode is True:
+        elif ((profile.spanmode.startswith("single") and profile.ppimode is True) or
+               profile.spanmode.startswith("advanced")):
             thrd = Thread(target=span_single_image_advanced, args=(profile,), daemon=True)
             thrd.start()
         elif profile.spanmode.startswith("multi"):
@@ -1372,6 +1373,7 @@ def change_wallpaper_job(profile):
             thrd.start()
         else:
             sp_logging.G_LOGGER.info("Unkown profile spanmode: %s", profile.spanmode)
+            return None
         return thrd
 
 
