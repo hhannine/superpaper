@@ -39,6 +39,7 @@ RESOLUTION_ARRAY = []
 # list of display offsets (width,height), use tuples.
 DISPLAY_OFFSET_ARRAY = []
 
+G_ACTIVE_DISPLAYSYSTEM = None
 G_WALLPAPER_CHANGE_LOCK = Lock()
 G_SUPPORTED_IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".webp")
 G_SET_COMMAND_STRING = ""
@@ -681,6 +682,10 @@ def get_display_data():
         for disp in display_list:
             sp_logging.G_LOGGER.info(str(disp))
     return display_list
+
+def refresh_display_data():
+    global G_ACTIVE_DISPLAYSYSTEM
+    G_ACTIVE_DISPLAYSYSTEM = DisplaySystem()
 
 def compute_canvas(res_array, offset_array):
     """Computes the size of the total desktop area from monitor resolutions and offsets."""
@@ -1379,8 +1384,11 @@ def change_wallpaper_job(profile):
 
 def run_profile_job(profile):
     """This method executes the input profile as the profile is configured."""
+    global G_ACTIVE_DISPLAYSYSTEM
+    # get_display_data()  # Check here so new profile has fresh data.
+    refresh_display_data() # Refresh available display data.
+
     repeating_timer = None
-    get_display_data()  # Check here so new profile has fresh data.
     if sp_logging.DEBUG:
         sp_logging.G_LOGGER.info("running profile job with profile: %s", profile.name)
 

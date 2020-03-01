@@ -10,6 +10,7 @@ from threading import Lock
 from superpaper.__version__ import __version__
 import superpaper.sp_logging as sp_logging
 import superpaper.sp_paths as sp_paths
+import superpaper.wallpaper_processing as wpproc
 from superpaper.gui import ConfigFrame
 from superpaper.configuration_dialogs import ProfileConfigFrame, SettingsFrame, HelpFrame
 from superpaper.message_dialog import show_message_dialog
@@ -69,9 +70,11 @@ class TaskBarIcon(wx.adv.TaskBarIcon):
         super(TaskBarIcon, self).__init__()
         self.set_icon(TRAY_ICON)
         self.Bind(wx.adv.EVT_TASKBAR_LEFT_DOWN, self.on_left_down)
+        # Initialize display data
+        # get_display_data()
+        wpproc.refresh_display_data()
         # profile initialization
         self.job_lock = Lock()
-        get_display_data()
         self.repeating_timer = None
         self.pause_item = None
         self.is_paused = False
