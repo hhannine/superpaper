@@ -892,6 +892,18 @@ class WallpaperSettingsPanel(wx.Panel):
             self.parent_tray_obj.reload_profiles(event)
             self.parent_tray_obj.register_hotkeys()
             self.choice_profiles.SetSelection(self.choice_profiles.FindString(tmp_profile.name))
+            # Update wallpaper preview from selected profile
+            saved_profile = ProfileData(saved_file)
+            if self.show_advanced_settings:
+                display_data = self.display_sys.get_disp_list(True)
+            else:
+                display_data = self.display_sys.get_disp_list(False)
+            self.wpprev_pnl.preview_wallpaper(
+                saved_profile.next_wallpaper_files(),
+                self.show_advanced_settings,
+                self.use_multi_image,
+                display_data
+            )
             return saved_file
         else:
             sp_logging.G_LOGGER.info("test_save failed.")
