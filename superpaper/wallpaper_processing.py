@@ -1417,7 +1417,8 @@ def quick_profile_job(profile):
         # Look for old temp image:
         files = [i for i in os.listdir(TEMP_PATH)
                  if os.path.isfile(os.path.join(TEMP_PATH, i))
-                 and i.startswith(profile.name + "-")]
+                 and (i.startswith(profile.name + "-a") or
+                      i.startswith(profile.name + "-b"))]
         if sp_logging.DEBUG:
             sp_logging.G_LOGGER.info("quickswitch file lookup: %s", files)
         if files:
