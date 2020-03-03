@@ -262,7 +262,16 @@ class DisplaySystem():
                     USER_TOLD_OF_PHYS_FAIL = True
 
     def __eq__(self, other):
-        return bool(tuple(self.disp_list) == tuple(other.disp_list))
+        # return bool(tuple(self.disp_list) == tuple(other.disp_list))
+        for dsp_1, dsp_2 in zip(self.disp_list, other.disp_list):
+            if dsp_1 == dsp_2:
+                continue
+            else:
+                return False
+        if len(self.disp_list) == len(other.disp_list):
+            return True
+        else:
+            return False
 
     def __hash__(self):
         return hash(tuple(self.disp_list))
@@ -284,19 +293,28 @@ class DisplaySystem():
                 round(dsp.resolution[1] / r_ppi)
             )
 
-    def get_ppi_norm_crops(self):
+    def get_ppi_norm_crops(self, manual_offsets):
         """Returns list of ppi_norm crop tuples to cut from ppi_norm canvas.
 
         A valid crop is a 4-tuple: (left, top, right, bottom).
         """
         crops = []
         for dsp in self.disp_list:
-            left_top = dsp.ppi_norm_offset[0]
+            try:
+                off = manual_offsets[self.disp_list.index(dsp)]
+            except IndexError:
+                off = (0, 0)
+            left_top = (
+                round(dsp.ppi_norm_offset[0] + off[0]),
+                round(dsp.ppi_norm_offset[1] + off[1])
+            )
             right_btm = (
-                dsp.ppi_norm_resolution[0] + dsp.ppi_norm_offset[0],
-                dsp.ppi_norm_resolution[1] + dsp.ppi_norm_offset[1],
+                round(dsp.ppi_norm_resolution[0]) + left_top[0],
+                round(dsp.ppi_norm_resolution[1]) + left_top[1],
             )
             crops.append(left_top + right_btm)
+        sp_logging.G_LOGGER.info("get_ppi_norm_offsets: %s", self.get_ppinorm_offsets())
+        sp_logging.G_LOGGER.info("get_ppi_norm_crops: %s", crops)
         return crops
 
     def fits_in_column(self, disp, col):
@@ -572,9 +590,10 @@ class DisplaySystem():
                 "perspective_angles: %s",
                 ppi_norm_offsets, bezel_mms, diagonal_inches, perspective_angles
             )
-            self.update_ppinorm_offsets(ppi_norm_offsets) # Bezels & user diagonals always included.
             self.update_bezels(bezel_mms)
+            self.update_ppinorm_offsets(ppi_norm_offsets) # Bezels & user diagonals always included.
             if diagonal_inches:
+                sp_logging.G_LOGGER.info("Updating diagonal_inches")
                 self.update_display_diags(diagonal_inches)
                 self.compute_ppinorm_resolutions()
             self.update_perspective_angles(perspective_angles)
@@ -947,7 +966,8 @@ def span_single_image_advanced(profile):
     # SIZES. Also EFFECTIVE SIZE Offsets are now required.
     manual_offsets = profile.manual_offsets
     cropped_images = []
-    crop_tuples = compute_crop_tuples(resolution_array_ppinormalized, manual_offsets)
+    # crop_tuples = compute_crop_tuples(resolution_array_ppinormalized, manual_offsets)
+    crop_tuples = G_ACTIVE_DISPLAYSYSTEM.get_ppi_norm_crops(manual_offsets)
     # larger working size needed to fill all the normalized lower density
     # displays. Takes account manual offsets that might require extra space.
     canvas_tuple_eff = tuple(compute_working_canvas(crop_tuples))
@@ -957,8 +977,8 @@ def span_single_image_advanced(profile):
     img_workingsize = resize_to_fill(img, canvas_tuple_eff)
     # Simultaneously make crops at working size and then resize down to actual
     # resolution from RESOLUTION_ARRAY as needed.
-    for crop, res in zip(crop_tuples, RESOLUTION_ARRAY):
-        crop_img = img_workingsize.crop(crop)
+    for crop_tup, res in zip(crop_tuples, RESOLUTION_ARRAY):
+        crop_img = img_workingsize.crop(crop_tup)
         if crop_img.size == res:
             cropped_images.append(crop_img)
         else:
