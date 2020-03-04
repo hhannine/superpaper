@@ -101,14 +101,14 @@ class WallpaperSettingsPanel(wx.Panel):
         self.sizer_setting_sizers.Add(self.sizer_setting_adv, 1, wx.CENTER|wx.EXPAND|wx.ALL, 5)
         self.sizer_setting_sizers.Layout()
 
-        self.sizer_bottom_half.Add(self.sizer_profiles, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
-        self.sizer_bottom_half.Add(self.sizer_setting_sizers, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
-        self.sizer_bottom_half.Add(self.sizer_bottom_buttonrow, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        self.sizer_bottom_half.Add(self.sizer_profiles, 0, wx.CENTER|wx.EXPAND|wx.ALL, 0)
+        self.sizer_bottom_half.Add(self.sizer_setting_sizers, 0, wx.CENTER|wx.EXPAND|wx.ALL, 0)
+        self.sizer_bottom_half.Add(self.sizer_bottom_buttonrow, 1, wx.CENTER|wx.EXPAND|wx.ALL, 0)
         self.sizer_bottom_half.SetMinSize(1000,500)
 
         # Collect items at main sizer
         self.sizer_main.Add(self.sizer_top_half, 1, wx.CENTER|wx.EXPAND|wx.ALL, 5)
-        self.sizer_main.Add(self.sizer_bottom_half, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        self.sizer_main.Add(self.sizer_bottom_half, 0, wx.CENTER|wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, 5)
 
         self.SetSizer(self.sizer_main)
         self.sizer_main.Fit(parent)
@@ -188,6 +188,7 @@ class WallpaperSettingsPanel(wx.Panel):
         self.sizer_setting_slideshow.Add(self.tc_sshow_delay, 0, wx.ALIGN_LEFT|wx.ALL, 5)
         self.sizer_setting_slideshow.Add(self.st_sshow_sort, 0, wx.ALIGN_LEFT|wx.ALL, 5)
         self.sizer_setting_slideshow.Add(self.ch_sshow_sort, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        self.sizer_setting_slideshow.AddSpacer(5)
 
         # hotkey sizer
         self.sizer_setting_hotkey = wx.StaticBoxSizer(wx.VERTICAL, self, "Hotkey")
@@ -198,16 +199,16 @@ class WallpaperSettingsPanel(wx.Panel):
         self.tc_hotkey_bind = wx.TextCtrl(statbox_parent_hkey, -1, size=(self.tc_width, -1))
         self.tc_hotkey_bind.Disable()
         self.hotkey_bind_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.hotkey_bind_sizer.Add(st_hotkey_bind, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
-        self.hotkey_bind_sizer.Add(self.tc_hotkey_bind, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
-        self.sizer_setting_hotkey.Add(self.cb_hotkey, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        self.hotkey_bind_sizer.Add(st_hotkey_bind, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        self.hotkey_bind_sizer.Add(self.tc_hotkey_bind, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        self.sizer_setting_hotkey.Add(self.cb_hotkey, 0, wx.ALIGN_LEFT|wx.ALL, 5)
         self.sizer_setting_hotkey.Add(self.hotkey_bind_sizer, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
         self.cb_hotkey.Bind(wx.EVT_CHECKBOX, self.onCheckboxHotkey)
 
         # Add subsizers to the left column sizer
-        self.sizer_settings_left.Add(self.radiobox_spanmode, 0, wx.CENTER|wx.EXPAND, 5)
-        self.sizer_settings_left.Add(self.sizer_setting_slideshow, 0, wx.CENTER|wx.EXPAND, 5)
-        self.sizer_settings_left.Add(self.sizer_setting_hotkey, 0, wx.CENTER|wx.EXPAND, 5)
+        self.sizer_settings_left.Add(self.radiobox_spanmode, 0, wx.EXPAND, 5)
+        self.sizer_settings_left.Add(self.sizer_setting_slideshow, 0, wx.EXPAND, 5)
+        self.sizer_settings_left.Add(self.sizer_setting_hotkey, 0, wx.EXPAND, 5)
 
 
     def create_sizer_settings_right(self):
@@ -283,10 +284,10 @@ class WallpaperSettingsPanel(wx.Panel):
         self.button_bezels.Bind(wx.EVT_BUTTON, self.onConfigureBezels)
         self.button_bezels_save.Bind(wx.EVT_BUTTON, self.onConfigureBezelsSave)
         self.button_bezels_canc.Bind(wx.EVT_BUTTON, self.onConfigureBezelsCanc)
-        self.sizer_bezel_buttons.Add(self.button_bezels, 0, wx.ALIGN_CENTER|wx.ALL, 5)
-        self.sizer_bezel_buttons.Add(self.button_bezels_save, 0, wx.ALIGN_CENTER|wx.ALL, 5)
-        self.sizer_bezel_buttons.Add(self.button_bezels_canc, 0, wx.ALIGN_CENTER|wx.ALL, 5)
-        self.sizer_setting_bezels.Add(self.sizer_bezel_buttons, 0, wx.EXPAND, 0)
+        self.sizer_bezel_buttons.Add(self.button_bezels, 0, wx.ALIGN_CENTER|wx.ALL, 10)
+        self.sizer_bezel_buttons.Add(self.button_bezels_save, 0, wx.ALIGN_CENTER|wx.TOP|wx.BOTTOM, 10)
+        self.sizer_bezel_buttons.Add(self.button_bezels_canc, 0, wx.ALIGN_CENTER|wx.ALL, 10)
+        self.sizer_setting_bezels.Add(self.sizer_bezel_buttons, 0, wx.ALIGN_CENTER|wx.EXPAND, 0)
         # self.button_bezels.Disable()
 
         # Offsets
