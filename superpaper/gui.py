@@ -737,6 +737,7 @@ class WallpaperSettingsPanel(wx.Panel):
                 dial.ShowModal()
                 return -1
         self.display_sys.update_display_diags(inches)
+        self.display_sys.save_system()
         display_data = self.display_sys.get_disp_list(self.show_advanced_settings)
         self.wpprev_pnl.update_display_data(
             display_data,

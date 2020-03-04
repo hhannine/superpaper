@@ -473,14 +473,12 @@ class DisplaySystem():
                 dsp.ppi = dsp.compute_ppi()
             self.compute_ppinorm_resolutions()
             self.compute_initial_preview_offsets()
-            self.save_system()
         else:
             self.use_user_diags = True
             for dsp, diag in zip(self.disp_list, diag_inches):
                 dsp.ppi_and_physsize_from_diagonal_inch(diag)
             self.compute_ppinorm_resolutions()
             self.compute_initial_preview_offsets()
-            self.save_system()
 
     def update_perspective_angles(self, angles):
         """Write perspective angle pairs to their respective Displays.
