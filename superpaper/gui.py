@@ -97,9 +97,9 @@ class WallpaperSettingsPanel(wx.Panel):
         #    Note: horizontal sizer needs children to have proportion = 1
         #    in order to expand them horizontally instead of vertically.
         self.sizer_setting_sizers.Add(self.sizer_settings_left, 1, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        self.sizer_setting_sizers.Add(self.sizer_settings_right, 1, wx.CENTER|wx.EXPAND|wx.ALL, 0)
         self.sizer_setting_sizers.Add(self.sizer_setting_adv, 1, wx.CENTER|wx.EXPAND|wx.ALL, 5)
         self.sizer_setting_sizers.Layout()
-        self.sizer_setting_sizers.Add(self.sizer_settings_right, 1, wx.CENTER|wx.EXPAND|wx.ALL, 0)
 
         self.sizer_bottom_half.Add(self.sizer_profiles, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
         self.sizer_bottom_half.Add(self.sizer_setting_sizers, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
