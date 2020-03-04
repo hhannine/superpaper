@@ -549,6 +549,9 @@ class DisplaySystem():
         with open(archive_file, 'w') as configfile:
             config.write(configfile)
 
+        # Once profile is saved make it available for wallpaper setter
+        refresh_display_data()
+
 
     def load_system(self):
         """Try to load system data from database based on initialization data,
