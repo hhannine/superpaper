@@ -1757,6 +1757,7 @@ class WallpaperPreviewPanel(wx.Panel):
         position config button(s)."""
         # TODO Change background color?
         self.old_bezels = self.display_sys.bezels_in_mm()
+        self.old_ppinorm_offs = self.display_sys.get_ppinorm_offsets()
         self.bezel_conifg_mode = True
         self.show_bezel_buttons(True)
         # Hide preview positioning config button
@@ -1779,6 +1780,7 @@ class WallpaperPreviewPanel(wx.Panel):
         # Show preview positioning config button
         self.toggle_buttons(True, False)
         self.display_sys.update_bezels(self.old_bezels)
+        self.display_sys.update_ppinorm_offsets(self.old_ppinorm_offs)
         for pops, bez_mms in zip(self.bezel_popups, self.old_bezels):
             pops[0].set_bezel_value(bez_mms[0])
             pops[1].set_bezel_value(bez_mms[1])
