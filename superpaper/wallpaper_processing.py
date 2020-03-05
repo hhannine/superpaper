@@ -960,14 +960,11 @@ def span_single_image_advanced(profile):
     if sp_logging.DEBUG:
         sp_logging.G_LOGGER.info(file)
     img = Image.open(file)
-    resolution_array_ppinormalized = compute_ppi_corrected_res_array(
-        RESOLUTION_ARRAY, profile.ppi_array_relative_density)
 
     # Cropping now sections of the image to be shown, USE EFFECTIVE WORKING
     # SIZES. Also EFFECTIVE SIZE Offsets are now required.
     manual_offsets = profile.manual_offsets
     cropped_images = []
-    # crop_tuples = compute_crop_tuples(resolution_array_ppinormalized, manual_offsets)
     crop_tuples = G_ACTIVE_DISPLAYSYSTEM.get_ppi_norm_crops(manual_offsets)
     # larger working size needed to fill all the normalized lower density
     # displays. Takes account manual offsets that might require extra space.
