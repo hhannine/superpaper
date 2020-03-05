@@ -1019,7 +1019,7 @@ class WallpaperPreviewPanel(wx.Panel):
     exists that matches the given resolutions, offsets and sizes.
     """
     def __init__(self, parent, display_sys, image_list = None, use_ppi_px = False, use_multi_image = False):
-        self.preview_size = (1200,450)
+        self.preview_size = (900,400)
         wx.Panel.__init__(self, parent, size=self.preview_size)
         self.frame = parent
 
