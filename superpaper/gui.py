@@ -102,9 +102,9 @@ class WallpaperSettingsPanel(wx.Panel):
         self.sizer_setting_sizers.Layout()
 
         self.sizer_bottom_half.Add(self.sizer_profiles, 0, wx.CENTER|wx.EXPAND|wx.ALL, 0)
-        self.sizer_bottom_half.Add(self.sizer_setting_sizers, 0, wx.CENTER|wx.EXPAND|wx.ALL, 0)
-        self.sizer_bottom_half.Add(self.sizer_bottom_buttonrow, 1, wx.CENTER|wx.EXPAND|wx.ALL, 0)
-        self.sizer_bottom_half.SetMinSize(1000,500)
+        self.sizer_bottom_half.Add(self.sizer_setting_sizers, 1, wx.CENTER|wx.EXPAND|wx.ALL, 0)
+        self.sizer_bottom_half.Add(self.sizer_bottom_buttonrow, 0, wx.CENTER|wx.EXPAND|wx.ALL, 0)
+        # self.sizer_bottom_half.SetMinSize(1000,500)
 
         # Collect items at main sizer
         self.sizer_main.Add(self.sizer_top_half, 1, wx.CENTER|wx.EXPAND|wx.ALL, 5)
@@ -284,10 +284,14 @@ class WallpaperSettingsPanel(wx.Panel):
         self.button_bezels.Bind(wx.EVT_BUTTON, self.onConfigureBezels)
         self.button_bezels_save.Bind(wx.EVT_BUTTON, self.onConfigureBezelsSave)
         self.button_bezels_canc.Bind(wx.EVT_BUTTON, self.onConfigureBezelsCanc)
-        self.sizer_bezel_buttons.Add(self.button_bezels, 0, wx.ALIGN_CENTER|wx.ALL, 10)
-        self.sizer_bezel_buttons.Add(self.button_bezels_save, 0, wx.ALIGN_CENTER|wx.TOP|wx.BOTTOM, 10)
-        self.sizer_bezel_buttons.Add(self.button_bezels_canc, 0, wx.ALIGN_CENTER|wx.ALL, 10)
-        self.sizer_setting_bezels.Add(self.sizer_bezel_buttons, 0, wx.ALIGN_CENTER|wx.EXPAND, 0)
+        self.sizer_bezel_buttons.Add(self.button_bezels, 0, wx.ALIGN_CENTER_HORIZONTAL|
+                                                            wx.RESERVE_SPACE_EVEN_IF_HIDDEN|wx.ALL, 10)
+        self.sizer_bezel_buttons.Add(self.button_bezels_save, 0, wx.ALIGN_CENTER_HORIZONTAL|
+                                                                 wx.RESERVE_SPACE_EVEN_IF_HIDDEN|
+                                                                 wx.TOP|wx.BOTTOM, 10)
+        self.sizer_bezel_buttons.Add(self.button_bezels_canc, 0, wx.ALIGN_CENTER_HORIZONTAL|
+                                                                 wx.RESERVE_SPACE_EVEN_IF_HIDDEN|wx.ALL, 10)
+        self.sizer_setting_bezels.Add(self.sizer_bezel_buttons, 0, wx.EXPAND, 0)
         # self.button_bezels.Disable()
 
         # Offsets
@@ -661,6 +665,7 @@ class WallpaperSettingsPanel(wx.Panel):
         if cb_state == False:
             # revert to automatic detection and save
             self.display_sys.update_display_diags("auto")
+            self.display_sys.save_system()
             diags = [str(dsp.diagonal_size()[1]) for dsp in self.display_sys.disp_list]
             for tc, diag in zip(self.tc_list_diaginch, diags):
                 tc.ChangeValue(diag)
@@ -1019,7 +1024,7 @@ class WallpaperPreviewPanel(wx.Panel):
     exists that matches the given resolutions, offsets and sizes.
     """
     def __init__(self, parent, display_sys, image_list = None, use_ppi_px = False, use_multi_image = False):
-        self.preview_size = (900,400)
+        self.preview_size = (975,400)
         wx.Panel.__init__(self, parent, size=self.preview_size)
         self.frame = parent
 
