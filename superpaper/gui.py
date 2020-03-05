@@ -96,9 +96,15 @@ class WallpaperSettingsPanel(wx.Panel):
         # Add sub-sizers to bottom_half
         #    Note: horizontal sizer needs children to have proportion = 1
         #    in order to expand them horizontally instead of vertically.
-        self.sizer_setting_sizers.Add(self.sizer_settings_left, 1, wx.CENTER|wx.EXPAND|wx.ALL, 5)
-        self.sizer_setting_sizers.Add(self.sizer_settings_right, 1, wx.CENTER|wx.EXPAND|wx.ALL, 0)
-        self.sizer_setting_sizers.Add(self.sizer_setting_adv, 1, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        self.sizer_setting_sizers.Add(
+            self.sizer_settings_left, 1, wx.CENTER|wx.EXPAND|wx.TOP|wx.LEFT, 5
+            )
+        self.sizer_setting_sizers.Add(
+            self.sizer_settings_right, 2, wx.CENTER|wx.EXPAND|wx.TOP|wx.LEFT, 0
+            )
+        self.sizer_setting_sizers.Add(
+            self.sizer_setting_adv, 0.8, wx.CENTER|wx.EXPAND|wx.TOP|wx.RIGHT, 5
+            )
         self.sizer_setting_sizers.Layout()
 
         self.sizer_bottom_half.Add(self.sizer_profiles, 0, wx.CENTER|wx.EXPAND|wx.ALL, 0)
@@ -107,8 +113,8 @@ class WallpaperSettingsPanel(wx.Panel):
         # self.sizer_bottom_half.SetMinSize(1000,500)
 
         # Collect items at main sizer
-        self.sizer_main.Add(self.sizer_top_half, 1, wx.CENTER|wx.EXPAND|wx.ALL, 5)
-        self.sizer_main.Add(self.sizer_bottom_half, 0, wx.CENTER|wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, 5)
+        self.sizer_main.Add(self.sizer_top_half, 1, wx.CENTER|wx.EXPAND|wx.BOTTOM, 5)
+        self.sizer_main.Add(self.sizer_bottom_half, 0, wx.CENTER|wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, 0)
 
         self.SetSizer(self.sizer_main)
         self.sizer_main.Fit(parent)
@@ -238,7 +244,9 @@ class WallpaperSettingsPanel(wx.Panel):
         self.path_listctrl.SetImageList(self.image_list, wx.IMAGE_LIST_SMALL)
 
         self.sizer_setting_paths.Add(st_paths_info, 0, wx.ALIGN_LEFT|wx.ALL, 5)
-        self.sizer_setting_paths.Add(self.path_listctrl, 1, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        self.sizer_setting_paths.Add(
+            self.path_listctrl, 1, wx.CENTER|wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, 5
+            )
         # Buttons
         self.sizer_setting_paths_buttons = wx.BoxSizer(wx.HORIZONTAL)
         self.button_browse = wx.Button(self.statbox_parent_paths, label="Browse")
@@ -248,9 +256,11 @@ class WallpaperSettingsPanel(wx.Panel):
         self.sizer_setting_paths_buttons.Add(self.button_browse, 0, wx.CENTER|wx.ALL, 5)
         self.sizer_setting_paths_buttons.Add(self.button_remove_source, 0, wx.CENTER|wx.ALL, 5)
         # add button sizer to parent paths sizer
-        self.sizer_setting_paths.Add(self.sizer_setting_paths_buttons, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        self.sizer_setting_paths.Add(self.sizer_setting_paths_buttons, 0, wx.CENTER|wx.EXPAND|wx.ALL, 0)
 
-        self.sizer_settings_right.Add(self.sizer_setting_paths, 1, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        self.sizer_settings_right.Add(
+            self.sizer_setting_paths, 1, wx.CENTER|wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, 5
+        )
 
 
     def create_sizer_settings_advanced(self):
@@ -291,7 +301,7 @@ class WallpaperSettingsPanel(wx.Panel):
                                                                  wx.TOP|wx.BOTTOM, 10)
         self.sizer_bezel_buttons.Add(self.button_bezels_canc, 0, wx.ALIGN_CENTER_HORIZONTAL|
                                                                  wx.RESERVE_SPACE_EVEN_IF_HIDDEN|wx.ALL, 10)
-        self.sizer_setting_bezels.Add(self.sizer_bezel_buttons, 0, wx.EXPAND, 0)
+        self.sizer_setting_bezels.Add(self.sizer_bezel_buttons, 1, wx.EXPAND, 0)
         # self.button_bezels.Disable()
 
         # Offsets
@@ -543,7 +553,11 @@ class WallpaperSettingsPanel(wx.Panel):
         """Show/Hide the sizer for advanced spanning settings."""
         self.sizer_setting_sizers.Show(self.sizer_setting_adv, show=show_bool)
         self.toggle_bezel_buttons(enable_config_butt=True)
+        # To only reveal sizer sit no frame resize
         self.sizer_main.Layout()
+        # to re-layout the whole window making it wider run:
+        # self.sizer_setting_adv.Layout()
+        # self.sizer_main.Fit(self.frame)
         self.sizer_bottom_buttonrow.Show(self.button_align_test, show=show_bool)
         self.sizer_bottom_buttonrow.Layout()
 
@@ -1024,7 +1038,7 @@ class WallpaperPreviewPanel(wx.Panel):
     exists that matches the given resolutions, offsets and sizes.
     """
     def __init__(self, parent, display_sys, image_list = None, use_ppi_px = False, use_multi_image = False):
-        self.preview_size = (975,400)
+        self.preview_size = (1080,400)
         wx.Panel.__init__(self, parent, size=self.preview_size)
         self.frame = parent
 
