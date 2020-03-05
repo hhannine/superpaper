@@ -991,29 +991,31 @@ class WallpaperSettingsPanel(wx.Panel):
         if not os.path.isfile(testimage[0]):
             msg = "Test image not found in {}.".format(testimage)
             show_message_dialog(msg, "Error")
-        ppi = None
-        inches = self.tc_inches.GetLineText(0).split(";")
-        if (inches == "") or (len(inches) < wpproc.NUM_DISPLAYS):
-            msg = "You must enter a diagonal inch value for every \
-display, serparated by a semicolon ';'."
-            show_message_dialog(msg, "Error")
 
-        inches = [float(i) for i in inches]
-        bezels = self.tc_bez.GetLineText(0).split(";")
-        bezels = [float(b) for b in bezels]
-        offsets = self.tc_offsets.GetLineText(0).split(";")
-        offsets = [[int(i.split(",")[0]), int(i.split(",")[1])] for i in offsets]
+        inches = [dsp.diagonal_size()[1] for dsp in self.display_sys.disp_list]
+
+        offsets = []
+        for off_tc in self.tc_list_offsets:
+            off = off_tc.GetLineText(0).split(",")
+            try:
+                offsets.append([int(off[0]), int(off[1])])
+            except (IndexError, ValueError):
+                show_message_dialog(
+                    "Offsets must be integer pairs separated with a comma!\n"
+                    "Problematic offset is {}".format(off)
+                    )
+                return -1
         flat_offsets = []
         for off in offsets:
             for pix in off:
                 flat_offsets.append(pix)
 
         # Use the simplified CLI profile class
-        get_display_data()
+        wpproc.refresh_display_data()
         profile = CLIProfileData(testimage,
-                                 ppi,
+                                 None,
                                  inches,
-                                 bezels,
+                                 None,
                                  flat_offsets,
                                 )
         change_wallpaper_job(profile)
