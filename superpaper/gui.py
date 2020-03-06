@@ -173,14 +173,15 @@ class WallpaperSettingsPanel(wx.Panel):
         # slideshow sizer
         self.sizer_setting_slideshow = wx.StaticBoxSizer(wx.VERTICAL, self, "Wallpaper Slideshow")
         statbox_parent_sshow = self.sizer_setting_slideshow.GetStaticBox()
+        sizer_sshow_subsettings = wx.GridSizer(2, 5, 5)
         self.st_sshow_sort = wx.StaticText(statbox_parent_sshow, -1, "Slideshow order:")
         self.ch_sshow_sort = wx.Choice(statbox_parent_sshow, -1, name="SortChoice",
-                                 size=(self.tc_width, -1),
+                                 size=(self.tc_width*0.7, -1),
                                  choices=["Shuffle", "Alphabetical"])
         self.st_sshow_delay = wx.StaticText(statbox_parent_sshow, -1, "Delay (minutes):")
         self.tc_sshow_delay = wx.TextCtrl(
             statbox_parent_sshow, -1,
-            size=(self.tc_width, -1),
+            size=(self.tc_width*0.69, -1),
             style=wx.TE_RIGHT
         )
         self.cb_slideshow = wx.CheckBox(statbox_parent_sshow, -1, "Slideshow")
@@ -190,11 +191,12 @@ class WallpaperSettingsPanel(wx.Panel):
         self.ch_sshow_sort.Disable()
         self.cb_slideshow.Bind(wx.EVT_CHECKBOX, self.onCheckboxSlideshow)
         self.sizer_setting_slideshow.Add(self.cb_slideshow, 0, wx.ALIGN_LEFT|wx.ALL, 5)
-        self.sizer_setting_slideshow.Add(self.st_sshow_delay, 0, wx.ALIGN_LEFT|wx.ALL, 5)
-        self.sizer_setting_slideshow.Add(self.tc_sshow_delay, 0, wx.ALIGN_LEFT|wx.ALL, 5)
-        self.sizer_setting_slideshow.Add(self.st_sshow_sort, 0, wx.ALIGN_LEFT|wx.ALL, 5)
-        self.sizer_setting_slideshow.Add(self.ch_sshow_sort, 0, wx.ALIGN_LEFT|wx.ALL, 5)
-        self.sizer_setting_slideshow.AddSpacer(5)
+        sizer_sshow_subsettings.Add(self.st_sshow_delay, 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT, 0)
+        sizer_sshow_subsettings.Add(self.tc_sshow_delay, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 0)
+        sizer_sshow_subsettings.Add(self.st_sshow_sort, 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT, 0)
+        sizer_sshow_subsettings.Add(self.ch_sshow_sort, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 0)
+        self.sizer_setting_slideshow.Add(sizer_sshow_subsettings, 0, wx.ALIGN_LEFT|wx.LEFT|wx.BOTTOM, 10)
+        # self.sizer_setting_slideshow.AddSpacer(5)
 
         # hotkey sizer
         self.sizer_setting_hotkey = wx.StaticBoxSizer(wx.VERTICAL, self, "Hotkey")
