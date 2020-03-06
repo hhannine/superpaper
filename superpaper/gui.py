@@ -277,8 +277,8 @@ class WallpaperSettingsPanel(wx.Panel):
         )
         self.button_override = wx.Button(statbox_parent_diaginch, label="Override detected sizes")
         self.button_override.Bind(wx.EVT_BUTTON, self.onOverrideSizes)
-        self.sizer_setting_diaginch.Add(st_diaginch_override, 0, wx.CENTER|wx.ALL, 5)
-        self.sizer_setting_diaginch.Add(self.button_override, 0, wx.CENTER|wx.BOTTOM, 20)
+        self.sizer_setting_diaginch.Add(st_diaginch_override, 0, wx.CENTER|wx.ALL, 2)
+        self.sizer_setting_diaginch.Add(self.button_override, 0, wx.CENTER|wx.BOTTOM, 5)
 
         # Bezels
         self.sizer_setting_bezels = wx.StaticBoxSizer(wx.VERTICAL, self, "Bezel Correction")
@@ -311,7 +311,7 @@ class WallpaperSettingsPanel(wx.Panel):
         self.cb_offsets.Bind(wx.EVT_CHECKBOX, self.onCheckboxOffsets)
         st_offsets = wx.StaticText(
             statbox_parent_offsets, -1,
-            "Manual wallpaper offsets/panning in pixels (x,y=px,px):"
+            "Manual offsets in pixels (x,y=px,px):"
         )
         st_offsets.Disable()
         self.sizer_setting_offsets.Add(self.cb_offsets, 0, wx.ALIGN_LEFT|wx.ALL, 5)
@@ -319,10 +319,14 @@ class WallpaperSettingsPanel(wx.Panel):
         tc_list_sizer_offs = wx.BoxSizer(wx.HORIZONTAL)
         self.tc_list_offsets = self.list_of_textctrl(statbox_parent_offsets, wpproc.NUM_DISPLAYS)
         for tc in self.tc_list_offsets:
+            st = wx.StaticText(statbox_parent_offsets, -1,
+                               str(self.tc_list_offsets.index(tc))+":")
+            tc_list_sizer_offs.Add(st, 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT|wx.TOP|wx.BOTTOM, 5)
             tc_list_sizer_offs.Add(tc, 0, wx.ALIGN_LEFT|wx.ALL, 5)
             tc.SetValue("0,0")
+            st.Disable()
             tc.Disable()
-        self.sizer_setting_offsets.Add(tc_list_sizer_offs, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        self.sizer_setting_offsets.Add(tc_list_sizer_offs, 0, wx.ALIGN_LEFT|wx.ALL, 0)
 
         # Add setting subsizers to the adv settings sizer
         self.sizer_setting_adv.Add(self.sizer_setting_diaginch, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
@@ -346,7 +350,7 @@ class WallpaperSettingsPanel(wx.Panel):
         diags = [str(dsp.diagonal_size()[1]) for dsp in self.display_sys.disp_list]
         # sizer for textctrls
         tc_list_sizer_diag = wx.BoxSizer(wx.HORIZONTAL)
-        self.tc_list_diaginch = self.list_of_textctrl(statbox_parent_diaginch, wpproc.NUM_DISPLAYS)
+        self.tc_list_diaginch = self.list_of_textctrl(statbox_parent_diaginch, wpproc.NUM_DISPLAYS, fraction=2/5)
         for tc, diag in zip(self.tc_list_diaginch, diags):
             tc_list_sizer_diag.Add(tc, 0, wx.ALIGN_LEFT|wx.ALL, 5)
             tc.ChangeValue(diag)
@@ -511,12 +515,12 @@ class WallpaperSettingsPanel(wx.Panel):
         self.profnames.append("Create a new profile")
         self.choice_profiles.SetItems(self.profnames)
 
-    def list_of_textctrl(self, ctrl_parent, num_disp):
+    def list_of_textctrl(self, ctrl_parent, num_disp, fraction = 1/2):
         tcrtl_list = []
         for i in range(num_disp):
             tcrtl_list.append(
                 wx.TextCtrl(ctrl_parent, -1,
-                    size=(self.tc_width/2, -1),
+                    size=(self.tc_width * fraction, -1),
                     style=wx.TE_RIGHT
                 )
             )
