@@ -316,7 +316,7 @@ class WallpaperSettingsPanel(wx.Panel):
         st_offsets.Disable()
         self.sizer_setting_offsets.Add(self.cb_offsets, 0, wx.ALIGN_LEFT|wx.ALL, 5)
         self.sizer_setting_offsets.Add(st_offsets, 0, wx.ALIGN_LEFT|wx.ALL, 5)
-        tc_list_sizer_offs = wx.BoxSizer(wx.HORIZONTAL)
+        tc_list_sizer_offs = wx.WrapSizer(wx.HORIZONTAL)
         self.tc_list_offsets = self.list_of_textctrl(statbox_parent_offsets, wpproc.NUM_DISPLAYS)
         for tc in self.tc_list_offsets:
             st = wx.StaticText(statbox_parent_offsets, -1,
@@ -349,7 +349,7 @@ class WallpaperSettingsPanel(wx.Panel):
         # diag size data for fields
         diags = [str(dsp.diagonal_size()[1]) for dsp in self.display_sys.disp_list]
         # sizer for textctrls
-        tc_list_sizer_diag = wx.BoxSizer(wx.HORIZONTAL)
+        tc_list_sizer_diag = wx.WrapSizer(wx.HORIZONTAL)
         self.tc_list_diaginch = self.list_of_textctrl(statbox_parent_diaginch, wpproc.NUM_DISPLAYS, fraction=2/5)
         for tc, diag in zip(self.tc_list_diaginch, diags):
             tc_list_sizer_diag.Add(tc, 0, wx.ALIGN_LEFT|wx.ALL, 5)
