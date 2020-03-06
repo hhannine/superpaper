@@ -829,7 +829,7 @@ class WallpaperSettingsPanel(wx.Panel):
         if saved_file:
             saved_profile = ProfileData(saved_file)
             self.parent_tray_obj.reload_profiles(event)
-            self.parent_tray_obj.start_profile(event, saved_profile)
+            self.parent_tray_obj.start_profile(event, saved_profile, force_reload=True)
         else:
             pass
 

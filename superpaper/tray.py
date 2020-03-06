@@ -312,7 +312,7 @@ New hotkeys are registered."
             else:
                 self.repeating_timer = run_profile_job(profile)
 
-    def start_profile(self, event, profile):
+    def start_profile(self, event, profile, force_reload = False):
         """
         Starts a profile job, i.e. runs a slideshow or a one time wallpaper change.
 
@@ -332,7 +332,7 @@ New hotkeys are registered."
                 sp_logging.G_LOGGER.info(
                     "name check: %s, %s",
                     profile.name, self.active_profile.name)
-            if profile.name == self.active_profile.name:
+            if profile.name == self.active_profile.name and not force_reload:
                 self.next_wallpaper(event)
                 return 0
             else:
