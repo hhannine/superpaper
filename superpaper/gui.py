@@ -317,7 +317,7 @@ class WallpaperSettingsPanel(wx.Panel):
         )
         st_offsets.Disable()
         self.sizer_setting_offsets.Add(self.cb_offsets, 0, wx.ALIGN_LEFT|wx.ALL, 5)
-        self.sizer_setting_offsets.Add(st_offsets, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        self.sizer_setting_offsets.Add(st_offsets, 0, wx.ALIGN_LEFT|wx.LEFT, 10)
         tc_list_sizer_offs = wx.WrapSizer(wx.HORIZONTAL)
         self.tc_list_offsets = self.list_of_textctrl(statbox_parent_offsets, wpproc.NUM_DISPLAYS)
         for tc in self.tc_list_offsets:
@@ -328,7 +328,7 @@ class WallpaperSettingsPanel(wx.Panel):
             tc.SetValue("0,0")
             st.Disable()
             tc.Disable()
-        self.sizer_setting_offsets.Add(tc_list_sizer_offs, 0, wx.ALIGN_LEFT|wx.ALL, 0)
+        self.sizer_setting_offsets.Add(tc_list_sizer_offs, 0, wx.ALIGN_LEFT|wx.LEFT, 5)
 
         # Add setting subsizers to the adv settings sizer
         self.sizer_setting_adv.Add(self.sizer_setting_diaginch, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
@@ -347,7 +347,7 @@ class WallpaperSettingsPanel(wx.Panel):
         )
         st_diaginch.Disable()
         self.sizer_setting_diaginch.Add(self.cb_diaginch, 0, wx.ALIGN_LEFT|wx.LEFT, 5)
-        self.sizer_setting_diaginch.Add(st_diaginch, 0, wx.ALIGN_LEFT|wx.LEFT, 5)
+        self.sizer_setting_diaginch.Add(st_diaginch, 0, wx.ALIGN_LEFT|wx.LEFT, 10)
         # diag size data for fields
         diags = [str(dsp.diagonal_size()[1]) for dsp in self.display_sys.disp_list]
         # sizer for textctrls
@@ -361,7 +361,7 @@ class WallpaperSettingsPanel(wx.Panel):
         self.button_diaginch_save.Bind(wx.EVT_BUTTON, self.onSaveDiagInch)
         tc_list_sizer_diag.Add(self.button_diaginch_save, 0, wx.ALL, 5)
         self.button_diaginch_save.Disable()
-        self.sizer_setting_diaginch.Add(tc_list_sizer_diag, 0, wx.ALIGN_LEFT|wx.ALL, 0)
+        self.sizer_setting_diaginch.Add(tc_list_sizer_diag, 0, wx.ALIGN_LEFT|wx.LEFT, 5)
         self.sizer_setting_adv.Layout()
         self.sizer_main.Fit(self.frame)
         # Check cb according to DisplaySystem 'use_user_diags'
