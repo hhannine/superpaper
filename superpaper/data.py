@@ -297,17 +297,25 @@ class ProfileData(object):
                     # Use PPI mode algorithm to do cuts.
                     # Defaults assume uniform pixel density
                     # if no custom values are given.
-                    self.ppimode = True
-                    self.manual_offsets = []
-                    self.manual_offsets_useronly = []
+                    offs = []
+                    offs_user_only = []
                     # w1,h1;w2,h2;...
                     offset_strings = words[1].strip().split(";")
                     for offstr in offset_strings:
                         res_str = offstr.split(",")
-                        self.manual_offsets.append((int(res_str[0]),
-                                                    int(res_str[1])))
-                        self.manual_offsets_useronly.append((int(res_str[0]),
-                                                             int(res_str[1])))
+                        try:
+                            offs.append((int(res_str[0]), int(res_str[1])))
+                            offs_user_only.append((int(res_str[0]),
+                                                   int(res_str[1])))
+                        except (ValueError, IndexError):
+                            offs.append((0, 0))
+                            offs_user_only.append((0, 0))
+                    while len(offs) < wpproc.NUM_DISPLAYS:
+                        offs.append((0, 0))
+                        offs_user_only.append((0, 0))
+                    self.ppimode = True
+                    self.manual_offsets = offs
+                    self.manual_offsets_useronly = offs_user_only
                 elif words[0] == "bezels":
                     bez_mm_strings = words[1].strip().split(";")
                     for bezstr in bez_mm_strings:
@@ -715,8 +723,8 @@ using decimal point and separated by semicolon ';'."
                 if self.is_list_offsets(self.manual_offsets):
                     pass
                 else:
-                    msg = "Display offsets must be given in width,height pixel \
-pairs and separated by semicolon ';'."
+                    msg = "Display offsets must be given in (width,height) pixel \
+pairs."
                     show_message_dialog(msg, "Error")
                     return False
             if self.bezels:
@@ -787,7 +795,7 @@ Valid modifiers are 'control', 'super', 'alt', 'shift'."
         try:
             for off_pair in list_input:
                 offset = off_pair.split(",")
-                if len(offset) > 2:
+                if len(offset) != 2:
                     return False
                 try:
                     val_w = int(offset[0])
