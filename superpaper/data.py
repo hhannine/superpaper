@@ -27,11 +27,19 @@ def list_profiles():
         try:
             profile_list.append(ProfileData(os.path.join(sp_paths.PROFILES_PATH, files[i])))
         except Exception as exep:  # TODO implement proper error catching for ProfileData init
-            msg = "There was an error when loading profile '{}'. Exiting.".format(files[i])
+            msg = ("There was an error when loading profile '{}'.\n".format(files[i])
+                   + "Would you like to delete it? Choosing 'No' will just ignore the profile."
+            )
             sp_logging.G_LOGGER.info(msg)
             sp_logging.G_LOGGER.info(exep)
-            show_message_dialog(msg, "Error")
-            exit()
+            res = show_message_dialog(msg, "Error", style="YES_NO")
+            if res:
+                # remove files[i]
+                print("removing:", os.path.join(sp_paths.PROFILES_PATH, files[i]))
+                os.remove(os.path.join(sp_paths.PROFILES_PATH, files[i]))
+                continue
+            else:
+                continue
         if sp_logging.DEBUG:
             sp_logging.G_LOGGER.info("Listed profile: %s", profile_list[i].name)
     return profile_list
@@ -334,6 +342,7 @@ class ProfileData(object):
                 else:
                     sp_logging.G_LOGGER.info("Unknown setting line in config: %s", line)
         except Exception as excep:
+            profile_file.close()
             raise ProfileDataException("There was an error parsing the profile:",
                                        self.name, self.file, excep)
         finally:
@@ -654,7 +663,7 @@ class TempProfileData(object):
     def test_save(self):
         """Tests whether the user input for profile settings is valid."""
         valid_profile = False
-        if self.name is not None and self.name.strip() is not "":
+        if self.name is not None and self.name.strip() != "":
             fname = os.path.join(PROFILES_PATH, self.name + ".deleteme")
             try:
                 testfile = open(fname, "w")
