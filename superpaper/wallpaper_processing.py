@@ -354,6 +354,8 @@ class DisplaySystem():
         for dsp in self.disp_list:
             if work_col == []:
                 work_col.append(dsp)
+                if dsp == self.disp_list[-1]:
+                    columns.append(work_col)
             else:
                 if self.fits_in_column(dsp, work_col):
                     work_col.append(dsp)
@@ -676,6 +678,9 @@ def get_display_data():
     RESOLUTION_ARRAY = []
     DISPLAY_OFFSET_ARRAY = []
     monitors = get_monitors()
+    while not monitors:
+        monitors = get_monitors()
+        sp_logging.G_LOGGER.info("Had to re-query for display data.")
     NUM_DISPLAYS = len(monitors)
 
     display_list = []
