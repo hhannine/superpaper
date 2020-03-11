@@ -1277,6 +1277,19 @@ for(var desktopIndex in desktops()) {{
     }}
 }}
 
+// sort the array based on the (vertical) desktop position
+var i = 1;
+while(i < desktopArray.length) {{
+    var j = i;
+    while(j > 0 && screenGeometry(desktopArray[j-1].screen).top > screenGeometry(desktopArray[j].screen).top) {{
+        var temp = desktopArray[j];
+        desktopArray[j] = desktopArray[j-1];
+        desktopArray[j-1] = temp;
+        j = j-1;
+    }}
+    i = i+1;
+}}
+
 // sort the array based on the (horizontal) desktop position
 var i = 1;
 while(i < desktopArray.length) {{
