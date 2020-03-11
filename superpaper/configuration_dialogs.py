@@ -373,61 +373,34 @@ class HelpPanel(wx.Panel):
         help_str = """
 How to use Superpaper:
 
-In the Profile Configuration you can adjust all your wallpaper settings.
-Only required options are name and wallpaper paths. Other application
+In the Wallpaper Configuration you can adjust all your wallpaper settings.
+Only required options are name and wallpaper source. Other application
 wide settings can be changed in the Settings menu. Both are accessible
 from the system tray menu.
 
 IMPORTANT NOTE: For the wallpapers to be set correctly, you must set
 in your OS the background fitting option to 'Span'.
 
-NOTE: If your displays are not in a horizontal row, the pixel density
-and offset corrections unfortunately do not work. In this case leave
-the 'Diagonal inches', 'Offsets' and 'Bezels' fields empty.
+Description of Wallpaper Configuration 'advanced span' options:
+        In advanced mode PPI and bezel corrections are applied
+        to the wallpaper.
 
-Description of Profile Configuration options:
-In the text field description an example is shown in parantheses and in
-brackets the expected units of numerical values.
+    - Display positions:
+            test1
+            test2
 
-"Diagonal inches": The diagonal diameters of your monitors in
-                                order starting from the left most monitor.
-                                These affect the wallpaper only in "Single"
-                                spanmode.
+    - Bezel correction:
+            1
+            2
 
-"Spanmode": "Single" (span a single image across all monitors)
-                    "Multi" (set a different image on every monitor.)
-
-"Sort":  Applies to slideshow mode wallpaper order.
-
-"Offsets":  Wallpaper alignment correction offsets for your displays
-                if using "Single" spanmode. Entered as "width,height"
-                pixel value pairs, pairs separated by a semicolon ";".
-                Positive offsets move the portion of the image on 
-                the monitor down and to the right, negative offets
-                up or left.
-
-"Bezels":   Bezel correction for "Single" spanmode wallpaper. Use this
-                if you want the image to continue behind the bezels,
-                like a scenery does behind a window frame. The expected
-                values are the combined widths in millimeters of the
-                two adjacent monitor bezels including a possible gap.
-
-"Hotkey":   An optional key combination to apply/start the profile.
-                Supports up to 3 modifiers and a key. Valid modifiers
-                are 'control', 'super', 'alt' and 'shift'. Separate
-                keys with a '+', like 'control+alt+w'.
-
-"display{N}paths":  Wallpaper folder paths for the display in the Nth
-                        position from the left. Multiple can be entered with
-                        the browse tool using "Add". If you have more than
-                        one vertically stacked row, they should be listed
-                        row by row starting from the top most row.
+    - Monitor size detection:
+            3
+            4
 
 Tips:
-- You can use the given example profiles as templates: just change
-    the name and whatever else, save, and its a new profile.
-- 'Align Test' feature allows you to test your offset and bezel settings.
-    Display diagonals, offsets and bezels need to be entered.
+        - You can use the given example profiles as templates: just change
+          the name and whatever else, save, and its a new profile.
+        - 'Align Test' feature allows you to test your offset and bezel settings.
 """
         st_help = wx.StaticText(self, -1, help_str)
         self.sizer_helpcontent.Add(st_help, 0, wx.EXPAND|wx.CENTER|wx.ALL, 5)

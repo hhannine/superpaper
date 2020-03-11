@@ -12,7 +12,7 @@ import superpaper.sp_logging as sp_logging
 import superpaper.sp_paths as sp_paths
 import superpaper.wallpaper_processing as wpproc
 from superpaper.gui import ConfigFrame
-from superpaper.configuration_dialogs import ProfileConfigFrame, SettingsFrame, HelpFrame
+from superpaper.configuration_dialogs import SettingsFrame, HelpFrame
 from superpaper.message_dialog import show_message_dialog
 from superpaper.data import (GeneralSettingsData,
                   list_profiles, read_active_profile, write_active_profile)
@@ -109,7 +109,7 @@ class TaskBarIcon(wx.adv.TaskBarIcon):
                     "WARNING: Could not import keyboard hotkey hook library, \
 hotkeys will not work. Exception: %s", excep)
         if self.g_settings.show_help is True:
-            config_frame = ProfileConfigFrame(self)
+            config_frame = ConfigFrame(self)
             help_frame = HelpFrame()
 
 
