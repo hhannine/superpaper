@@ -245,7 +245,6 @@ New hotkeys are registered."
         menu = wx.Menu()
         create_menu_item(menu, "Open Config Folder", self.open_config)
         create_menu_item(menu, "Wallpaper Configuration", self.configure_wallpapers)
-        create_menu_item(menu, "Profile Configuration", self.configure_profiles)
         create_menu_item(menu, "Settings", self.configure_settings)
         create_menu_item(menu, "Reload Profiles", self.reload_profiles)
         menu.AppendSeparator()
@@ -291,10 +290,6 @@ New hotkeys are registered."
     def configure_wallpapers(self, event):
         """Opens wallpaper configuration panel."""
         config_frame = ConfigFrame(self)
-
-    def configure_profiles(self, event):
-        """Opens profile configuration panel."""
-        config_frame = ProfileConfigFrame(self)
 
     def configure_settings(self, event):
         """Opens general settings panel."""
