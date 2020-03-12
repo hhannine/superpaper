@@ -73,6 +73,8 @@ if __name__ == "__main__":
         package_data={
             "superpaper": ["resources/superpaper.png",
                            "resources/test.png",
+                           "resources/icons8-merge-vertical-96.png",
+                           "resources/icons8-merge-horizontal-96.png",
                            "profiles/example.profile",
                            "profiles/example_multi.profile"
                           ]
