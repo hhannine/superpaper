@@ -373,34 +373,37 @@ class HelpPanel(wx.Panel):
         help_str = """
 How to use Superpaper:
 
-In the Wallpaper Configuration you can adjust all your wallpaper settings.
-Only required options are name and wallpaper source. Other application
-wide settings can be changed in the Settings menu. Both are accessible
-from the system tray menu.
+In the Wallpaper Configuration you can adjust all your wallpaper settings.  Other  application  wide
+settings  can be  changed in the  Settings menu.  Both  are  accessible from the  system tray menu.
 
-IMPORTANT NOTE: For the wallpapers to be set correctly, you must set
-in your OS the background fitting option to 'Span'.
+IMPORTANT NOTE: For the wallpapers to be set correctly, you must set in your OS the background
+fitting option to 'Span'.
 
 Description of Wallpaper Configuration 'advanced span' options:
-        In advanced mode PPI and bezel corrections are applied
-        to the wallpaper.
+    In advanced mode PPI and bezel corrections are applied to the wallpaper. The following settings
+    are used to configure this:
 
-    - Display positions:
-            test1
-            test2
+    - Physical display positions:
+            In 'advanced span' mode Superpaper corrects for different pixel densities between displays
+            and this means that to get a corretly  spanned image across  the monitor array,  the  relative
+            physical locations of the displays needs to be known.  A  configuration  is guessed but if your
+            monitors  are  arranged  in  another  way,  you  can  adjust  the  positions  of  the  displays  by
+            entering the 'Positions' tool and dragging the display previews.
 
     - Bezel correction:
-            1
-            2
+            Display bezel thicknesses and gaps can be taken into account when computing the wallpaper
+            span.  Enter bezel sizes by selecting  'Configure bezels'  in  Advanced  Wallpaper  Adjustment
+            subsection. Adjacent bezels and gap are added together.
 
-    - Monitor size detection:
-            3
-            4
+    - Display size detection:
+            To apply PPI correction Superpaper needs to know the physical sizes of your displays.  These
+            are  attempted to be detected  automatically.  If this fails,  you can enter  the  correct  values
+            under 'Display Diagonal Sizes'.
 
 Tips:
-        - You can use the given example profiles as templates: just change
-          the name and whatever else, save, and its a new profile.
-        - 'Align Test' feature allows you to test your offset and bezel settings.
+    - You can use the given example profiles as templates: just change the name and whatever else,
+      save, and its a new profile.
+    - 'Align Test' feature allows you to test your offset and bezel settings.
 """
         st_help = wx.StaticText(self, -1, help_str)
         self.sizer_helpcontent.Add(st_help, 0, wx.EXPAND|wx.CENTER|wx.ALL, 5)
