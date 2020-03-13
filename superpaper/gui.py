@@ -1908,7 +1908,7 @@ class WallpaperPreviewPanel(wx.Panel):
     #
 
     class BezelEntryPopup(wx.PopupTransientWindow):
-        """Adds a bit of text and mouse movement to the wx.PopupWindow"""
+        """Popup that is shown when a bezel button is pressed in bezel config."""
         def __init__(self, parent, style):
             wx.PopupTransientWindow.__init__(self, parent, style)
             self.preview = parent

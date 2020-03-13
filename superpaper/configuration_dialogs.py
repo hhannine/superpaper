@@ -428,3 +428,49 @@ Tips:
                 current_settings.show_help = False
                 current_settings.save_settings()
         self.frame.Close(True)
+
+
+
+class HelpPopup(wx.PopupTransientWindow):
+    """Popup to show a bit of static text"""
+    def __init__(self, parent, text,
+                 show_image_quality = False,
+                 advanced_span = False,
+                 style = wx.SIMPLE_BORDER):
+        wx.PopupTransientWindow.__init__(self, parent, style)
+        self.preview = parent
+        self.advanced_on = advanced_span
+        pnl = wx.Panel(self)
+        # pnl.SetBackgroundColour("CADET BLUE")
+
+        st = wx.StaticText(pnl, -1, text)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(st, 0, wx.ALL, 5)
+        if show_image_quality:
+            st_qual = wx.StaticText(pnl, -1, self.string_ideal_image_size())
+            sizer.Add(st_qual, 0, wx.ALL, 5)
+        pnl.SetSizer(sizer)
+        sizer.Fit(pnl)
+        sizer.Fit(self)
+        self.Layout()
+
+    def ProcessLeftDown(self, evt):
+        return wx.PopupTransientWindow.ProcessLeftDown(self, evt)
+
+    def string_ideal_image_size(self):
+        "Return a sentence what the minimum source image size is for best quality."
+        senten = (r"For the best image quality with current settings your"
+                  r" wallpapers should be {} or larger.")
+        if self.advanced_on:
+            # prof = self.preview.frame. TODO
+            offsets = prof.manual_offsets()
+            crops = self.preview.display_sys.get_ppi_norm_crops(offsets)
+            canv = wpproc.compute_working_canvas(crops)
+        else:
+            canv = wpproc.compute_canvas(
+                wpproc.RESOLUTION_ARRAY,
+                wpproc.DISPLAY_OFFSET_ARRAY
+            )
+        res_str = "{}x{}".format(canv[0], canv[1])
+        fin = senten.format(res_str)
+        return fin
