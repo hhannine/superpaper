@@ -439,14 +439,15 @@ class HelpPopup(wx.PopupTransientWindow):
                  style = wx.SIMPLE_BORDER):
         wx.PopupTransientWindow.__init__(self, parent, style)
         self.preview = parent
-        self.advanced_on = advanced_span
+        self.advanced_on = self.preview.frame.show_advanced_settings
+        self.show_image_quality = not self.preview.frame.use_multi_image
         pnl = wx.Panel(self)
         # pnl.SetBackgroundColour("CADET BLUE")
 
         st = wx.StaticText(pnl, -1, text)
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(st, 0, wx.ALL, 5)
-        if show_image_quality:
+        if self.show_image_quality:
             st_qual = wx.StaticText(pnl, -1, self.string_ideal_image_size())
             sizer.Add(st_qual, 0, wx.ALL, 5)
         pnl.SetSizer(sizer)
@@ -457,13 +458,28 @@ class HelpPopup(wx.PopupTransientWindow):
     def ProcessLeftDown(self, evt):
         return wx.PopupTransientWindow.ProcessLeftDown(self, evt)
 
+    def OnDismiss(self):
+        self.Destroy()
+
     def string_ideal_image_size(self):
         "Return a sentence what the minimum source image size is for best quality."
-        senten = (r"For the best image quality with current settings your"
+        senten = ("For the best image quality with current settings your\n"
                   r" wallpapers should be {} or larger.")
         if self.advanced_on:
-            # prof = self.preview.frame. TODO
-            offsets = prof.manual_offsets()
+            if self.preview.frame.cb_offsets.GetValue():
+                offsets = []
+                for tc in self.preview.frame.tc_list_offsets:
+                    off_str = tc.GetValue().split(",")
+                    try:
+                        offsets.append(
+                            (int(off_str[0]), int(off_str[1]))
+                        )
+                    except (ValueError, IndexError):
+                        offsets.append(
+                            (0, 0)
+                        )
+            else:
+                offsets = wpproc.NUM_DISPLAYS * [(0, 0)]
             crops = self.preview.display_sys.get_ppi_norm_crops(offsets)
             canv = wpproc.compute_working_canvas(crops)
         else:

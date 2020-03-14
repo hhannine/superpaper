@@ -7,7 +7,7 @@ from PIL import Image, ImageEnhance
 
 import superpaper.sp_logging as sp_logging
 import superpaper.wallpaper_processing as wpproc
-from superpaper.configuration_dialogs import BrowsePaths, HelpFrame
+from superpaper.configuration_dialogs import BrowsePaths, HelpFrame, HelpPopup
 from superpaper.data import GeneralSettingsData, ProfileData, TempProfileData, CLIProfileData, list_profiles
 from superpaper.message_dialog import show_message_dialog
 from superpaper.sp_paths import PATH, CONFIG_PATH, PROFILES_PATH
@@ -1460,11 +1460,15 @@ class WallpaperPreviewPanel(wx.Panel):
         self.button_save = wx.Button(self, label="Save")
         self.button_reset = wx.Button(self, label="Reset")
         self.button_cancel = wx.Button(self, label="Cancel")
+        help_bmp =  wx.ArtProvider.GetBitmap(wx.ART_QUESTION, wx.ART_BUTTON, (16, 16))
+        self.button_help = wx.BitmapButton(self, bitmap=help_bmp, name="butt_help")
+
 
         self.button_config.Bind(wx.EVT_BUTTON, self.onConfigure)
         self.button_save.Bind(wx.EVT_BUTTON, self.onSave)
         self.button_reset.Bind(wx.EVT_BUTTON, self.onReset)
         self.button_cancel.Bind(wx.EVT_BUTTON, self.onCancel)
+        self.button_help.Bind(wx.EVT_BUTTON, self.onHelp)
 
         self.move_buttons()
 
@@ -1477,6 +1481,7 @@ class WallpaperPreviewPanel(wx.Panel):
         """Position display config buttons to bottom right corner."""
         sz_area = self.GetSize()
         sz_butt = self.button_config.GetDefaultSize()
+        sz_help = self.button_help.GetSize()
         self.butt_gap = 10
         self.button_config.SetPosition(
             (
@@ -1500,6 +1505,12 @@ class WallpaperPreviewPanel(wx.Panel):
             (
                 sz_area[0] - sz_butt[0] - self.butt_gap,
                 sz_area[1] - sz_butt[1] - self.butt_gap
+            )
+        )
+        self.button_help.SetPosition(
+            (
+                sz_area[0] - sz_help[0] - self.butt_gap,
+                self.butt_gap
             )
         )
 
@@ -1568,6 +1579,22 @@ class WallpaperPreviewPanel(wx.Panel):
         self.full_refresh_preview(True, True, False)
         self.show_staticbmps(True)
         self.frame.toggle_radio_and_profile_choice(True)
+
+    def onHelp(self, evt):
+        """Popup a help dialog."""
+        text = ("Preview of your wallpaper settings.\n"
+                "In 'advanced span' mode you need use the 'Positions'\n"
+                "tool to move the display previews by dragging to\n"
+                "as accurately as possible represent the actual\n"
+                "positions of you displays on your desk."
+        )
+        pop = HelpPopup(self, text, show_image_quality = True)
+        btn = evt.GetEventObject()
+        pos = btn.ClientToScreen( (0,0) )
+        sz =  btn.GetSize()
+        pop.Position(pos, (0, sz[1]))
+        pop.Popup()
+
 
 
     def show_staticbmps(self, show):
