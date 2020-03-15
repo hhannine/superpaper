@@ -206,9 +206,15 @@ class WallpaperSettingsPanel(wx.Panel):
         st_hotkey_bind.Disable()
         self.tc_hotkey_bind = wx.TextCtrl(statbox_parent_hkey, -1, size=(self.tc_width, -1))
         self.tc_hotkey_bind.Disable()
+        self.tc_hotkey_bind.SetToolTip(wx.ToolTip("Modifiers: control, alt, shift, super.\nExample: control+super+x"))
         self.hotkey_bind_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.hotkey_bind_sizer.Add(st_hotkey_bind, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
         self.hotkey_bind_sizer.Add(self.tc_hotkey_bind, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        help_bmp =  wx.ArtProvider.GetBitmap(wx.ART_QUESTION, wx.ART_BUTTON, (16, 16))
+        self.button_help_hotkey = wx.BitmapButton(statbox_parent_hkey, bitmap=help_bmp, name="butt_help_hk")
+        self.button_help_hotkey.Bind(wx.EVT_BUTTON, self.onHelpHotkey)
+        self.button_help_hotkey.Disable()
+        self.hotkey_bind_sizer.Add(self.button_help_hotkey, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
         self.sizer_setting_hotkey.Add(self.cb_hotkey, 0, wx.ALIGN_LEFT|wx.ALL, 5)
         self.sizer_setting_hotkey.Add(self.hotkey_bind_sizer, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
         self.cb_hotkey.Bind(wx.EVT_CHECKBOX, self.onCheckboxHotkey)
@@ -1029,6 +1035,20 @@ class WallpaperSettingsPanel(wx.Panel):
     def onHelp(self, event):
         """Open help dialog."""
         help_frame = HelpFrame()
+
+    def onHelpHotkey(self, evt):
+        """Popup hotkey help."""
+        text = ("Bind a hotkey to start this profile. Choose max 3\n"
+                "modfiers out of: control, alt, shift, super(=win).\n"
+                "Example: control+super+x"
+        )
+        pop = HelpPopup(self, text)
+        btn = evt.GetEventObject()
+        pos = btn.ClientToScreen( (0,0) )
+        sz =  btn.GetSize()
+        pop.Position(pos, (0, sz[1]))
+        pop.Popup()
+
 
 
 

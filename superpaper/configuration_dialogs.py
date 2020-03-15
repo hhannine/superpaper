@@ -436,11 +436,15 @@ class HelpPopup(wx.PopupTransientWindow):
     def __init__(self, parent, text,
                  show_image_quality = False,
                  advanced_span = False,
-                 style = wx.SIMPLE_BORDER):
+                 style = wx.BORDER_DEFAULT):
         wx.PopupTransientWindow.__init__(self, parent, style)
         self.preview = parent
-        self.advanced_on = self.preview.frame.show_advanced_settings
-        self.show_image_quality = not self.preview.frame.use_multi_image
+        if show_image_quality:
+            self.advanced_on = self.preview.frame.show_advanced_settings
+            self.show_image_quality = not self.preview.frame.use_multi_image
+        else:
+            self.advanced_on = False
+            self.show_image_quality = False
         pnl = wx.Panel(self)
         # pnl.SetBackgroundColour("CADET BLUE")
 
