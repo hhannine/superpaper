@@ -296,21 +296,25 @@ class WallpaperSettingsPanel(wx.Panel):
         # self.sizer_setting_bezels.Add(self.cb_bezels, 0, wx.ALIGN_LEFT|wx.LEFT, 5)
 
         self.sizer_bezel_buttons = wx.BoxSizer(wx.HORIZONTAL)
-        self.button_bezels = wx.Button(statbox_parent_bezels, -1, label="Configure bezels")
+        self.button_bezels = wx.Button(statbox_parent_bezels, -1, label="Configure")
         self.button_bezels_save = wx.Button(statbox_parent_bezels, -1, label="Save bezels")
         self.button_bezels_canc = wx.Button(statbox_parent_bezels, -1, label="Cancel")
         self.button_bezels.Bind(wx.EVT_BUTTON, self.onConfigureBezels)
         self.button_bezels_save.Bind(wx.EVT_BUTTON, self.onConfigureBezelsSave)
         self.button_bezels_canc.Bind(wx.EVT_BUTTON, self.onConfigureBezelsCanc)
-        self.sizer_bezel_buttons.Add(self.button_bezels, 0, wx.ALIGN_CENTER_HORIZONTAL|
-                                                            wx.RESERVE_SPACE_EVEN_IF_HIDDEN|wx.ALL, 10)
-        self.sizer_bezel_buttons.Add(self.button_bezels_save, 0, wx.ALIGN_CENTER_HORIZONTAL|
-                                                                 wx.RESERVE_SPACE_EVEN_IF_HIDDEN|
-                                                                 wx.TOP|wx.BOTTOM, 10)
-        self.sizer_bezel_buttons.Add(self.button_bezels_canc, 0, wx.ALIGN_CENTER_HORIZONTAL|
-                                                                 wx.RESERVE_SPACE_EVEN_IF_HIDDEN|wx.ALL, 10)
+        help_bmp =  wx.ArtProvider.GetBitmap(wx.ART_QUESTION, wx.ART_BUTTON, (16, 16))
+        self.button_help_bezel = wx.BitmapButton(statbox_parent_bezels, bitmap=help_bmp, name="butt_help_bez")
+        self.button_help_bezel.Bind(wx.EVT_BUTTON, self.onHelpBezels)
+
+        self.sizer_bezel_buttons.Add(self.button_bezels, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 10)
+        self.sizer_bezel_buttons.Add(self.button_bezels_save, 0, wx.ALIGN_CENTER_VERTICAL|wx.TOP|wx.BOTTOM, 10)
+        self.sizer_bezel_buttons.Add(self.button_bezels_canc, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 10)
+        self.sizer_bezel_buttons.Add(self.button_help_bezel, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 10)
         self.sizer_setting_bezels.Add(self.sizer_bezel_buttons, 1, wx.EXPAND, 0)
         # self.button_bezels.Disable()
+        self.button_bezels_save.Disable()
+        self.button_bezels_canc.Disable()
+        # self.button_help_bezel.Disable()
 
         # Offsets
         self.sizer_setting_offsets = wx.StaticBoxSizer(wx.VERTICAL, self, "Manual Display Offsets")
@@ -580,11 +584,14 @@ class WallpaperSettingsPanel(wx.Panel):
         save and cancel buttons.
         enable_config_butt optional controls whether the config button should be
         enabled/disabled."""
-        self.sizer_bezel_buttons.Show(self.button_bezels, show=not bezel_mode)
-        self.sizer_bezel_buttons.Show(self.button_bezels_save, show=bezel_mode)
-        self.sizer_bezel_buttons.Show(self.button_bezels_canc, show=bezel_mode)
-        self.sizer_bezel_buttons.Layout()
+        # self.sizer_bezel_buttons.Show(self.button_bezels, show=not bezel_mode)
+        # self.sizer_bezel_buttons.Show(self.button_bezels_save, show=bezel_mode)
+        # self.sizer_bezel_buttons.Show(self.button_bezels_canc, show=bezel_mode)
+        # self.sizer_bezel_buttons.Layout()
         self.button_bezels.Enable(enable_config_butt)
+        self.button_bezels_save.Enable(bezel_mode)
+        self.button_bezels_canc.Enable(bezel_mode)
+        self.button_help_bezel.Enable(True)
 
     def refresh_path_listctrl(self, mult_img_bool):
         self.path_listctrl.Destroy()
@@ -781,25 +788,25 @@ class WallpaperSettingsPanel(wx.Panel):
         """Start bezel size config mode."""
         self.toggle_radio_and_profile_choice(False)
         self.wpprev_pnl.start_bezel_config()
-        self.button_bezels.Hide()
-        self.button_bezels_save.Show()
-        self.button_bezels_canc.Show()
+        self.button_bezels.Disable()
+        self.button_bezels_save.Enable()
+        self.button_bezels_canc.Enable()
 
     def onConfigureBezelsSave(self, event):
         """Save out of bezel size config mode."""
         self.toggle_radio_and_profile_choice(True)
         self.wpprev_pnl.bezel_config_save()
-        self.button_bezels_save.Hide()
-        self.button_bezels_canc.Hide()
-        self.button_bezels.Show()
+        self.button_bezels_save.Disable()
+        self.button_bezels_canc.Disable()
+        self.button_bezels.Enable()
 
     def onConfigureBezelsCanc(self, event):
         """Cancel out of bezel size config mode."""
         self.toggle_radio_and_profile_choice(True)
         self.wpprev_pnl.bezel_config_cancel()
-        self.button_bezels_save.Hide()
-        self.button_bezels_canc.Hide()
-        self.button_bezels.Show()
+        self.button_bezels_save.Disable()
+        self.button_bezels_canc.Disable()
+        self.button_bezels.Enable()
 
     def onBrowsePaths(self, event):
         """Opens the pick paths dialog."""
@@ -1049,6 +1056,21 @@ class WallpaperSettingsPanel(wx.Panel):
         pop.Position(pos, (0, sz[1]))
         pop.Popup()
 
+    def onHelpBezels(self, evt):
+        """Popup bezel config help."""
+        text = ("Configure your bezels in the wallpaper preview\n"
+                "panel with the buttons placed at the right and\n"
+                "bottom edges of displays. Bezels between displays\n"
+                "are meaningful. Adjacent bezel pair thicknesses are\n"
+                "grouped together with the gap in between to a single\n"
+                "number."
+        )
+        pop = HelpPopup(self, text)
+        btn = evt.GetEventObject()
+        pos = btn.ClientToScreen( (0,0) )
+        sz =  btn.GetSize()
+        pop.Position(pos, (0, sz[1]))
+        pop.Popup()
 
 
 
@@ -1544,6 +1566,7 @@ class WallpaperPreviewPanel(wx.Panel):
     def onConfigure(self, evt):
         """Start diplay position config mode."""
         self.frame.toggle_radio_and_profile_choice(False)
+        self.frame.toggle_bezel_buttons(False, False)
         self.config_mode = True
         self.toggle_buttons(False, True)
         self.show_staticbmps(False)
@@ -1567,6 +1590,7 @@ class WallpaperPreviewPanel(wx.Panel):
             self.show_staticbmps(True)
         self.draggable_shapes = []  # Destroys DragShapes
         self.frame.toggle_radio_and_profile_choice(True)
+        self.frame.toggle_bezel_buttons(False, True)
 
     def onReset(self, evt):
         """Reset Display preview positions to the initial guess."""
@@ -1599,6 +1623,7 @@ class WallpaperPreviewPanel(wx.Panel):
         self.full_refresh_preview(True, True, False)
         self.show_staticbmps(True)
         self.frame.toggle_radio_and_profile_choice(True)
+        self.frame.toggle_bezel_buttons(False, True)
 
     def onHelp(self, evt):
         """Popup a help dialog."""
