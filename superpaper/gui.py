@@ -1882,6 +1882,9 @@ class WallpaperPreviewPanel(wx.Panel):
             butts = []
             butt_rb = wx.BitmapButton(self, bitmap=rb_bmp, name="butt_bez_r")
             butt_bb = wx.BitmapButton(self, bitmap=bb_bmp, name="butt_bez_b")
+            bez_butt_color = wx.Colour(41, 47, 52)
+            butt_rb.SetBackgroundColour(bez_butt_color)
+            butt_bb.SetBackgroundColour(bez_butt_color)
             self.bez_butt_sz = butt_rb.GetSize()
             pos_rb, pos_bb = self.bezel_button_positions(st_bmp)
             butt_rb.SetPosition((pos_rb[0], pos_rb[1]))
