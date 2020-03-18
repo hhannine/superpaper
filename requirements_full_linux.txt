@@ -1,4 +1,4 @@
-Pillow>=6.0.0
+Pillow>=7.0.0
 screeninfo>=0.6.1
 system_hotkey>=1.0
 xcffib>=0.8.0

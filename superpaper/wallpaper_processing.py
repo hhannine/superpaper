@@ -745,8 +745,15 @@ def compute_ppi_corrected_res_array(res_array, ppi_list_rel_density):
 
 # resize image to fill given rectangle and do a centered crop to size.
 # Return output image.
-def resize_to_fill(img, res):
+def resize_to_fill(img, res, quality=Image.LANCZOS):
     """Resize image to fill given rectangle and do a centered crop to size."""
+    if quality == "fast":
+        quality = Image.HAMMING
+        reducing_gap = 1.5
+    else:
+        quality = Image.LANCZOS
+        reducing_gap = None
+
     image_size = img.size  # returns image (width,height)
     if image_size == res:
         # input image is already of the correct size, no action needed.
@@ -760,7 +767,7 @@ def resize_to_fill(img, res):
         new_size = (
             round(resize_multiplier * image_size[0]),
             round(resize_multiplier * image_size[1]))
-        img = img.resize(new_size, resample=Image.LANCZOS)
+        img = img.resize(new_size, resample=quality, reducing_gap=reducing_gap)
         # crop vertically to target height
         extra_height = new_size[1] - res[1]
         if extra_height < 0:
@@ -791,7 +798,7 @@ def resize_to_fill(img, res):
         new_size = (
             round(resize_multiplier * image_size[0]),
             round(resize_multiplier * image_size[1]))
-        img = img.resize(new_size, resample=Image.LANCZOS)
+        img = img.resize(new_size, resample=quality, reducing_gap=reducing_gap)
         # crop horizontally to target width
         extra_width = new_size[0] - res[0]
         if extra_width < 0:

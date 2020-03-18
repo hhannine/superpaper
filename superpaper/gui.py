@@ -75,9 +75,9 @@ class WallpaperSettingsPanel(wx.Panel):
         # self.sizer_top_half.SetMinSize()
         self.wpprev_pnl.Bind(wx.EVT_SIZE, self.onResize)
         self.wpprev_pnl.Bind(wx.EVT_IDLE, self.onIdle)
-        
+
         # bottom half
-        
+
         # profile sizer contents
         self.create_sizer_profiles()
 
@@ -746,7 +746,13 @@ class WallpaperSettingsPanel(wx.Panel):
             target_h = self.tsize[1]
             target_w = target_h*w2h_ratio
             pos = (round((target_h - target_w)/2), 0)
-        bmp = wximg.Scale(target_w, target_h).Resize(self.tsize, pos).ConvertToBitmap()
+        bmp = wximg.Scale(
+            target_w,
+            target_h,
+            quality=wx.IMAGE_QUALITY_BOX_AVERAGE
+            ).Resize(
+                self.tsize, pos
+            ).ConvertToBitmap()
         return bmp
 
     def populate_lc_browse(self, pathslist, imglist):
@@ -1323,9 +1329,9 @@ class WallpaperPreviewPanel(wx.Panel):
                 st_bmp.Show()
         self.draw_monitor_numbers(use_ppi_px)
 
-    def resize_and_bitmap(self, fname, size, enhance_color = False):
+    def resize_and_bitmap(self, fname, size, enhance_color=False):
         """Take filename of an image and resize and center crop it to size."""
-        pil = resize_to_fill(Image.open(fname), size)
+        pil = resize_to_fill(Image.open(fname), size, quality="fast")
         img = wx.Image(pil.size[0], pil.size[1])
         img.SetData(pil.convert("RGB").tobytes())
         if enhance_color:

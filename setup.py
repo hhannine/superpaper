@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
         # python_requires="~=3.5",
         install_requires=[
-            "Pillow>=6.0.0",
+            "Pillow>=7.0.0",
             "screeninfo>=0.6.1",
             "system_hotkey>=1.0.3",
             "xcffib>=0.8.0",

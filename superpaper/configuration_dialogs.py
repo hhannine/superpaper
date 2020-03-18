@@ -168,7 +168,12 @@ class BrowsePaths(wx.Dialog):
             target_h = self.tsize[1]
             target_w = target_h*w2h_ratio
             pos = (round((target_h - target_w)/2), 0)
-        bmp = wximg.Scale(target_w, target_h).Resize(self.tsize, pos).ConvertToBitmap()
+        bmp = wximg.Scale(target_w,
+                          target_h,
+                          quality=wx.IMAGE_QUALITY_BOX_AVERAGE
+                         ).Resize(self.tsize,
+                                  pos
+                                 ).ConvertToBitmap()
         return bmp
 
     #
@@ -179,7 +184,7 @@ class BrowsePaths(wx.Dialog):
         """Adds selected path to export field."""
         path_data_tuples = []
         sel_path = self.dir3.GetPath()
-        # self.dir3.GetPaths(paths) # could use this to be more efficient but it does not will the list
+        # self.dir3.GetPaths(paths) # more efficient but couldn't get to work
         if self.use_multi_image:
             # Extra column in advanced mode
             disp_id = str(self.radiobox_displays.GetSelection())
