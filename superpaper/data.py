@@ -244,6 +244,7 @@ class ProfileData(object):
         self.bezels = []
         self.bezel_px_offsets = []
         self.hk_binding = None
+        self.perspective = "default"
         self.paths_array = []
 
         self.parse_profile(self.file)
@@ -343,6 +344,10 @@ class ProfileData(object):
                     self.hk_binding = tuple(binding_strings)
                     if sp_logging.DEBUG:
                         sp_logging.G_LOGGER.info("hkBinding: %s", self.hk_binding)
+                elif words[0] == "perspective":
+                    self.perspective = words[1].strip()
+                    if sp_logging.DEBUG:
+                        sp_logging.G_LOGGER.info("perspective preset: %s", self.perspective)
                 elif words[0].startswith("display"):
                     paths = words[1].strip().split(";")
                     paths = list(filter(None, paths))  # drop empty strings
@@ -628,6 +633,7 @@ class TempProfileData(object):
         self.manual_offsets = None
         self.bezels = None
         self.hk_binding = None
+        self.perspective = None
         self.paths_array = []
 
     def save(self):
@@ -657,6 +663,8 @@ class TempProfileData(object):
                 tpfile.write("bezels=" + str(self.bezels) + "\n")
             if self.hk_binding:
                 tpfile.write("hotkey=" + str(self.hk_binding) + "\n")
+            if self.perspective:
+                tpfile.write("perspective=" + str(self.perspective) + "\n")
             if self.paths_array:
                 for paths in self.paths_array:
                     tpfile.write("display" + str(self.paths_array.index(paths))

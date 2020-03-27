@@ -979,7 +979,8 @@ def span_single_image_advanced(profile):
     manual_offsets = profile.manual_offsets
     cropped_images = []
     crop_tuples = G_ACTIVE_DISPLAYSYSTEM.get_ppi_norm_crops(manual_offsets)
-    if G_ACTIVE_DISPLAYSYSTEM.use_perspective:
+    if G_ACTIVE_DISPLAYSYSTEM.use_perspective and profile.perspective is not None:
+        # get_data(profile.perspective) TODO
         proj_plane_crops, persp_coeffs = persp.get_backprojected_display_system()
         # Canvas containing back-projected displays
         canvas_tuple_proj = tuple(compute_working_canvas(proj_plane_crops))

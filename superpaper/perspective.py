@@ -42,10 +42,8 @@ def get_backprojected_display_system(display_system=None, plot=False):
     sizes = [(crp[2] - crp[0], crp[3] - crp[1]) for crp in crops]
     swivels = (
         ("right", 0*pi/8, (0, 0)),
-        # ("left", -pi/20, (0, 0))
-        # ("left", 1*pi/8, (0, 0))
-        # ("left", -1*pi/16, (0, 0))
-        ("left", 2.8*pi/8, (0, 0))
+        # ("left", 0*pi/16, (0, 0))
+        ("left", 1.8*pi/8, (0, 0))
     )
     tilts = (
         # (0/360 * 2*pi, (0, 0)),
