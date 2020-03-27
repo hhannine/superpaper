@@ -19,6 +19,7 @@ from threading import Lock, Thread, Timer
 from PIL import Image
 from screeninfo import get_monitors
 
+import superpaper.perspective as persp
 import superpaper.sp_logging as sp_logging
 from superpaper.message_dialog import show_message_dialog
 from superpaper.sp_paths import CONFIG_PATH, TEMP_PATH
@@ -245,8 +246,8 @@ class DisplaySystem():
 
         # Data
         self.use_user_diags = False
+        self.use_perspective = False
 
-        # self.update_bezels([(10, 20), (15, 0)]) # TODO usage in load
         self.load_system()
 
         # if user diags are not entered, tell about failed physical sizes
@@ -840,9 +841,9 @@ def get_all_centers(resarr_eff, manual_offsets):
     center_standard_height = get_center(resarr_eff[0])[1]
     if len(manual_offsets) < len(resarr_eff):
         sp_logging.G_LOGGER.info("get_all_centers: Not enough manual offsets: \
-                      %s for displays: %s",
-                      len(manual_offsets),
-                      len(resarr_eff))
+                                 %s for displays: %s",
+                                 len(manual_offsets),
+                                 len(resarr_eff))
     else:
         for i in range(len(resarr_eff)):
             horiz_radius = get_horizontal_radius(resarr_eff[i])
@@ -978,22 +979,49 @@ def span_single_image_advanced(profile):
     manual_offsets = profile.manual_offsets
     cropped_images = []
     crop_tuples = G_ACTIVE_DISPLAYSYSTEM.get_ppi_norm_crops(manual_offsets)
-    # larger working size needed to fill all the normalized lower density
-    # displays. Takes account manual offsets that might require extra space.
-    canvas_tuple_eff = tuple(compute_working_canvas(crop_tuples))
-    # Image is now the height of the eff tallest display + possible manual
-    # offsets and the width of the combined eff widths + possible manual
-    # offsets.
-    img_workingsize = resize_to_fill(img, canvas_tuple_eff)
-    # Simultaneously make crops at working size and then resize down to actual
-    # resolution from RESOLUTION_ARRAY as needed.
-    for crop_tup, res in zip(crop_tuples, RESOLUTION_ARRAY):
-        crop_img = img_workingsize.crop(crop_tup)
-        if crop_img.size == res:
-            cropped_images.append(crop_img)
-        else:
+    if G_ACTIVE_DISPLAYSYSTEM.use_perspective:
+        proj_plane_crops, persp_coeffs = persp.get_backprojected_display_system()
+        # Canvas containing back-projected displays
+        canvas_tuple_proj = tuple(compute_working_canvas(proj_plane_crops))
+        # Canvas containing ppi normalized displays
+        canvas_tuple_trgt = tuple(compute_working_canvas(crop_tuples))
+        print("EFF", canvas_tuple_proj)
+        img_workingsize = resize_to_fill(img, canvas_tuple_proj)
+        for crop_tup, coeffs, ppin_crop, res in zip(proj_plane_crops,
+                                                    persp_coeffs,
+                                                    crop_tuples,
+                                                    RESOLUTION_ARRAY):
+            # Whole image needs to be transformed for each display separately
+            # since the coeffs live between the full back-projected plane
+            # containing all displays and the full 'target' working canvas
+            # size canvas_tuple_trgt containing ppi normalized displays.
+            persp_crop = img_workingsize.transform(canvas_tuple_trgt,
+                                                   Image.PERSPECTIVE, coeffs,
+                                                   Image.BICUBIC)
+            ## persp_crop.save(str(canvas_tuple_trgt)+str(crop_tup), "PNG")
+            # Crop desired region from transformed image which is now in
+            # ppi normalized resolution
+            crop_img = persp_crop.crop(ppin_crop)
+            # Resize correct crop to actual display resolution
             crop_img = crop_img.resize(res, resample=Image.LANCZOS)
             cropped_images.append(crop_img)
+    else:
+        # larger working size needed to fill all the normalized lower density
+        # displays. Takes account manual offsets that might require extra space.
+        canvas_tuple_eff = tuple(compute_working_canvas(crop_tuples))
+        # Image is now the height of the eff tallest display + possible manual
+        # offsets and the width of the combined eff widths + possible manual
+        # offsets.
+        img_workingsize = resize_to_fill(img, canvas_tuple_eff)
+        # Simultaneously make crops at working size and then resize down to actual
+        # resolution from RESOLUTION_ARRAY as needed.
+        for crop_tup, res in zip(crop_tuples, RESOLUTION_ARRAY):
+            crop_img = img_workingsize.crop(crop_tup)
+            if crop_img.size == res:
+                cropped_images.append(crop_img)
+            else:
+                crop_img = crop_img.resize(res, resample=Image.LANCZOS)
+                cropped_images.append(crop_img)
     # Combine crops to a single canvas of the size of the actual desktop
     # actual combined size of the display resolutions
     canvas_tuple_fin = tuple(compute_canvas(RESOLUTION_ARRAY, DISPLAY_OFFSET_ARRAY))
