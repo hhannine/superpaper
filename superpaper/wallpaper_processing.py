@@ -591,8 +591,8 @@ class DisplaySystem():
             bezel_mms = [(round(bez[0], 2), round(bez[1], 2)) for bez in bezel_mms]
             diagonal_inches = str_to_list(instance_data["user_diagonal_inches"],
                                           item_len=1)
-            use_perspective = bool(int(instance_data["use_perspective"]))
-            def_perspective = instance_data["def_perspective"]
+            use_perspective = bool(int(instance_data.get("use_perspective", 0)))
+            def_perspective = instance_data.get("def_perspective", "None")
             sp_logging.G_LOGGER.info(
                 "DisplaySystem loaded: P.N.Offs: %s, "
                 "bezel_mmṣ: %s, "

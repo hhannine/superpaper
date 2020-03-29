@@ -235,6 +235,46 @@ class BrowsePaths(wx.Dialog):
 
 
 
+
+
+class PerspectiveConfig(wx.Dialog):
+    """Perspective data configuration dialog."""
+    def __init__(self, parent):
+        wx.Dialog.__init__(self, parent, -1,
+                           'Configure wallpaper perspective rotations',
+                           size=(750, 850))
+        self.display_sys = parent.display_sys
+
+        sizer_main = wx.BoxSizer(wx.VERTICAL)
+        sizer_common = wx.BoxSizer(wx.VERTICAL)
+        sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
+
+        # Buttons
+        self.button_add = wx.Button(self, label="Add source")
+        self.button_remove = wx.Button(self, label="Remove source")
+        self.button_ok = wx.Button(self, label="Ok")
+        self.button_cancel = wx.Button(self, label="Cancel")
+
+        # self.button_add.Bind(wx.EVT_BUTTON, self.onAdd)
+        # self.button_remove.Bind(wx.EVT_BUTTON, self.onRemove)
+        # self.button_ok.Bind(wx.EVT_BUTTON, self.onOk)
+        # self.button_cancel.Bind(wx.EVT_BUTTON, self.onCancel)
+
+        sizer_buttons.Add(self.button_add, 0, wx.CENTER|wx.ALL, 5)
+        sizer_buttons.Add(self.button_remove, 0, wx.CENTER|wx.ALL, 5)
+        sizer_buttons.AddStretchSpacer()
+        sizer_buttons.Add(self.button_ok, 0, wx.CENTER|wx.ALL, 5)
+        sizer_buttons.Add(self.button_cancel, 0, wx.CENTER|wx.ALL, 5)
+
+        sizer_main.Add(sizer_common, 1, wx.ALL|wx.ALIGN_CENTER|wx.EXPAND)
+        sizer_main.Add(sizer_buttons, 0, wx.ALL|wx.EXPAND, 5)
+        self.SetSizer(sizer_main)
+        self.SetAutoLayout(True)
+
+
+
+
+
 class SettingsFrame(wx.Frame):
     """Settings dialog frame."""
     def __init__(self, parent_tray_obj):
@@ -340,6 +380,10 @@ class SettingsPanel(wx.Panel):
         self.frame.Close(True)
 
 
+
+
+
+
 class HelpFrame(wx.Frame):
     """Help dialog frame."""
     def __init__(self):
@@ -433,6 +477,7 @@ Tips:
                 current_settings.show_help = False
                 current_settings.save_settings()
         self.frame.Close(True)
+
 
 
 

@@ -7,7 +7,7 @@ from PIL import Image, ImageEnhance
 
 import superpaper.sp_logging as sp_logging
 import superpaper.wallpaper_processing as wpproc
-from superpaper.configuration_dialogs import BrowsePaths, HelpFrame, HelpPopup
+from superpaper.configuration_dialogs import BrowsePaths, PerspectiveConfig, HelpFrame, HelpPopup
 from superpaper.data import GeneralSettingsData, ProfileData, TempProfileData, CLIProfileData, list_profiles
 from superpaper.message_dialog import show_message_dialog
 from superpaper.sp_paths import PATH, CONFIG_PATH, PROFILES_PATH
@@ -382,17 +382,21 @@ class WallpaperSettingsPanel(wx.Panel):
     def create_sizer_bottom_buttonrow(self):
         self.button_help = wx.Button(self, label="Help")
         self.button_align_test = wx.Button(self, label="Align Test")
+        self.button_perspectives = wx.Button(self, label="Perspectives")
         self.button_apply = wx.Button(self, label="Apply")
         self.button_close = wx.Button(self, label="Close")
 
         self.button_apply.Bind(wx.EVT_BUTTON, self.onApply)
         self.button_align_test.Bind(wx.EVT_BUTTON, self.onAlignTest)
+        self.button_perspectives.Bind(wx.EVT_BUTTON, self.onPerspectives)
         self.button_help.Bind(wx.EVT_BUTTON, self.onHelp)
         self.button_close.Bind(wx.EVT_BUTTON, self.onClose)
 
         self.sizer_bottom_buttonrow.Add(self.button_help, 0, wx.ALIGN_LEFT|wx.ALL, 5)
         self.sizer_bottom_buttonrow.Add(self.button_align_test, 0, wx.ALIGN_LEFT|wx.ALL, 5)
         self.sizer_bottom_buttonrow.Hide(self.button_align_test)
+        self.sizer_bottom_buttonrow.Add(self.button_perspectives, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        self.sizer_bottom_buttonrow.Hide(self.button_perspectives)
         self.sizer_bottom_buttonrow.Layout()
         self.sizer_bottom_buttonrow.AddStretchSpacer()
         self.sizer_bottom_buttonrow.Add(self.button_apply, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
@@ -575,6 +579,7 @@ class WallpaperSettingsPanel(wx.Panel):
         # self.sizer_setting_adv.Layout()
         # self.sizer_main.Fit(self.frame)
         self.sizer_bottom_buttonrow.Show(self.button_align_test, show=show_bool)
+        self.sizer_bottom_buttonrow.Show(self.button_perspectives, show=show_bool)
         self.sizer_bottom_buttonrow.Layout()
 
     def toggle_bezel_buttons(self, bezel_mode = False, enable_config_butt = True):
@@ -1044,6 +1049,14 @@ class WallpaperSettingsPanel(wx.Panel):
                                  flat_offsets,
                                 )
         change_wallpaper_job(profile)
+
+    def onPerspectives(self, event):
+        """Open perspective configuration dialog."""
+        dlg = PerspectiveConfig(self)
+        res = dlg.ShowModal()
+        # if res == wx.ID_OK:
+            # pass
+        dlg.Destroy()
 
     def onHelp(self, event):
         """Open help dialog."""
