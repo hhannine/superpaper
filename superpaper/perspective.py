@@ -41,17 +41,17 @@ def get_backprojected_display_system(display_system=None, plot=False):
     crops = [(0, 695, 3840, 2855), (3943, 0, 5940, 3550)] # left, top, right, bottom
     sizes = [(crp[2] - crp[0], crp[3] - crp[1]) for crp in crops]
     swivels = (
-        ("right", 0*pi/8, (0, 0)),
-        # ("left", 0*pi/16, (0, 0))
-        ("left", 1.8*pi/8, (0, 0))
+        ("right", 0*pi/8, 0, 0),
+        # ("left", 0*pi/16, 0, 0)
+        ("left", 1.8*pi/8, 0, 0)
     )
     tilts = (
-        # (0/360 * 2*pi, (0, 0)),
-        # (0/360 * 2*pi, (0, 0))
-        # (1/360 * 2*pi, (0, 0)),
-        # (1/360 * 2*pi, (0, 0))
-        (-2/360 * 2*pi, (0, 50/25.4 * 163)),
-        (-2/360 * 2*pi, (0, 50/25.4 * 163))
+        # (0/360 * 2*pi, 0, 0),
+        # (0/360 * 2*pi, 0, 0)
+        # (1/360 * 2*pi, 0, 0),
+        # (1/360 * 2*pi, 0, 0)
+        (-2/360 * 2*pi, 0, 50/25.4 * 163),
+        (-2/360 * 2*pi, 0, 50/25.4 * 163)
     )
     disp_positions, init_plane_basis = position_displays_viewer(
         central_disp, viewer_pos_wrt_central, crops
@@ -177,10 +177,8 @@ def get_backprojected_display(display_size, display_center,
     The display is placed on the z-axis, centering it to (0, 0, view_dist).
     """
 
-    swiv_ax, swiv_ang, swiv_off = swivel_ax_ang_off
-    swiv_loff, swiv_depth = swiv_off
-    tilt_ang, tilt_off = tilt_ang_off
-    tilt_voff, tilt_depth = tilt_off
+    swiv_ax, swiv_ang, swiv_loff, swiv_depth = swivel_ax_ang_off
+    tilt_ang, tilt_voff, tilt_depth = tilt_ang_off
 
     display_plane = XYPlaneRectangle(display_center, display_size)
     display_normal = display_plane.normal()

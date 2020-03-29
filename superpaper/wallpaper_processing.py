@@ -246,9 +246,12 @@ class DisplaySystem():
 
         # Data
         self.use_user_diags = False
-        self.use_perspective = False
+        self.use_perspective = True
+        self.default_perspective = None
+        self.perspective_dict = {}
 
         self.load_system()
+        self.load_perspectives()
 
         # if user diags are not entered, tell about failed physical sizes
         global USER_TOLD_OF_PHYS_FAIL
@@ -606,6 +609,87 @@ class DisplaySystem():
             self.compute_initial_preview_offsets()
 
 
+    def update_perspectives(self, persp_name, toggle, is_ds_def, viewer_data, swivels, tilts):
+        """Update perspective data.
+
+        Common data across all profiles:
+            - master toggle for perspective corrections
+
+        Data types in a profile are:
+            - index of central display
+            - viewer's position relative to the center of the central display
+                - lateral, vertical, depth
+            - swivel data as a list over each display
+                - axis in ["left", "right"]
+                    - points up
+                - angle
+                    - sign with right hand rule
+                - axis offset: (lateral, depth)
+            - tilt data as a list over each display
+                - angle (axis is the equator line of the display)
+                    - axis points left
+                    - sign with right hand rule
+                - axis offset: (vertical, depth)
+        """
+        use_persp_master = toggle
+        centr_disp, viewer_pos = viewer_data
+        self.use_perspective = use_persp_master
+        if is_ds_def:
+            self.default_perspective = persp_name
+
+        if persp_name is not None:
+            if persp_name not in self.perspective_dict:
+                self.perspective_dict[persp_name] = {}
+            self.perspective_dict[persp_name]["central_disp"] = centr_disp
+            self.perspective_dict[persp_name]["viewer_pos"] = viewer_pos
+            self.perspective_dict[persp_name]["swivels"] = swivels
+            self.perspective_dict[persp_name]["tilts"] = tilts
+        # trigger save afterwards (not here)
+
+
+    def save_perspectives(self):
+        """Save perspective data dict to file."""
+        persp_file = os.path.join(CONFIG_PATH, "perspectives.dat")
+
+        # load previous configs if file is found
+        config = configparser.ConfigParser()
+        if os.path.exists(persp_file):
+            config.read(persp_file)
+
+        for sect in self.perspective_dict:
+            config[sect] = {
+                "central_disp": str(self.perspective_dict[sect]["central_disp"]),
+                "viewer_pos": list_to_str(self.perspective_dict[sect]["viewer_pos"], item_len=1),
+                "swivels": list_to_str(self.perspective_dict[sect]["swivels"], item_len=4),
+                "tilts": list_to_str(self.perspective_dict[sect]["tilts"], item_len=3)
+            }
+        # write config to file
+        with open(persp_file, 'w') as configfile:
+            config.write(configfile)
+
+
+    def load_perspectives(self):
+        """Load perspective data dict from file."""
+        persp_file = os.path.join(CONFIG_PATH, "perspectives.dat")
+        # check if file exists and load saved perspective dicts
+        if os.path.exists(persp_file):
+            config = configparser.ConfigParser()
+            config.read(persp_file)
+            sp_logging.G_LOGGER.info("config.sections: %s", config.sections())
+
+            self.perspective_dict = {}
+            for sect in config.sections():
+                self.perspective_dict[sect] = {
+                    "central_disp": int(config[sect]["central_disp"]),
+                    "viewer_pos": str_to_list(config[sect]["viewer_pos"], item_len=1),
+                    "swivels": str_to_list(config[sect]["swivels"], item_len=4, strings=True),
+                    "tilts": str_to_list(config[sect]["tilts"], item_len=3)
+                }
+        else:
+            pass
+
+    # End DisplaySystem
+
 
 def list_to_str(lst, item_len=1):
     """Format lists as ,(;) separated strings."""
@@ -620,7 +704,7 @@ def list_to_str(lst, item_len=1):
             joined_items.append(",".join(str(sub_itm) for sub_itm in sub_lst))
         return ";".join(joined_items)
 
-def str_to_list(joined_list, item_len=1):
+def str_to_list(joined_list, item_len=1, strings=False):
     """Extract list from joined_list."""
     if item_len == 1:
         if joined_list in [None, "None"]:
@@ -634,9 +718,10 @@ def str_to_list(joined_list, item_len=1):
                 try:
                     val = float(item)
                 except ValueError:
-                    sp_logging.G_LOGGER.info(
-                        "str_to_list: ValueError: not int or float: %s", item
-                    )
+                    if not strings:
+                        sp_logging.G_LOGGER.info(
+                            "str_to_list: ValueError: not int or float: %s", item
+                        )
             conv_list.append(val)
         return conv_list
     else:
@@ -652,9 +737,10 @@ def str_to_list(joined_list, item_len=1):
                     try:
                         val = float(sub_item)
                     except ValueError:
-                        sp_logging.G_LOGGER.info(
-                            "str_to_list: ValueError: not int or float: %s", sub_item
-                        )
+                        if not strings:
+                            sp_logging.G_LOGGER.info(
+                                "str_to_list: ValueError: not int or float: %s", sub_item
+                            )
                 conv_item.append(val)
             conv_list.append(tuple(conv_item))
         return conv_list
