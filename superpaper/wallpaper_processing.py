@@ -518,11 +518,10 @@ class DisplaySystem():
         ppi_norm_offsets = []
         bezel_mms = self.bezels_in_mm()
         diagonal_inches = []
-        perspective_angles = []
+        use_perspective = self.use_perspective
         for dsp in self.disp_list:
             ppi_norm_offsets.append(dsp.ppi_norm_offset)
             diagonal_inches.append(dsp.diagonal_size()[1])
-            perspective_angles.append(dsp.perspective_angles)
         if not self.use_user_diags:
             diagonal_inches = None
 
@@ -536,17 +535,17 @@ class DisplaySystem():
             "ppi_norm_offsets": list_to_str(ppi_norm_offsets, item_len=2),
             "bezel_mms": list_to_str(bezel_mms, item_len=2),
             "user_diagonal_inches": list_to_str(diagonal_inches, item_len=1),
-            "perspective_angles": list_to_str(perspective_angles, item_len=2)
+            "use_perspective": str(int(use_perspective))
         }
 
         sp_logging.G_LOGGER.info(
             "Saving DisplaySystem: key: %s, ppi_norm_offsets: %s, "
-            "bezel_mms: %s, user_diagonal_inches: %s, perspective_angles: %s",
+            "bezel_mms: %s, user_diagonal_inches: %s, use_perspective: %s",
             instance_key,
             ppi_norm_offsets,
             bezel_mms,
             diagonal_inches,
-            perspective_angles
+            use_perspective
         )
 
         # write config to file
@@ -588,14 +587,13 @@ class DisplaySystem():
             bezel_mms = [(round(bez[0], 2), round(bez[1], 2)) for bez in bezel_mms]
             diagonal_inches = str_to_list(instance_data["user_diagonal_inches"],
                                           item_len=1)
-            perspective_angles = str_to_list(instance_data["perspective_angles"],
-                                             item_len=2)
+            use_perspective = bool(int(instance_data["use_perspective"]))
             sp_logging.G_LOGGER.info(
                 "DisplaySystem loaded: P.N.Offs: %s, "
                 "bezel_mmṣ: %s, "
                 "user_diagonal_inches: %s, "
-                "perspective_angles: %s",
-                ppi_norm_offsets, bezel_mms, diagonal_inches, perspective_angles
+                "use_perspective: %s",
+                ppi_norm_offsets, bezel_mms, diagonal_inches, use_perspective
             )
             self.update_bezels(bezel_mms)
             self.update_ppinorm_offsets(ppi_norm_offsets) # Bezels & user diagonals always included.
@@ -603,7 +601,7 @@ class DisplaySystem():
                 sp_logging.G_LOGGER.info("Updating diagonal_inches")
                 self.update_display_diags(diagonal_inches)
                 self.compute_ppinorm_resolutions()
-            self.update_perspective_angles(perspective_angles)
+            self.use_perspective = use_perspective
         else:
             # Continue without data
             self.compute_initial_preview_offsets()
