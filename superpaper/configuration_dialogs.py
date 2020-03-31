@@ -242,14 +242,155 @@ class PerspectiveConfig(wx.Dialog):
     def __init__(self, parent):
         wx.Dialog.__init__(self, parent, -1,
                            'Configure wallpaper perspective rotations',
-                           size=(750, 850))
+                           #    size=(750, 850)
+                          )
+        self.tc_width = 150
         self.display_sys = parent.display_sys
+        self.persp_dict = parent.display_sys.perspective_dict
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        sizer_common = wx.BoxSizer(wx.VERTICAL)
-        sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
+        # sizer_common = wx.BoxSizer(wx.VERTICAL)
+        # sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
 
-        # Buttons
+
+
+        # self.sizer_setting_slideshow = wx.StaticBoxSizer(wx.VERTICAL, self, "Wallpaper Slideshow")
+        # statbox_parent_sshow = self.sizer_setting_slideshow.GetStaticBox()
+        # sizer_sshow_subsettings = wx.GridSizer(2, 5, 5)
+        # self.st_sshow_sort = wx.StaticText(statbox_parent_sshow, -1, "Slideshow order:")
+        # self.ch_sshow_sort = wx.Choice(statbox_parent_sshow, -1, name="SortChoice",
+        #                          size=(self.tc_width*0.7, -1),
+        #                          choices=["Shuffle", "Alphabetical"])
+        # self.st_sshow_delay = wx.StaticText(statbox_parent_sshow, -1, "Delay (minutes):")
+        # self.tc_sshow_delay = wx.TextCtrl(
+        #     statbox_parent_sshow, -1,
+        #     size=(self.tc_width*0.69, -1),
+        #     style=wx.TE_RIGHT
+        # )
+
+
+        # Master options
+        self.cb_master = wx.CheckBox(self, -1, "Use perspective corrections")
+
+        # Profile options
+        self.create_profile_opts()
+
+        # Display perspective config
+        self.create_display_opts(wpproc.NUM_DISPLAYS)
+
+        # Bottom row buttons
+        self.create_bottom_butts()
+
+        sizer_main.Add(self.cb_master, 0, wx.ALL|wx.ALIGN_LEFT, 5)
+        sizer_main.Add(self.sizer_prof_opts, 1, wx.ALL|wx.ALIGN_CENTER|wx.EXPAND, 5)
+        sizer_main.Add(self.sizer_disp_opts, 1, wx.ALL|wx.ALIGN_CENTER|wx.EXPAND, 5)
+        sizer_main.Add(self.sizer_buttons, 0, wx.ALL|wx.EXPAND, 5)
+        self.SetSizer(sizer_main)
+        self.Fit()
+
+    def create_profile_opts(self):
+        """Create sizer for perspective profile options."""
+        self.sizer_prof_opts = wx.StaticBoxSizer(wx.VERTICAL, self, "Perspective profile")
+        statbox_profs = self.sizer_prof_opts.GetStaticBox()
+        self.profnames = list(self.persp_dict.keys())
+        self.profnames.append("Create a new profile")
+        self.choice_profiles = wx.Choice(statbox_profs, -1,
+                                         name="ProfileChoice", choices=self.profnames)
+        self.choice_profiles.Bind(wx.EVT_CHOICE, self.onSelect)
+        st_choice_profiles = wx.StaticText(statbox_profs, -1, "Perspective profiles:")
+        # name txt ctrl
+        st_name = wx.StaticText(statbox_profs, -1, "Profile name:")
+        self.tc_name = wx.TextCtrl(statbox_profs, -1, size=(self.tc_width, -1))
+        # buttons
+        self.button_new = wx.Button(statbox_profs, label="New")
+        self.button_save = wx.Button(statbox_profs, label="Save")
+        self.button_delete = wx.Button(statbox_profs, label="Delete")
+        self.button_new.Bind(wx.EVT_BUTTON, self.onCreateNewProfile)
+        self.button_save.Bind(wx.EVT_BUTTON, self.onSave)
+        self.button_delete.Bind(wx.EVT_BUTTON, self.onDeleteProfile)
+
+        # Add elements to the sizer
+        self.sizer_prof_opts.Add(st_choice_profiles, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_prof_opts.Add(self.choice_profiles, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_prof_opts.Add(st_name, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_prof_opts.Add(self.tc_name, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_prof_opts.Add(self.button_new, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_prof_opts.Add(self.button_save, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_prof_opts.Add(self.button_delete, 0, wx.CENTER|wx.ALL, 5)
+
+
+    def create_display_opts(self, num_disps):
+        """Create sizer for display perspective options."""
+        self.sizer_disp_opts = wx.StaticBoxSizer(wx.VERTICAL, self,
+                                                 "Display perspective configuration")
+        cols = 8
+        gap = 5
+        self.grid = wx.FlexGridSizer(cols, gap, gap)
+
+        # header
+        hd_id = wx.StaticText(self, -1, "Display")
+        hd_sax = wx.StaticText(self, -1, "Swivel axis")
+        hd_san = wx.StaticText(self, -1, "Swivel angle")
+        hd_sol = wx.StaticText(self, -1, "Swiv. ax. lat. offs.")
+        hd_sod = wx.StaticText(self, -1, "Swiv. ax. dep. offs.")
+        hd_tan = wx.StaticText(self, -1, "Tilt angle")
+        hd_tov = wx.StaticText(self, -1, "Tilt ax. ver. offs.")
+        hd_tod = wx.StaticText(self, -1, "Tilt ax. dep. offs.")
+        self.grid.Add(hd_id, 0, wx.ALL, 5)
+        self.grid.Add(hd_sax, 0, wx.ALL, 5)
+        self.grid.Add(hd_san, 0, wx.ALL, 5)
+        self.grid.Add(hd_sol, 0, wx.ALL, 5)
+        self.grid.Add(hd_sod, 0, wx.ALL, 5)
+        self.grid.Add(hd_tan, 0, wx.ALL, 5)
+        self.grid.Add(hd_tov, 0, wx.ALL, 5)
+        self.grid.Add(hd_tod, 0, wx.ALL, 5)
+
+        # Fill grid rows
+        self.grid_rows = []
+        for i in range(num_disps):
+            row = self.display_opt_widget_row(i)
+            self.grid_rows.append(row)
+            sizer_row = [(item, 0, wx.ALL|wx.ALIGN_RIGHT, 5) for item in row]
+            self.grid.AddMany(sizer_row)
+
+        # Build sizer
+        self.sizer_disp_opts.Add(self.grid, 0, wx.ALL|wx.EXPAND, 5)
+
+    def display_opt_widget_row(self, row_id):
+        """Return a display option widget row."""
+        row_id = wx.StaticText(self, -1, str(row_id))
+        row_sax = wx.Choice(self, -1, name="SwivelAxisChoice",
+                            size=(self.tc_width*0.7, -1),
+                            choices=["No swivel", "Left", "Right"])
+        row_san = wx.TextCtrl(self, -1, size=(self.tc_width*0.69, -1),
+                              style=wx.TE_RIGHT)
+        row_sol = wx.TextCtrl(self, -1, size=(self.tc_width*0.69, -1),
+                              style=wx.TE_RIGHT)
+        row_sod = wx.TextCtrl(self, -1, size=(self.tc_width*0.69, -1),
+                              style=wx.TE_RIGHT)
+        row_tan = wx.TextCtrl(self, -1, size=(self.tc_width*0.69, -1),
+                              style=wx.TE_RIGHT)
+        row_tov = wx.TextCtrl(self, -1, size=(self.tc_width*0.69, -1),
+                              style=wx.TE_RIGHT)
+        row_tod = wx.TextCtrl(self, -1, size=(self.tc_width*0.69, -1),
+                              style=wx.TE_RIGHT)
+        # Prefill neutral data
+        row_sax.SetSelection(0)
+        row_san.SetValue("0")
+        row_sol.SetValue("0")
+        row_sod.SetValue("0")
+        row_tan.SetValue("0")
+        row_tov.SetValue("0")
+        row_tod.SetValue("0")
+
+        row = [row_id, row_sax, row_san, row_sol, row_sod, row_tan, row_tov, row_tod]
+        return row
+
+
+    def create_bottom_butts(self):
+        """Create sizer for bottom row buttons."""
+        self.sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
+
         self.button_add = wx.Button(self, label="Add source")
         self.button_remove = wx.Button(self, label="Remove source")
         self.button_ok = wx.Button(self, label="Ok")
@@ -260,17 +401,27 @@ class PerspectiveConfig(wx.Dialog):
         # self.button_ok.Bind(wx.EVT_BUTTON, self.onOk)
         # self.button_cancel.Bind(wx.EVT_BUTTON, self.onCancel)
 
-        sizer_buttons.Add(self.button_add, 0, wx.CENTER|wx.ALL, 5)
-        sizer_buttons.Add(self.button_remove, 0, wx.CENTER|wx.ALL, 5)
-        sizer_buttons.AddStretchSpacer()
-        sizer_buttons.Add(self.button_ok, 0, wx.CENTER|wx.ALL, 5)
-        sizer_buttons.Add(self.button_cancel, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_buttons.Add(self.button_add, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_buttons.Add(self.button_remove, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_buttons.AddStretchSpacer()
+        self.sizer_buttons.Add(self.button_ok, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_buttons.Add(self.button_cancel, 0, wx.CENTER|wx.ALL, 5)
 
-        sizer_main.Add(sizer_common, 1, wx.ALL|wx.ALIGN_CENTER|wx.EXPAND)
-        sizer_main.Add(sizer_buttons, 0, wx.ALL|wx.EXPAND, 5)
-        self.SetSizer(sizer_main)
-        self.SetAutoLayout(True)
 
+    #
+    # Button methods
+    #
+    def onSelect(self, evt):
+        pass
+
+    def onSave(self, evt):
+        pass
+
+    def onDeleteProfile(self, evt):
+        pass
+
+    def onCreateNewProfile(self, evt):
+        pass
 
 
 
