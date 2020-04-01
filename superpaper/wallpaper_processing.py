@@ -281,6 +281,7 @@ class DisplaySystem():
         return hash(tuple(self.disp_list))
 
     def max_ppi(self):
+        """Return maximum pixel density."""
         return max([disp.ppi for disp in self.disp_list])
 
     def get_normalized_ppis(self):

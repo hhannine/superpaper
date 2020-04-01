@@ -282,8 +282,8 @@ class PerspectiveConfig(wx.Dialog):
         self.create_bottom_butts()
 
         sizer_main.Add(self.cb_master, 0, wx.ALL|wx.ALIGN_LEFT, 5)
-        sizer_main.Add(self.sizer_prof_opts, 1, wx.ALL|wx.ALIGN_CENTER|wx.EXPAND, 5)
-        sizer_main.Add(self.sizer_disp_opts, 1, wx.ALL|wx.ALIGN_CENTER|wx.EXPAND, 5)
+        sizer_main.Add(self.sizer_prof_opts, 0, wx.ALL|wx.ALIGN_CENTER|wx.EXPAND, 5)
+        sizer_main.Add(self.sizer_disp_opts, 0, wx.ALL|wx.ALIGN_CENTER|wx.EXPAND, 5)
         sizer_main.Add(self.sizer_buttons, 0, wx.ALL|wx.EXPAND, 5)
         self.SetSizer(sizer_main)
         self.Fit()
@@ -292,6 +292,8 @@ class PerspectiveConfig(wx.Dialog):
         """Create sizer for perspective profile options."""
         self.sizer_prof_opts = wx.StaticBoxSizer(wx.VERTICAL, self, "Perspective profile")
         statbox_profs = self.sizer_prof_opts.GetStaticBox()
+
+        self.sizer_prof_bar = wx.BoxSizer(wx.HORIZONTAL)
         self.profnames = list(self.persp_dict.keys())
         self.profnames.append("Create a new profile")
         self.choice_profiles = wx.Choice(statbox_profs, -1,
@@ -309,15 +311,53 @@ class PerspectiveConfig(wx.Dialog):
         self.button_save.Bind(wx.EVT_BUTTON, self.onSave)
         self.button_delete.Bind(wx.EVT_BUTTON, self.onDeleteProfile)
 
-        # Add elements to the sizer
-        self.sizer_prof_opts.Add(st_choice_profiles, 0, wx.CENTER|wx.ALL, 5)
-        self.sizer_prof_opts.Add(self.choice_profiles, 0, wx.CENTER|wx.ALL, 5)
-        self.sizer_prof_opts.Add(st_name, 0, wx.CENTER|wx.ALL, 5)
-        self.sizer_prof_opts.Add(self.tc_name, 0, wx.CENTER|wx.ALL, 5)
-        self.sizer_prof_opts.Add(self.button_new, 0, wx.CENTER|wx.ALL, 5)
-        self.sizer_prof_opts.Add(self.button_save, 0, wx.CENTER|wx.ALL, 5)
-        self.sizer_prof_opts.Add(self.button_delete, 0, wx.CENTER|wx.ALL, 5)
+        # Add profile bar items to the sizer
+        self.sizer_prof_bar.Add(st_choice_profiles, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_prof_bar.Add(self.choice_profiles, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_prof_bar.Add(st_name, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_prof_bar.Add(self.tc_name, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_prof_bar.Add(self.button_new, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_prof_bar.Add(self.button_save, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_prof_bar.Add(self.button_delete, 0, wx.CENTER|wx.ALL, 5)
 
+        self.sizer_prof_opts.Add(self.sizer_prof_bar, 0, wx.CENTER|wx.ALL, 5)
+        sline = wx.StaticLine(statbox_profs, -1, style=wx.LI_HORIZONTAL)
+        self.sizer_prof_opts.Add(sline, 0, wx.EXPAND|wx.ALL, 5)
+
+        # Profile related options
+        self.cb_dispsys_def = wx.CheckBox(statbox_profs, -1, "Default for this display setup")
+        sizer_centr_disp = wx.BoxSizer(wx.HORIZONTAL)
+        st_centr_disp = wx.StaticText(statbox_profs, -1, "Central display:")
+        disp_ids = [str(idx) for idx in range(wpproc.NUM_DISPLAYS)]
+        self.choice_centr_disp = wx.Choice(statbox_profs, -1,
+                                           name="CentDispChoice", choices=disp_ids)
+        self.choice_centr_disp.SetSelection(0)
+        sizer_centr_disp.Add(st_centr_disp, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        sizer_centr_disp.Add(self.choice_centr_disp, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+        sizer_viewer_off = wx.BoxSizer(wx.HORIZONTAL)
+        st_vwroffs = wx.StaticText(statbox_profs, -1,
+                                   "Viewer offset from central display center [mm]:")
+        self.tclist_vieweroffs = [
+            wx.StaticText(statbox_profs, -1, "hor:"),
+            wx.TextCtrl(statbox_profs, -1, size=(self.tc_width*0.69, -1), style=wx.TE_RIGHT),
+            wx.StaticText(statbox_profs, -1, "ver:"),
+            wx.TextCtrl(statbox_profs, -1, size=(self.tc_width*0.69, -1), style=wx.TE_RIGHT),
+            wx.StaticText(statbox_profs, -1, "dist:"),
+            wx.TextCtrl(statbox_profs, -1, size=(self.tc_width*0.69, -1), style=wx.TE_RIGHT)
+        ]
+        for tc in self.tclist_vieweroffs:
+            if isinstance(tc, wx.TextCtrl):
+                tc.SetValue("0")
+        szr_tclist = [(item, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+                      for item in self.tclist_vieweroffs]
+        sizer_viewer_off.Add(st_vwroffs, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        sizer_viewer_off.AddMany(szr_tclist)
+
+        # Add remaining options to persp profile sizer
+        self.sizer_prof_opts.Add(self.cb_dispsys_def, 0, wx.ALL, 5)
+        self.sizer_prof_opts.Add(sizer_centr_disp, 0, wx.LEFT, 5)
+        self.sizer_prof_opts.Add(sizer_viewer_off, 0, wx.LEFT, 5)
 
     def create_display_opts(self, num_disps):
         """Create sizer for display perspective options."""
@@ -350,7 +390,8 @@ class PerspectiveConfig(wx.Dialog):
         for i in range(num_disps):
             row = self.display_opt_widget_row(i)
             self.grid_rows.append(row)
-            sizer_row = [(item, 0, wx.ALL|wx.ALIGN_RIGHT, 5) for item in row]
+            sizer_row = [(item, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+                         for item in row]
             self.grid.AddMany(sizer_row)
 
         # Build sizer
@@ -391,36 +432,85 @@ class PerspectiveConfig(wx.Dialog):
         """Create sizer for bottom row buttons."""
         self.sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
 
-        self.button_add = wx.Button(self, label="Add source")
-        self.button_remove = wx.Button(self, label="Remove source")
-        self.button_ok = wx.Button(self, label="Ok")
+        self.button_align_test = wx.Button(self, label="Align test")
+        self.button_test_wp = wx.Button(self, label="Test current wallpaper")
+        self.button_apply = wx.Button(self, label="Apply")
         self.button_cancel = wx.Button(self, label="Cancel")
 
-        # self.button_add.Bind(wx.EVT_BUTTON, self.onAdd)
-        # self.button_remove.Bind(wx.EVT_BUTTON, self.onRemove)
-        # self.button_ok.Bind(wx.EVT_BUTTON, self.onOk)
-        # self.button_cancel.Bind(wx.EVT_BUTTON, self.onCancel)
+        self.button_align_test.Bind(wx.EVT_BUTTON, self.onAlignTest)
+        self.button_test_wp.Bind(wx.EVT_BUTTON, self.onTestWallpaper)
+        self.button_apply.Bind(wx.EVT_BUTTON, self.onApply)
+        self.button_cancel.Bind(wx.EVT_BUTTON, self.onCancel)
 
-        self.sizer_buttons.Add(self.button_add, 0, wx.CENTER|wx.ALL, 5)
-        self.sizer_buttons.Add(self.button_remove, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_buttons.Add(self.button_align_test, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_buttons.Add(self.button_test_wp, 0, wx.CENTER|wx.ALL, 5)
         self.sizer_buttons.AddStretchSpacer()
-        self.sizer_buttons.Add(self.button_ok, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_buttons.Add(self.button_apply, 0, wx.CENTER|wx.ALL, 5)
         self.sizer_buttons.Add(self.button_cancel, 0, wx.CENTER|wx.ALL, 5)
 
+
+    def populate_fields(self, profile_id):
+        """."""
+        pass
+
+    def collect_data_column(self, column):
+        """Collect data from display data grid, returns a column as a list.
+
+        Column ids are
+            0   display id
+            1   swivel axis
+            2   swivel angle
+            3   swivel lat offset
+            4   swivel dep offset
+            5   tilt angle
+            6   tilt vert offset
+            7   tilt dep offset
+        """
+        pass
 
     #
     # Button methods
     #
-    def onSelect(self, evt):
-        pass
+    def onSelect(self, event):
+        """Acts once a profile is picked in the dropdown menu."""
+        event_object = event.GetEventObject()
+        if event_object.GetName() == "ProfileChoice":
+            item = event.GetSelection()
+            if event.GetString() == "Create a new profile":
+                self.onCreateNewProfile(event)
+            else:
+                self.populate_fields("TODO")
+        else:
+            pass
 
     def onSave(self, evt):
+        """."""
         pass
 
     def onDeleteProfile(self, evt):
+        """."""
         pass
 
     def onCreateNewProfile(self, evt):
+        """."""
+        pass
+
+
+    def onApply(self, event):
+        """."""
+        pass
+
+    def onCancel(self, event):
+        """Closes settings panel."""
+        self.frame.Close(True)
+
+
+    def onAlignTest(self, event):
+        """."""
+        pass
+
+    def onTestWallpaper(self, event):
+        """."""
         pass
 
 
