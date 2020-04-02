@@ -338,21 +338,27 @@ class PerspectiveConfig(wx.Dialog):
         sizer_viewer_off = wx.BoxSizer(wx.HORIZONTAL)
         st_vwroffs = wx.StaticText(statbox_profs, -1,
                                    "Viewer offset from central display center [mm]:")
-        self.tclist_vieweroffs = [
+        self.stlist_vieweroffs = [
             wx.StaticText(statbox_profs, -1, "hor:"),
-            wx.TextCtrl(statbox_profs, -1, size=(self.tc_width*0.69, -1), style=wx.TE_RIGHT),
             wx.StaticText(statbox_profs, -1, "ver:"),
-            wx.TextCtrl(statbox_profs, -1, size=(self.tc_width*0.69, -1), style=wx.TE_RIGHT),
             wx.StaticText(statbox_profs, -1, "dist:"),
+        ]
+        self.tclist_vieweroffs = [
+            wx.TextCtrl(statbox_profs, -1, size=(self.tc_width*0.69, -1), style=wx.TE_RIGHT),
+            wx.TextCtrl(statbox_profs, -1, size=(self.tc_width*0.69, -1), style=wx.TE_RIGHT),
             wx.TextCtrl(statbox_profs, -1, size=(self.tc_width*0.69, -1), style=wx.TE_RIGHT)
         ]
         for tc in self.tclist_vieweroffs:
             if isinstance(tc, wx.TextCtrl):
                 tc.SetValue("0")
+        szr_stlist = [(item, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+                      for item in self.stlist_vieweroffs]
         szr_tclist = [(item, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
                       for item in self.tclist_vieweroffs]
         sizer_viewer_off.Add(st_vwroffs, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
-        sizer_viewer_off.AddMany(szr_tclist)
+        for st, tc in zip(szr_stlist, szr_tclist):
+            sizer_viewer_off.Add(st[0], st[1], st[2], st[3])
+            sizer_viewer_off.Add(tc[0], tc[1], tc[2], tc[3])
 
         # Add remaining options to persp profile sizer
         self.sizer_prof_opts.Add(self.cb_dispsys_def, 0, wx.ALL, 5)
@@ -449,9 +455,29 @@ class PerspectiveConfig(wx.Dialog):
         self.sizer_buttons.Add(self.button_cancel, 0, wx.CENTER|wx.ALL, 5)
 
 
-    def populate_fields(self, profile_id):
-        """."""
-        pass
+    def populate_fields(self, persp_name):
+        """Populate config fields from DisplaySystem perspective dict."""
+        persd = self.persp_dict[persp_name]
+        self.cb_master.SetValue(self.display_sys.use_perspective)
+        self.tc_name.SetValue(persp_name)
+        self.cb_dispsys_def.SetValue(persp_name == self.display_sys.default_perspective)
+        self.choice_centr_disp.SetSelection(persd["central_disp"])
+        px_per_mm = self.display_sys.max_ppi() / 25.4
+        for tc, offs in zip(self.tclist_vieweroffs, persd["viewer_pos"]):
+            tc.SetValue(str(offs / px_per_mm))
+        self.populate_grid(persd["swivels"], persd["tilts"], px_per_mm)
+
+    def populate_grid(self, swivels, tilts, px_per_mm):
+        """Fill data grid from lists."""
+        for row, sw, ti in zip(self.grid_rows, swivels, tilts):
+            row[0].SetLabel(str(self.grid_rows.index(row)))
+            row[1].SetSelection(sw[0])
+            row[2].SetValue(str(sw[1]))
+            row[3].SetValue(str(round(sw[2] / px_per_mm, 1)))
+            row[4].SetValue(str(round(sw[3] / px_per_mm, 1)))
+            row[5].SetValue(str(ti[0]))
+            row[6].SetValue(str(round(ti[1] / px_per_mm, 1)))
+            row[7].SetValue(str(round(ti[2] / px_per_mm, 1)))
 
     def collect_data_column(self, column):
         """Collect data from display data grid, returns a column as a list.
@@ -466,7 +492,29 @@ class PerspectiveConfig(wx.Dialog):
             6   tilt vert offset
             7   tilt dep offset
         """
-        pass
+        data = []
+
+        for row in self.grid_rows:
+            if column == 0:
+                datum = row[column].GetSelection()
+                try:
+                    data.append(int(datum))
+                except ValueError:
+                    pass
+            elif column == 1:
+                datum = row[column].GetSelection()
+                try:
+                    data.append(int(datum))
+                except ValueError:
+                    pass
+            else:
+                datum = row[column].GetLineText(0)
+                try:
+                    data.append(float(datum))
+                except ValueError:
+                    pass
+        return data
+
 
     #
     # Button methods
@@ -476,16 +524,53 @@ class PerspectiveConfig(wx.Dialog):
         event_object = event.GetEventObject()
         if event_object.GetName() == "ProfileChoice":
             item = event.GetSelection()
-            if event.GetString() == "Create a new profile":
+            item_str = event.GetString()
+            if item_str == "Create a new profile":
                 self.onCreateNewProfile(event)
             else:
-                self.populate_fields("TODO")
+                self.populate_fields(item_str)
         else:
             pass
 
     def onSave(self, evt):
-        """."""
-        pass
+        """Save perspective config to file and update display system state."""
+        persp_name = self.tc_name.GetLineText(0)
+        toggle = self.cb_master.GetValue()
+        is_ds_def = self.cb_dispsys_def.GetValue()
+        centr_disp = int(self.choice_centr_disp.GetSelection())
+        px_per_mm = self.display_sys.max_ppi() / 25.4
+        try:
+            # covert lenghts to ppi norm res
+            viewer_offset = [
+                px_per_mm * float(tc.GetLineText(0)) for tc in self.tclist_vieweroffs
+            ]
+        except ValueError:
+            msg = "Viewer offsets should be lenghts in millimeters, separate decimals with a point."
+            return 0
+        viewer_data = (centr_disp, viewer_offset)
+        swivels = []
+        sw_axii = self.collect_data_column(1)
+        sw_angl = self.collect_data_column(2)
+        sw_lato = self.collect_data_column(3)
+        sw_depo = self.collect_data_column(4)
+        for ax, an, lo, do in zip(sw_axii, sw_angl, sw_lato, sw_depo):
+            swivels.append(
+                (ax, an, px_per_mm * lo, px_per_mm * do)
+            )
+        tilts = []
+        ti_angl = self.collect_data_column(5)
+        ti_vero = self.collect_data_column(6)
+        ti_depo = self.collect_data_column(7)
+        for an, vo, do in zip(ti_angl, ti_vero, ti_depo):
+            tilts.append(
+                (an, px_per_mm * vo, px_per_mm * do)
+            )
+
+        self.display_sys.update_perspectives(
+            persp_name, toggle, is_ds_def, viewer_data, swivels, tilts
+        )
+        self.display_sys.save_perspectives()
+        return 1
 
     def onDeleteProfile(self, evt):
         """."""

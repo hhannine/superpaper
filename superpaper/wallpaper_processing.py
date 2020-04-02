@@ -659,7 +659,8 @@ class DisplaySystem():
 
     def save_perspectives(self):
         """Save perspective data dict to file."""
-        persp_file = os.path.join(CONFIG_PATH, "perspectives.dat")
+        instance_key = str(hash(self))
+        persp_file = os.path.join(CONFIG_PATH, instance_key + ".persp")
 
         # load previous configs if file is found
         config = configparser.ConfigParser()
@@ -680,7 +681,8 @@ class DisplaySystem():
 
     def load_perspectives(self):
         """Load perspective data dict from file."""
-        persp_file = os.path.join(CONFIG_PATH, "perspectives.dat")
+        instance_key = str(hash(self))
+        persp_file = os.path.join(CONFIG_PATH, instance_key + ".persp")
         # check if file exists and load saved perspective dicts
         if os.path.exists(persp_file):
             config = configparser.ConfigParser()
@@ -1075,7 +1077,9 @@ def span_single_image_advanced(profile):
     manual_offsets = profile.manual_offsets
     cropped_images = []
     crop_tuples = G_ACTIVE_DISPLAYSYSTEM.get_ppi_norm_crops(manual_offsets)
-    if G_ACTIVE_DISPLAYSYSTEM.use_perspective and profile.perspective is not None:
+    print("G_A_DSYS: ", G_ACTIVE_DISPLAYSYSTEM.use_perspective, " prof.persp ", profile.perspective)
+    # if G_ACTIVE_DISPLAYSYSTEM.use_perspective and profile.perspective is not None:
+    if profile.perspective is not None:
         # get_data(profile.perspective) TODO
         proj_plane_crops, persp_coeffs = persp.get_backprojected_display_system()
         # Canvas containing back-projected displays
