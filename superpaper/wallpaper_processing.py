@@ -619,7 +619,7 @@ class DisplaySystem():
             self.compute_initial_preview_offsets()
 
 
-    def update_perspectives(self, persp_name, toggle, is_ds_def, viewer_data, swivels, tilts):
+    def update_perspectives(self, persp_name, use_persp_master, is_ds_def, viewer_data, swivels, tilts):
         """Update perspective data.
 
         Common data across all profiles:
@@ -641,11 +641,13 @@ class DisplaySystem():
                     - sign with right hand rule
                 - axis offset: (vertical, depth)
         """
-        use_persp_master = toggle
         centr_disp, viewer_pos = viewer_data
         self.use_perspective = use_persp_master
-        if is_ds_def:
+        if is_ds_def and self.default_perspective != persp_name:
             self.default_perspective = persp_name
+        elif not is_ds_def and self.default_perspective == persp_name:
+            self.default_perspective = None
+        self.save_system()
 
         if persp_name is not None:
             if persp_name not in self.perspective_dict:

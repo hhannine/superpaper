@@ -271,6 +271,8 @@ class PerspectiveConfig(wx.Dialog):
 
         # Master options
         self.cb_master = wx.CheckBox(self, -1, "Use perspective corrections")
+        self.cb_master.SetValue(self.display_sys.use_perspective)
+        # self.cb_master.Bind(wx.EVT_CHECKBOX, self.onCbmaster)
 
         # Profile options
         self.create_profile_opts()
@@ -287,6 +289,11 @@ class PerspectiveConfig(wx.Dialog):
         sizer_main.Add(self.sizer_buttons, 0, wx.ALL|wx.EXPAND, 5)
         self.SetSizer(sizer_main)
         self.Fit()
+        if self.display_sys.default_perspective:
+            self.populate_fields(self.display_sys.default_perspective)
+            self.choice_profiles.SetSelection(
+                self.choice_profiles.FindString(self.display_sys.default_perspective)
+            )
 
     def create_profile_opts(self):
         """Create sizer for perspective profile options."""
@@ -440,18 +447,18 @@ class PerspectiveConfig(wx.Dialog):
 
         self.button_align_test = wx.Button(self, label="Align test")
         self.button_test_wp = wx.Button(self, label="Test current wallpaper")
-        self.button_apply = wx.Button(self, label="Apply")
+        self.button_ok = wx.Button(self, label="OK")
         self.button_cancel = wx.Button(self, label="Cancel")
 
         self.button_align_test.Bind(wx.EVT_BUTTON, self.onAlignTest)
         self.button_test_wp.Bind(wx.EVT_BUTTON, self.onTestWallpaper)
-        self.button_apply.Bind(wx.EVT_BUTTON, self.onApply)
+        self.button_ok.Bind(wx.EVT_BUTTON, self.onOk)
         self.button_cancel.Bind(wx.EVT_BUTTON, self.onCancel)
 
         self.sizer_buttons.Add(self.button_align_test, 0, wx.CENTER|wx.ALL, 5)
         self.sizer_buttons.Add(self.button_test_wp, 0, wx.CENTER|wx.ALL, 5)
         self.sizer_buttons.AddStretchSpacer()
-        self.sizer_buttons.Add(self.button_apply, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_buttons.Add(self.button_ok, 0, wx.CENTER|wx.ALL, 5)
         self.sizer_buttons.Add(self.button_cancel, 0, wx.CENTER|wx.ALL, 5)
 
 
@@ -515,10 +522,22 @@ class PerspectiveConfig(wx.Dialog):
                     pass
         return data
 
+    def update_choiceprofile(self):
+        """Reload profile list into the choice box."""
+        self.profnames = list(self.persp_dict.keys())
+        self.profnames.append("Create a new profile")
+        self.choice_profiles.SetItems(self.profnames)
 
     #
     # Button methods
     #
+    def checkCbmaster(self, event=None):
+        """Save master checkbox state into display system."""
+        master = self.cb_master.GetValue()
+        if master != self.display_sys.use_perspective:
+            self.display_sys.use_perspective = master
+            self.display_sys.save_system()
+
     def onSelect(self, event):
         """Acts once a profile is picked in the dropdown menu."""
         event_object = event.GetEventObject()
@@ -532,7 +551,7 @@ class PerspectiveConfig(wx.Dialog):
         else:
             pass
 
-    def onSave(self, evt):
+    def onSave(self, evt=None):
         """Save perspective config to file and update display system state."""
         persp_name = self.tc_name.GetLineText(0)
         toggle = self.cb_master.GetValue()
@@ -566,37 +585,64 @@ class PerspectiveConfig(wx.Dialog):
                 (an, px_per_mm * vo, px_per_mm * do)
             )
 
+        # update and save data
         self.display_sys.update_perspectives(
             persp_name, toggle, is_ds_def, viewer_data, swivels, tilts
         )
         self.display_sys.save_perspectives()
+
+        # update dialog profile list
+        self.update_choiceprofile()
+        self.choice_profiles.SetSelection(
+            self.choice_profiles.FindString(persp_name)
+        )
         return 1
 
     def onDeleteProfile(self, evt):
-        """."""
-        pass
+        """Delete selected perspective profile."""
+        persp_name = self.choice_profiles.GetString(self.choice_profiles.GetSelection())
+        self.persp_dict.pop(persp_name, None)
+        self.display_sys.save_perspectives()
+        # update dialog profile list
+        self.update_choiceprofile()
+        self.onCreateNewProfile(None)
+
 
     def onCreateNewProfile(self, evt):
-        """."""
-        pass
+        """Reset profile settings options to neutral state."""
+        self.cb_master.SetValue(self.display_sys.use_perspective)
+        self.choice_profiles.SetSelection(
+            self.choice_profiles.FindString("Create a new profile")
+        )
+        self.tc_name.SetValue("")
+        self.cb_dispsys_def.SetValue(False)
+        self.choice_centr_disp.SetSelection(0)
+        for tc in self.tclist_vieweroffs:
+            tc.SetValue(str(0))
+        swivels = wpproc.NUM_DISPLAYS*[(0, 0.0, 0.0, 0.0)]
+        tilts = wpproc.NUM_DISPLAYS*[(0.0, 0.0, 0.0)]
+        self.populate_grid(swivels, tilts, 1)
 
 
-    def onApply(self, event):
-        """."""
-        pass
+    def onOk(self, event):
+        """Apply/save perspective settings and close dialog."""
+        # self.checkCbmaster()
+        self.onSave()
+        self.EndModal(wx.ID_OK)
 
     def onCancel(self, event):
-        """Closes settings panel."""
-        self.frame.Close(True)
-
+        """Closes perspective config, throwing away unsaved contents."""
+        self.Destroy()
 
     def onAlignTest(self, event):
-        """."""
+        """Sets a test image wallpaper using the current perspectve config."""
         pass
 
     def onTestWallpaper(self, event):
-        """."""
+        """Test the current perspective options by triggering a new wallpaper
+        from the active wallpaper profile, if any."""
         pass
+        # TODO warn that no profile is active?
 
 
 
