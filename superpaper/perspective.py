@@ -16,7 +16,7 @@ import numpy as np
 
 # import sp_logging as sp_logging
 
-def get_backprojected_display_system(display_system=None, plot=False):
+def get_backprojected_display_system(crops, persp_data, plot=False):
     """
     Return a back-projected quadrilateral and associated projection
     transformation coefficients for each display in the DisplaySystem.
@@ -33,26 +33,33 @@ def get_backprojected_display_system(display_system=None, plot=False):
     are used to compute the perspective correction coefficients that are used
     with Pillow to perform the perspective transformation on the source image.
     """
-    # display_system = wpproc.DisplaySystem()
-
     # get_ppi_norm_crops: [(0, 695, 3840, 2855), (3943, 0, 5940, 3550)]
-    central_disp = 0
-    viewer_pos_wrt_central = (0, 0, 500/25.4 * 163) # (lateral, vert, depth)
-    crops = [(0, 695, 3840, 2855), (3943, 0, 5940, 3550)] # left, top, right, bottom
+    # central_disp = 0
+    # viewer_pos_wrt_central = (0, 0, 500/25.4 * 163) # (lateral, vert, depth)
+    # crops = [(0, 695, 3840, 2855), (3943, 0, 5940, 3550)] # left, top, right, bottom
+    # sizes = [(crp[2] - crp[0], crp[3] - crp[1]) for crp in crops]
+    # swivels = (
+    #     ("right", 0*pi/8, 0, 0),
+    #     # ("left", 0*pi/16, 0, 0)
+    #     ("left", 1.8*pi/8, 0, 0)
+    # )
+    # tilts = (
+    #     # (0/360 * 2*pi, 0, 0),
+    #     # (0/360 * 2*pi, 0, 0)
+    #     # (1/360 * 2*pi, 0, 0),
+    #     # (1/360 * 2*pi, 0, 0)
+    #     (-2/360 * 2*pi, 0, 50/25.4 * 163),
+    #     (-2/360 * 2*pi, 0, 50/25.4 * 163)
+    # )
+
     sizes = [(crp[2] - crp[0], crp[3] - crp[1]) for crp in crops]
-    swivels = (
-        ("right", 0*pi/8, 0, 0),
-        # ("left", 0*pi/16, 0, 0)
-        ("left", 1.8*pi/8, 0, 0)
-    )
-    tilts = (
-        # (0/360 * 2*pi, 0, 0),
-        # (0/360 * 2*pi, 0, 0)
-        # (1/360 * 2*pi, 0, 0),
-        # (1/360 * 2*pi, 0, 0)
-        (-2/360 * 2*pi, 0, 50/25.4 * 163),
-        (-2/360 * 2*pi, 0, 50/25.4 * 163)
-    )
+    central_disp = persp_data["central_disp"]
+    viewer_pos_wrt_central = persp_data["viewer_pos"] # (lateral, vert, depth)
+    swivels = persp_data["swivels"]
+    tilts = persp_data["tilts"]
+    print("swivs: ", swivels)
+    print("tilts: ", tilts)
+
     disp_positions, init_plane_basis = position_displays_viewer(
         central_disp, viewer_pos_wrt_central, crops
     )
@@ -178,7 +185,20 @@ def get_backprojected_display(display_size, display_center,
     """
 
     swiv_ax, swiv_ang, swiv_loff, swiv_depth = swivel_ax_ang_off
+    if swiv_ax == 0:
+        # No swivel; keep code simpler by performing rotation of 0 degrees
+        swiv_ax = "left"
+        swiv_ang = 0
+        swiv_loff = 0
+        swiv_depth = 0
+    elif swiv_ax == 1:
+        swiv_ax = "left"
+    elif swiv_ax == 2:
+        swiv_ax = "right"
     tilt_ang, tilt_voff, tilt_depth = tilt_ang_off
+    # convert angles to radians
+    swiv_ang *= 2*pi/360
+    tilt_ang *= 2*pi/360
 
     display_plane = XYPlaneRectangle(display_center, display_size)
     display_normal = display_plane.normal()
@@ -426,7 +446,7 @@ def find_coeffs(source_coords, target_coords):
 
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
     # from PIL import Image
 
     # RESOLUTION_ARRAY = [(3840, 2160), (1440, 2560)]
@@ -436,7 +456,7 @@ if __name__ == "__main__":
     # img = Image.open(file)
     # cropped_images = []
 
-    get_backprojected_display_system(plot=True)
+    # get_backprojected_display_system(plot=True)
 
     # canvas_tuple_eff = tuple(compute_working_canvas(crop_tuples))
     # img_workingsize = resize_to_fill(img, canvas_tuple_eff)

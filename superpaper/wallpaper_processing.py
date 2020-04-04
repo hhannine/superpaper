@@ -433,23 +433,34 @@ class DisplaySystem():
             )
         return pnoffs
 
-    def update_ppinorm_offsets(self, offsets, bezels_included = False):
+    def get_persp_data(self, persp_name):
+        """Return a dict of perspective settings."""
+        if persp_name == "default":
+            get_id = self.default_perspective
+        else:
+            get_id = persp_name
+        if not get_id:
+            return None
+        return self.perspective_dict[get_id]
+
+    def update_ppinorm_offsets(self, offsets, bezels_included=False):
         """Write ppi_norm resolution offsets as determined
         in the GUI into Displays."""
-        self.offsets_include_bezels = bezels_included
+        # self.offsets_include_bezels = bezels_included # TODO unused? cleanup?
         for dsp, offs in zip(self.disp_list, offsets):
             dsp.ppi_norm_offset = offs
 
     def update_bezels(self, bezels_mm):
-
+        """Update displays with new bezel sizes."""
         # test that input values are positive
         for bez_pair in bezels_mm:
             for bez in bez_pair:
                 if bez < 0:
-                    msg = "Bezel thickness must be a non-negative number, {} was entered.".format(bez)
+                    msg = ("Bezel thickness must be a "
+                           "non-negative number, {} was entered.").format(bez)
                     sp_logging.G_LOGGER.info(msg)
                     show_message_dialog(msg, "Error")
-                    return -1
+                    return 0
         # convert to normalized pixel units
         max_ppmm = self.max_ppi() / 25.4
         bezels_ppi_norm = [(bz[0] * max_ppmm, bz[1] * max_ppmm) for bz in bezels_mm]
@@ -457,6 +468,7 @@ class DisplaySystem():
             dsp.ppi_norm_bezels = bz_px
             sp_logging.G_LOGGER.info("update_bezels: %s", bz_px)
         self.compute_initial_preview_offsets()
+        return 1
 
     def bezels_in_mm(self):
         """Return list of bezel thicknesses in millimeters."""
@@ -486,19 +498,6 @@ class DisplaySystem():
                 dsp.ppi_and_physsize_from_diagonal_inch(diag)
             self.compute_ppinorm_resolutions()
             self.compute_initial_preview_offsets()
-
-    def update_perspective_angles(self, angles):
-        """Write perspective angle pairs to their respective Displays.
-
-        After this writing process every Display is assumed to have
-        a persepective angle pair (float, float), where floats are
-        horizontal and vertical rotations of the display. Display with
-        angles (0, 0) defines the reference plane of perspective
-        corrections.
-        """
-        # self.use_perspective = True # TODO is a boolean needed for toggling?
-        for dsp, angl in zip(self.disp_list, angles):
-            dsp.perspective_angles = angl
 
 
     def save_system(self):
@@ -1080,10 +1079,11 @@ def span_single_image_advanced(profile):
     cropped_images = []
     crop_tuples = G_ACTIVE_DISPLAYSYSTEM.get_ppi_norm_crops(manual_offsets)
     print("G_A_DSYS: ", G_ACTIVE_DISPLAYSYSTEM.use_perspective, " prof.persp ", profile.perspective)
-    # if G_ACTIVE_DISPLAYSYSTEM.use_perspective and profile.perspective is not None:
-    if profile.perspective is not None:
-        # get_data(profile.perspective) TODO
-        proj_plane_crops, persp_coeffs = persp.get_backprojected_display_system()
+    if G_ACTIVE_DISPLAYSYSTEM.use_perspective:
+        persp_dat = G_ACTIVE_DISPLAYSYSTEM.get_persp_data(profile.perspective)
+    if persp_dat:
+        proj_plane_crops, persp_coeffs = persp.get_backprojected_display_system(crop_tuples,
+                                                                                persp_dat)
         # Canvas containing back-projected displays
         canvas_tuple_proj = tuple(compute_working_canvas(proj_plane_crops))
         # Canvas containing ppi normalized displays
