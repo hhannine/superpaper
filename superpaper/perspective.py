@@ -14,7 +14,7 @@ import math
 from math import pi
 import numpy as np
 
-# import sp_logging as sp_logging
+import superpaper.sp_logging as sp_logging
 
 def get_backprojected_display_system(crops, persp_data, plot=False):
     """
@@ -57,8 +57,8 @@ def get_backprojected_display_system(crops, persp_data, plot=False):
     viewer_pos_wrt_central = persp_data["viewer_pos"] # (lateral, vert, depth)
     swivels = persp_data["swivels"]
     tilts = persp_data["tilts"]
-    print("swivs: ", swivels)
-    print("tilts: ", tilts)
+    sp_logging.G_LOGGER.info("swivs: %s", swivels)
+    sp_logging.G_LOGGER.info("tilts: %s", tilts)
 
     disp_positions, init_plane_basis = position_displays_viewer(
         central_disp, viewer_pos_wrt_central, crops
@@ -85,12 +85,12 @@ def get_backprojected_display_system(crops, persp_data, plot=False):
                 )
             )
         translated_quads.append(work_quad)
-    print("trans_quads", translated_quads)
+    sp_logging.G_LOGGER.info("translated_quads: %s", translated_quads)
     ordered_quads = [(tquad[2], tquad[3], tquad[1], tquad[0])
                      for tquad in translated_quads]
-    print("ordered_quads", ordered_quads)
+    sp_logging.G_LOGGER.info("ordered_quads: %s", ordered_quads)
     ordered_crops = [crop_from_quad(ordqu) for ordqu in ordered_quads]
-    print("ordered_crops", ordered_crops)
+    sp_logging.G_LOGGER.info("ordered_crops: %s", ordered_crops)
     ppi_norm_corners = [
         (
             (crop[0], crop[1]),
@@ -100,7 +100,7 @@ def get_backprojected_display_system(crops, persp_data, plot=False):
         )
         for crop in crops
     ]
-    print("ppi_norm_corners", ppi_norm_corners)
+    # print("ppi_norm_corners", ppi_norm_corners)
     projected_coeffs = []
     for ordquad, ppi_norm_quad in zip(ordered_quads, ppi_norm_corners):
         coeffs = find_coeffs(ordquad, ppi_norm_quad)

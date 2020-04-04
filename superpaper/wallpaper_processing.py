@@ -1078,7 +1078,10 @@ def span_single_image_advanced(profile):
     manual_offsets = profile.manual_offsets
     cropped_images = []
     crop_tuples = G_ACTIVE_DISPLAYSYSTEM.get_ppi_norm_crops(manual_offsets)
-    print("G_A_DSYS: ", G_ACTIVE_DISPLAYSYSTEM.use_perspective, " prof.persp ", profile.perspective)
+    sp_logging.G_LOGGER.info("G_A_DSYS: %s, prof.persp %s",
+                             G_ACTIVE_DISPLAYSYSTEM.use_perspective,
+                             profile.perspective)
+    persp_dat = None
     if G_ACTIVE_DISPLAYSYSTEM.use_perspective:
         persp_dat = G_ACTIVE_DISPLAYSYSTEM.get_persp_data(profile.perspective)
     if persp_dat:
@@ -1088,7 +1091,7 @@ def span_single_image_advanced(profile):
         canvas_tuple_proj = tuple(compute_working_canvas(proj_plane_crops))
         # Canvas containing ppi normalized displays
         canvas_tuple_trgt = tuple(compute_working_canvas(crop_tuples))
-        print("EFF", canvas_tuple_proj)
+        sp_logging.G_LOGGER.info("Back-projected canvas size: %s", canvas_tuple_proj)
         img_workingsize = resize_to_fill(img, canvas_tuple_proj)
         for crop_tup, coeffs, ppin_crop, res in zip(proj_plane_crops,
                                                     persp_coeffs,
