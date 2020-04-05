@@ -439,7 +439,7 @@ class DisplaySystem():
             get_id = self.default_perspective
         else:
             get_id = persp_name
-        if not get_id:
+        if not get_id or get_id == "disabled":
             return None
         return self.perspective_dict[get_id]
 
@@ -1078,7 +1078,7 @@ def span_single_image_advanced(profile):
     manual_offsets = profile.manual_offsets
     cropped_images = []
     crop_tuples = G_ACTIVE_DISPLAYSYSTEM.get_ppi_norm_crops(manual_offsets)
-    sp_logging.G_LOGGER.info("G_A_DSYS: %s, prof.persp %s",
+    sp_logging.G_LOGGER.info("G_A_DSYS.use_perspective: %s, prof.perspective: %s",
                              G_ACTIVE_DISPLAYSYSTEM.use_perspective,
                              profile.perspective)
     persp_dat = None

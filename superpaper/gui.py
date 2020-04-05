@@ -357,11 +357,11 @@ class WallpaperSettingsPanel(wx.Panel):
         persp_choices = (["default"]
                          + list(self.display_sys.perspective_dict.keys())
                          + ["disabled"])
-        self.ch_sshow_sort = wx.Choice(self, -1, name="PerspChoice",
+        self.ch_persp = wx.Choice(self, -1, name="PerspChoice",
                                        size=(self.tc_width*0.7, -1),
                                        choices=persp_choices)
         self.sizer_setting_persp.Add(st_perspprof, 0, wx.ALIGN_LEFT|wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
-        self.sizer_setting_persp.Add(self.ch_sshow_sort, 0, wx.ALIGN_LEFT|wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.sizer_setting_persp.Add(self.ch_persp, 0, wx.ALIGN_LEFT|wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
 
         # Add setting subsizers to the adv settings sizer
@@ -499,6 +499,9 @@ class WallpaperSettingsPanel(wx.Panel):
             else:
                 self.cb_offsets.SetValue(False)
             wx.PostEvent(self.cb_offsets, wx.CommandEvent(commandEventType=wx.EVT_CHECKBOX.typeId))
+            self.ch_persp.SetSelection(
+                self.ch_persp.FindString(profile.perspective, False)
+            )
         else:
             self.show_adv_setting_sizer(False)
 
@@ -920,9 +923,12 @@ class WallpaperSettingsPanel(wx.Panel):
                     # if offset field is empty, assume user wants no offset
                     offs_strs.append("0,0")
             tmp_profile.manual_offsets = ";".join(offs_strs)
+        # perspective
+        tmp_profile.perspective = self.ch_persp.GetString(
+            self.ch_persp.GetSelection()
+        )
 
         # Paths
-        # for text_field in self.paths_controls: # TODO
         # extract data from path_listctrl
         path_lc_contents = []
         columns = self.path_listctrl.GetColumnCount()
@@ -932,7 +938,7 @@ class WallpaperSettingsPanel(wx.Panel):
                 item_dat.append(self.path_listctrl.GetItemText(idx, col))
             path_lc_contents.append(item_dat)
 
-        # format data
+        # format paths
         paths_array = []
         if columns == 1:
             flat_contents = [path for row in path_lc_contents for path in row]
