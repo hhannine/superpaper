@@ -171,7 +171,7 @@ class WallpaperSettingsPanel(wx.Panel):
         self.radiobox_spanmode.Bind(wx.EVT_RADIOBOX, self.onSpanRadio)
 
         # slideshow sizer
-        self.sizer_setting_slideshow = wx.StaticBoxSizer(wx.VERTICAL, self, "Wallpaper Slideshow")
+        self.sizer_setting_slideshow = wx.StaticBoxSizer(wx.VERTICAL, self, "Wallpaper slideshow")
         statbox_parent_sshow = self.sizer_setting_slideshow.GetStaticBox()
         sizer_sshow_subsettings = wx.GridSizer(2, 5, 5)
         self.st_sshow_sort = wx.StaticText(statbox_parent_sshow, -1, "Slideshow order:")
@@ -230,7 +230,7 @@ class WallpaperSettingsPanel(wx.Panel):
         self.create_sizer_paths()
 
     def create_sizer_paths(self):
-        self.sizer_setting_paths = wx.StaticBoxSizer(wx.VERTICAL, self, "Wallpaper Paths")
+        self.sizer_setting_paths = wx.StaticBoxSizer(wx.VERTICAL, self, "Wallpaper paths")
         self.statbox_parent_paths = self.sizer_setting_paths.GetStaticBox()
         st_paths_info = wx.StaticText(self.statbox_parent_paths, -1, "Browse to add your wallpaper files or source folders here:")
         if self.use_multi_image:
@@ -273,26 +273,33 @@ class WallpaperSettingsPanel(wx.Panel):
 
     def create_sizer_settings_advanced(self):
         """Create sizer for advanced spanning settings."""
-        self.sizer_setting_adv = wx.StaticBoxSizer(wx.VERTICAL, self, "Advanced Wallpaper Adjustment")
+        self.sizer_setting_adv = wx.StaticBoxSizer(wx.VERTICAL, self,
+                                                   "Advanced wallpaper adjustment")
         statbox_parent_adv = self.sizer_setting_adv.GetStaticBox()
 
         # Fallback Diagonal Inches
-        self.sizer_setting_diaginch = wx.StaticBoxSizer(wx.VERTICAL, self, "Display diagonal sizes")
-        statbox_parent_diaginch = self.sizer_setting_diaginch.GetStaticBox()
-        # st_diaginch_override = wx.StaticText(
-        #     statbox_parent_diaginch, -1, "Manual display size input:"
-        # )
+        # self.sizer_setting_diaginch = wx.StaticBoxSizer(wx.VERTICAL, self, "Display diagonal sizes")
+        # statbox_parent_diaginch = self.sizer_setting_diaginch.GetStaticBox()
+        self.sizer_setting_diaginch = wx.BoxSizer(wx.VERTICAL)
+        statbox_parent_diaginch = self
+        st_diaginch_override = wx.StaticText(statbox_parent_diaginch, -1,
+                                             "Display diagonal sizes:")
         self.button_override = wx.Button(statbox_parent_diaginch, label="Override detected sizes")
         self.button_override.Bind(wx.EVT_BUTTON, self.onOverrideSizes)
-        # self.sizer_setting_diaginch.Add(st_diaginch_override, 0, wx.CENTER|wx.ALL, 2)
-        self.sizer_setting_diaginch.Add(self.button_override, 0, wx.CENTER|wx.BOTTOM, 5)
+        self.sizer_setting_diaginch.Add(st_diaginch_override, 0, wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL|wx.BOTTOM, 5)
+        self.sizer_setting_diaginch.Add(self.button_override, 0,
+                                        wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL|wx.LEFT, 10)
 
         # Bezels
-        self.sizer_setting_bezels = wx.StaticBoxSizer(wx.VERTICAL, self, "Bezel Correction")
-        statbox_parent_bezels = self.sizer_setting_bezels.GetStaticBox()
+        # self.sizer_setting_bezels = wx.StaticBoxSizer(wx.VERTICAL, self, "Bezel Correction")
+        # statbox_parent_bezels = self.sizer_setting_bezels.GetStaticBox()
+        self.sizer_setting_bezels = wx.BoxSizer(wx.VERTICAL)
+        statbox_parent_bezels = self
         # self.cb_bezels = wx.CheckBox(statbox_parent_bezels, -1, "Apply bezel correction")
         # self.cb_bezels.Bind(wx.EVT_CHECKBOX, self.onCheckboxBezels)
         # self.sizer_setting_bezels.Add(self.cb_bezels, 0, wx.ALIGN_LEFT|wx.LEFT, 5)
+        st_bezels = wx.StaticText(statbox_parent_bezels, -1,
+                                  "Adjust bezel sizes:")
 
         self.sizer_bezel_buttons = wx.BoxSizer(wx.HORIZONTAL)
         self.button_bezels = wx.Button(statbox_parent_bezels, -1, label="Configure")
@@ -301,7 +308,7 @@ class WallpaperSettingsPanel(wx.Panel):
         self.button_bezels.Bind(wx.EVT_BUTTON, self.onConfigureBezels)
         self.button_bezels_save.Bind(wx.EVT_BUTTON, self.onConfigureBezelsSave)
         self.button_bezels_canc.Bind(wx.EVT_BUTTON, self.onConfigureBezelsCanc)
-        help_bmp =  wx.ArtProvider.GetBitmap(wx.ART_QUESTION, wx.ART_BUTTON, (16, 16))
+        help_bmp = wx.ArtProvider.GetBitmap(wx.ART_QUESTION, wx.ART_BUTTON, (16, 16))
         self.button_help_bezel = wx.BitmapButton(statbox_parent_bezels, bitmap=help_bmp, name="butt_help_bez")
         self.button_help_bezel.Bind(wx.EVT_BUTTON, self.onHelpBezels)
 
@@ -309,6 +316,7 @@ class WallpaperSettingsPanel(wx.Panel):
         self.sizer_bezel_buttons.Add(self.button_bezels_save, 0, wx.ALIGN_CENTER_VERTICAL|wx.TOP|wx.BOTTOM, 10)
         self.sizer_bezel_buttons.Add(self.button_bezels_canc, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 10)
         self.sizer_bezel_buttons.Add(self.button_help_bezel, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 10)
+        self.sizer_setting_bezels.Add(st_bezels, 0, wx.ALL, 0)
         self.sizer_setting_bezels.Add(self.sizer_bezel_buttons, 1, wx.EXPAND, 0)
         # self.button_bezels.Disable()
         self.button_bezels_save.Disable()
@@ -316,8 +324,10 @@ class WallpaperSettingsPanel(wx.Panel):
         # self.button_help_bezel.Disable()
 
         # Offsets
-        self.sizer_setting_offsets = wx.StaticBoxSizer(wx.VERTICAL, self, "Manual Display Offsets")
-        statbox_parent_offsets = self.sizer_setting_offsets.GetStaticBox()
+        # self.sizer_setting_offsets = wx.StaticBoxSizer(wx.VERTICAL, self, "Manual Display Offsets")
+        # statbox_parent_offsets = self.sizer_setting_offsets.GetStaticBox()
+        self.sizer_setting_offsets = wx.BoxSizer(wx.VERTICAL)
+        statbox_parent_offsets = self
         self.cb_offsets = wx.CheckBox(statbox_parent_offsets, -1, "Apply manual offsets")
         self.cb_offsets.Bind(wx.EVT_CHECKBOX, self.onCheckboxOffsets)
         st_offsets = wx.StaticText(
@@ -325,7 +335,7 @@ class WallpaperSettingsPanel(wx.Panel):
             "Manual offsets in pixels (x,y=px,px):"
         )
         st_offsets.Disable()
-        self.sizer_setting_offsets.Add(self.cb_offsets, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+        self.sizer_setting_offsets.Add(self.cb_offsets, 0, wx.ALIGN_LEFT|wx.BOTTOM, 5)
         self.sizer_setting_offsets.Add(st_offsets, 0, wx.ALIGN_LEFT|wx.LEFT, 10)
         tc_list_sizer_offs = wx.WrapSizer(wx.HORIZONTAL)
         self.tc_list_offsets = self.list_of_textctrl(statbox_parent_offsets, wpproc.NUM_DISPLAYS)
@@ -350,7 +360,7 @@ class WallpaperSettingsPanel(wx.Panel):
         self.ch_sshow_sort = wx.Choice(self, -1, name="PerspChoice",
                                        size=(self.tc_width*0.7, -1),
                                        choices=persp_choices)
-        self.sizer_setting_persp.Add(st_perspprof, 0, wx.ALIGN_LEFT|wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.sizer_setting_persp.Add(st_perspprof, 0, wx.ALIGN_LEFT|wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
         self.sizer_setting_persp.Add(self.ch_sshow_sort, 0, wx.ALIGN_LEFT|wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
 
 
@@ -363,7 +373,8 @@ class WallpaperSettingsPanel(wx.Panel):
 
     def create_sizer_diaginch_override(self):
         self.sizer_setting_diaginch.Clear(True)
-        statbox_parent_diaginch = self.sizer_setting_diaginch.GetStaticBox()
+        # statbox_parent_diaginch = self.sizer_setting_diaginch.GetStaticBox()
+        statbox_parent_diaginch = self
         self.cb_diaginch = wx.CheckBox(statbox_parent_diaginch, -1, "Input display sizes manually")
         self.cb_diaginch.Bind(wx.EVT_CHECKBOX, self.onCheckboxDiaginch)
         st_diaginch = wx.StaticText(
@@ -371,7 +382,7 @@ class WallpaperSettingsPanel(wx.Panel):
             "Display diagonal sizes (inches):"
         )
         st_diaginch.Disable()
-        self.sizer_setting_diaginch.Add(self.cb_diaginch, 0, wx.ALIGN_LEFT|wx.LEFT, 5)
+        self.sizer_setting_diaginch.Add(self.cb_diaginch, 0, wx.ALIGN_LEFT|wx.LEFT, 0)
         self.sizer_setting_diaginch.Add(st_diaginch, 0, wx.ALIGN_LEFT|wx.LEFT, 10)
         # diag size data for fields
         diags = [str(dsp.diagonal_size()[1]) for dsp in self.display_sys.disp_list]
