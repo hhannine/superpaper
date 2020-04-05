@@ -277,15 +277,14 @@ class WallpaperSettingsPanel(wx.Panel):
         statbox_parent_adv = self.sizer_setting_adv.GetStaticBox()
 
         # Fallback Diagonal Inches
-        self.sizer_setting_diaginch = wx.StaticBoxSizer(wx.VERTICAL, self, "Display Diagonal Sizes")
+        self.sizer_setting_diaginch = wx.StaticBoxSizer(wx.VERTICAL, self, "Display diagonal sizes")
         statbox_parent_diaginch = self.sizer_setting_diaginch.GetStaticBox()
-        st_diaginch_override = wx.StaticText(
-            statbox_parent_diaginch, -1,
-            "Manual display size input:"
-        )
+        # st_diaginch_override = wx.StaticText(
+        #     statbox_parent_diaginch, -1, "Manual display size input:"
+        # )
         self.button_override = wx.Button(statbox_parent_diaginch, label="Override detected sizes")
         self.button_override.Bind(wx.EVT_BUTTON, self.onOverrideSizes)
-        self.sizer_setting_diaginch.Add(st_diaginch_override, 0, wx.CENTER|wx.ALL, 2)
+        # self.sizer_setting_diaginch.Add(st_diaginch_override, 0, wx.CENTER|wx.ALL, 2)
         self.sizer_setting_diaginch.Add(self.button_override, 0, wx.CENTER|wx.BOTTOM, 5)
 
         # Bezels
@@ -340,10 +339,26 @@ class WallpaperSettingsPanel(wx.Panel):
             tc.Disable()
         self.sizer_setting_offsets.Add(tc_list_sizer_offs, 0, wx.ALIGN_LEFT|wx.LEFT, 5)
 
+        #Perspective profile
+        # self.sizer_setting_persp = wx.StaticBoxSizer(wx.HORIZONTAL, self, "")
+        # statbox_parent_persp = self.sizer_setting_persp.GetStaticBox()
+        self.sizer_setting_persp = wx.BoxSizer(wx.HORIZONTAL)
+        st_perspprof = wx.StaticText(self, -1, "Perspective profile:")
+        persp_choices = (["default"]
+                         + list(self.display_sys.perspective_dict.keys())
+                         + ["disabled"])
+        self.ch_sshow_sort = wx.Choice(self, -1, name="PerspChoice",
+                                       size=(self.tc_width*0.7, -1),
+                                       choices=persp_choices)
+        self.sizer_setting_persp.Add(st_perspprof, 0, wx.ALIGN_LEFT|wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        self.sizer_setting_persp.Add(self.ch_sshow_sort, 0, wx.ALIGN_LEFT|wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+
+
         # Add setting subsizers to the adv settings sizer
         self.sizer_setting_adv.Add(self.sizer_setting_diaginch, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
         self.sizer_setting_adv.Add(self.sizer_setting_bezels, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
         self.sizer_setting_adv.Add(self.sizer_setting_offsets, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        self.sizer_setting_adv.Add(self.sizer_setting_persp, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
 
 
     def create_sizer_diaginch_override(self):
