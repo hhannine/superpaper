@@ -1072,6 +1072,10 @@ class WallpaperSettingsPanel(wx.Panel):
             for pix in off:
                 flat_offsets.append(pix)
 
+        perspective = self.ch_persp.GetString(
+            self.ch_persp.GetSelection()
+        )
+
         # Use the simplified CLI profile class
         wpproc.refresh_display_data()
         profile = CLIProfileData(testimage,
@@ -1079,6 +1083,7 @@ class WallpaperSettingsPanel(wx.Panel):
                                  inches,
                                  None,
                                  flat_offsets,
+                                 perspective
                                 )
         change_wallpaper_job(profile)
 

@@ -245,29 +245,12 @@ class PerspectiveConfig(wx.Dialog):
                            #    size=(750, 850)
                           )
         self.tc_width = 150
+        self.parent = parent
         self.display_sys = parent.display_sys
         self.persp_dict = parent.display_sys.perspective_dict
+        self.test_image = None
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
-        # sizer_common = wx.BoxSizer(wx.VERTICAL)
-        # sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
-
-
-
-        # self.sizer_setting_slideshow = wx.StaticBoxSizer(wx.VERTICAL, self, "Wallpaper Slideshow")
-        # statbox_parent_sshow = self.sizer_setting_slideshow.GetStaticBox()
-        # sizer_sshow_subsettings = wx.GridSizer(2, 5, 5)
-        # self.st_sshow_sort = wx.StaticText(statbox_parent_sshow, -1, "Slideshow order:")
-        # self.ch_sshow_sort = wx.Choice(statbox_parent_sshow, -1, name="SortChoice",
-        #                          size=(self.tc_width*0.7, -1),
-        #                          choices=["Shuffle", "Alphabetical"])
-        # self.st_sshow_delay = wx.StaticText(statbox_parent_sshow, -1, "Delay (minutes):")
-        # self.tc_sshow_delay = wx.TextCtrl(
-        #     statbox_parent_sshow, -1,
-        #     size=(self.tc_width*0.69, -1),
-        #     style=wx.TE_RIGHT
-        # )
-
 
         # Master options
         self.cb_master = wx.CheckBox(self, -1, "Use perspective corrections")
@@ -446,17 +429,24 @@ class PerspectiveConfig(wx.Dialog):
         self.sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
 
         self.button_align_test = wx.Button(self, label="Align test")
-        self.button_test_wp = wx.Button(self, label="Test current wallpaper")
+        self.button_test_pick = wx.Button(self, label="Pick image")
+        self.button_test_imag = wx.Button(self, label="Test image")
         self.button_ok = wx.Button(self, label="OK")
         self.button_cancel = wx.Button(self, label="Cancel")
 
         self.button_align_test.Bind(wx.EVT_BUTTON, self.onAlignTest)
-        self.button_test_wp.Bind(wx.EVT_BUTTON, self.onTestWallpaper)
+        self.button_test_pick.Bind(wx.EVT_BUTTON, self.onChooseTestImage)
+        self.button_test_imag.Bind(wx.EVT_BUTTON, self.onTestWallpaper)
         self.button_ok.Bind(wx.EVT_BUTTON, self.onOk)
         self.button_cancel.Bind(wx.EVT_BUTTON, self.onCancel)
 
         self.sizer_buttons.Add(self.button_align_test, 0, wx.CENTER|wx.ALL, 5)
-        self.sizer_buttons.Add(self.button_test_wp, 0, wx.CENTER|wx.ALL, 5)
+        sline = wx.StaticLine(self, -1, style=wx.LI_VERTICAL)
+        self.sizer_buttons.Add(sline, 0, wx.EXPAND|wx.ALL, 5)
+        self.tc_testimage = wx.TextCtrl(self, -1, size=(self.tc_width, -1))
+        self.sizer_buttons.Add(self.tc_testimage, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_buttons.Add(self.button_test_pick, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_buttons.Add(self.button_test_imag, 0, wx.CENTER|wx.ALL, 5)
         self.sizer_buttons.AddStretchSpacer()
         self.sizer_buttons.Add(self.button_ok, 0, wx.CENTER|wx.ALL, 5)
         self.sizer_buttons.Add(self.button_cancel, 0, wx.CENTER|wx.ALL, 5)
@@ -634,15 +624,82 @@ class PerspectiveConfig(wx.Dialog):
         """Closes perspective config, throwing away unsaved contents."""
         self.Destroy()
 
-    def onAlignTest(self, event):
+    def onAlignTest(self, event=None, image=None):
         """Sets a test image wallpaper using the current perspectve config."""
-        pass
+        if image:
+            testimage = [os.path.realpath(image)]
+        else:
+            testimage = [os.path.join(PATH, "superpaper/resources/test.png")]
+        if not os.path.isfile(testimage[0]):
+            msg = "Test image not found in {}.".format(testimage)
+            show_message_dialog(msg, "Error")
+            return 0
+
+        # Use the settings currently written out in the fields!
+        inches = [dsp.diagonal_size()[1] for dsp in self.display_sys.disp_list]
+
+        offsets = []
+        for off_tc in self.parent.tc_list_offsets:
+            off = off_tc.GetLineText(0).split(",")
+            try:
+                offsets.append([int(off[0]), int(off[1])])
+            except (IndexError, ValueError):
+                show_message_dialog(
+                    "Offsets must be integer pairs separated with a comma!\n"
+                    "Problematic offset is {}".format(off)
+                    )
+                return 0
+        flat_offsets = []
+        for off in offsets:
+            for pix in off:
+                flat_offsets.append(pix)
+
+        # Save entered perspective values and get its name
+        self.onSave()
+        perspective = self.choice_profiles.GetString(
+            self.choice_profiles.GetSelection()
+        )
+
+        # Use the simplified CLI profile class
+        wpproc.refresh_display_data()
+        profile = CLIProfileData(testimage,
+                                 None,
+                                 inches,
+                                 None,
+                                 flat_offsets,
+                                 perspective
+                                )
+        change_wallpaper_job(profile)
+        return 1
+
+    def onChooseTestImage(self, event):
+        """Open a file dialog to choose a test image."""
+        with wx.FileDialog(self, "Choose a test image",
+                           wildcard=("Image files (*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tiff;*.webp)"
+                                     "|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tiff;*.webp"),
+                           defaultDir=self.parent.defdir,
+                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as file_dialog:
+
+            if file_dialog.ShowModal() == wx.ID_CANCEL:
+                return     # the user changed their mind
+
+            # Proceed loading the file chosen by the user
+            self.test_image = file_dialog.GetPath()
+            self.tc_testimage.SetValue(
+                os.path.basename(self.test_image)
+            )
+        return
 
     def onTestWallpaper(self, event):
         """Test the current perspective options by triggering a new wallpaper
         from the active wallpaper profile, if any."""
-        pass
-        # TODO warn that no profile is active?
+        if self.test_image:
+            self.onAlignTest(image=self.test_image)
+        else:
+            msg = "Choose a test image first."#.format(testimage)
+            show_message_dialog(msg, "Error")
+            return 0
+        return 1
 
 
 

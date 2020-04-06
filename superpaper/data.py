@@ -572,7 +572,8 @@ class CLIProfileData(ProfileData):
     the images given as input.
     """
 
-    def __init__(self, files, ppiarr, inches, bezels, offsets):
+    def __init__(self, files, ppiarr=None, inches=None,
+                 bezels=None, offsets=None, perspective=None):
         self.name = "cli"
         self.spanmode = ""  # single / multi
         if len(files) == 1:
@@ -607,6 +608,7 @@ class CLIProfileData(ProfileData):
         self.ppi_array_relative_density = []
         self.bezels = bezels
         self.bezel_px_offsets = []
+        self.perspective = perspective
         #self.files = files
         self.files = []
         for item in files:
