@@ -70,6 +70,7 @@ sudo snap install superpaper_1.2.0_amd64_experimental_classic.snap --classic --d
 - Python 3.6+
 - Pillow
 - screeninfo
+- numpy
 - wxpython (tray applet, GUI & slideshow, optional)
 - system_hotkey (hotkeys, optional)
 - xcffib (dep for system_hotkey)

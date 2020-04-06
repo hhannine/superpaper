@@ -61,6 +61,7 @@ if __name__ == "__main__":
         install_requires=[
             "Pillow>=7.0.0",
             "screeninfo>=0.6.1",
+            "numpy>=1.18.0",
             "system_hotkey>=1.0.3",
             "xcffib>=0.8.0",
             "xpybutil>=0.0.5"
