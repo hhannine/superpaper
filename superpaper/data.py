@@ -94,6 +94,7 @@ class GeneralSettingsData(object):
         self.set_command = ""
         self.browse_default_dir = ""
         self.show_help = True
+        self.warn_large_img = True
         self.parse_settings()
 
     def parse_settings(self):
@@ -150,6 +151,12 @@ class GeneralSettingsData(object):
                             self.show_help = False
                         else:
                             pass
+                    elif words[0].strip() == "warn_large_img":
+                        show_state = words[1].strip().lower()
+                        if show_state == "false":
+                            self.warn_large_img = False
+                        else:
+                            pass
                     elif words[0].strip() == "browse_default_dir":
                         self.browse_default_dir = words[1].strip()
                     else:
@@ -167,7 +174,8 @@ class GeneralSettingsData(object):
             general_settings_file.write("pause wallpaper hotkey=control+super+shift+p\n")
             self.hk_binding_pause = ("control", "super", "shift", "p")
             general_settings_file.write("set_command=\n")
-            general_settings_file.write("browse_default_dir=")
+            general_settings_file.write("browse_default_dir=\n")
+            general_settings_file.write("warn_large_img=true")
             general_settings_file.close()
 
     def save_settings(self):
@@ -200,7 +208,12 @@ class GeneralSettingsData(object):
             general_settings_file.write("show_help_at_start=false\n")
 
         general_settings_file.write("set_command={}\n".format(self.set_command))
-        general_settings_file.write("browse_default_dir={}".format(self.browse_default_dir))
+        general_settings_file.write("browse_default_dir={}\n".format(self.browse_default_dir))
+
+        if self.warn_large_img:
+            general_settings_file.write("warn_large_img=true")
+        else:
+            general_settings_file.write("warn_large_img=false")
         general_settings_file.close()
 
 
