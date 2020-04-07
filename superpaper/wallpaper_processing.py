@@ -665,8 +665,8 @@ class DisplaySystem():
 
         # load previous configs if file is found
         config = configparser.ConfigParser()
-        if os.path.exists(persp_file):
-            config.read(persp_file)
+        # if os.path.exists(persp_file):
+            # config.read(persp_file)
 
         for sect in self.perspective_dict:
             config[sect] = {
@@ -675,6 +675,9 @@ class DisplaySystem():
                 "swivels": list_to_str(self.perspective_dict[sect]["swivels"], item_len=4),
                 "tilts": list_to_str(self.perspective_dict[sect]["tilts"], item_len=3)
             }
+
+        sp_logging.G_LOGGER.info("Saving perspective profs: %s", config.sections())
+
         # write config to file
         with open(persp_file, 'w') as configfile:
             config.write(configfile)
@@ -688,7 +691,7 @@ class DisplaySystem():
         if os.path.exists(persp_file):
             config = configparser.ConfigParser()
             config.read(persp_file)
-            sp_logging.G_LOGGER.info("config.sections: %s", config.sections())
+            sp_logging.G_LOGGER.info("Loading perspective profs: %s", config.sections())
 
             self.perspective_dict = {}
             for sect in config.sections():
