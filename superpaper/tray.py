@@ -235,10 +235,14 @@ It is already registered for another action.".format(profile.hk_binding, profile
     def read_general_settings(self):
         """Refreshes general settings from file and applies hotkey bindings."""
         self.g_settings = GeneralSettingsData()
+        try:
+            self.seen_binding
+        except NameError:
+            self.seen_binding = set()
         self.register_hotkeys()
-        msg = "New settings are applied after an application restart. \
-New hotkeys are registered."
-        show_message_dialog(msg, "Info")
+        if self.g_settings.logging:
+            msg = "Logging is enabled after an application restart."
+            show_message_dialog(msg, "Info")
 
     def CreatePopupMenu(self):
         """Method called by WX library when user right clicks tray icon. Opens tray menu."""
