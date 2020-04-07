@@ -1103,12 +1103,11 @@ class WallpaperSettingsPanel(wx.Panel):
         """Popup hotkey help."""
         text = ("Bind a hotkey to start this profile. Choose max 3\n"
                 "modfiers out of: control, alt, shift, super(=win).\n"
-                "Example: control+super+x"
-        )
+                "Example: control+super+x")
         pop = HelpPopup(self, text)
         btn = evt.GetEventObject()
-        pos = btn.ClientToScreen( (0,0) )
-        sz =  btn.GetSize()
+        pos = btn.ClientToScreen((0, 0))
+        sz = btn.GetSize()
         pop.Position(pos, (0, sz[1]))
         pop.Popup()
 
@@ -1119,12 +1118,11 @@ class WallpaperSettingsPanel(wx.Panel):
                 "bottom edges of displays. Bezels between displays\n"
                 "are meaningful. Adjacent bezel pair thicknesses are\n"
                 "grouped together with the gap in between to a single\n"
-                "number."
-        )
+                "number.")
         pop = HelpPopup(self, text)
         btn = evt.GetEventObject()
-        pos = btn.ClientToScreen( (0,0) )
-        sz =  btn.GetSize()
+        pos = btn.ClientToScreen((0, 0))
+        sz = btn.GetSize()
         pop.Position(pos, (0, sz[1]))
         pop.Popup()
 
@@ -1689,7 +1687,12 @@ class WallpaperPreviewPanel(wx.Panel):
                 "as accurately as possible represent the actual\n"
                 "positions of you displays on your desk."
         )
-        pop = HelpPopup(self, text, show_image_quality = True)
+        use_per = self.display_sys.use_perspective
+        persname = self.frame.ch_persp.GetString(self.frame.ch_persp.GetSelection())
+        pop = HelpPopup(self, text,
+                        show_image_quality=True,
+                        use_perspective=use_per,
+                        persp_name=persname)
         btn = evt.GetEventObject()
         pos = btn.ClientToScreen( (0,0) )
         sz =  btn.GetSize()
