@@ -309,9 +309,9 @@ It is already registered for another action.".format(profile.hk_binding, profile
             if profile is None:
                 sp_logging.G_LOGGER.info("No previous profile was found.")
             else:
-                self.repeating_timer = run_profile_job(profile)
+                self.repeating_timer, thrd = run_profile_job(profile)
 
-    def start_profile(self, event, profile, force_reload = False):
+    def start_profile(self, event, profile, force_reload=False):
         """
         Starts a profile job, i.e. runs a slideshow or a one time wallpaper change.
 
@@ -348,13 +348,13 @@ It is already registered for another action.".format(profile.hk_binding, profile
                         sp_logging.G_LOGGER.info(
                             "Starting timed profile job with profile: %s",
                             profile.name)
-                    self.repeating_timer = run_profile_job(profile)
+                    self.repeating_timer, thrd = run_profile_job(profile)
                     self.active_profile = profile
                     write_active_profile(profile.name)
                     if sp_logging.DEBUG:
                         sp_logging.G_LOGGER.info("Wrote active profile: %s",
                                                  profile.name)
-                    return 0
+                    return thrd
         else:
             with self.job_lock:
                 if (self.repeating_timer is not None
@@ -369,13 +369,13 @@ It is already registered for another action.".format(profile.hk_binding, profile
                     sp_logging.G_LOGGER.info(
                         "Starting timed profile job with profile: %s",
                         profile.name)
-                self.repeating_timer = run_profile_job(profile)
+                self.repeating_timer, thrd = run_profile_job(profile)
                 self.active_profile = profile
                 write_active_profile(profile.name)
                 if sp_logging.DEBUG:
                     sp_logging.G_LOGGER.info("Wrote active profile: %s",
                                              profile.name)
-                return 0
+                return thrd
 
     def next_wallpaper(self, event):
         """Calls the next wallpaper changer method of the running profile."""

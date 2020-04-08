@@ -2,6 +2,7 @@
 New wallpaper configuration GUI for Superpaper.
 """
 import os
+import time
 from operator import itemgetter
 from PIL import Image, ImageEnhance
 
@@ -883,14 +884,20 @@ class WallpaperSettingsPanel(wx.Panel):
 
     def onApply(self, event):
         """Applies the currently open profile. Saves it first."""
+        busy = wx.BusyCursor()
         saved_file = self.onSave(event)
         sp_logging.G_LOGGER.info("onApply profile: saved %s", saved_file)
         if saved_file:
             saved_profile = ProfileData(saved_file)
             self.parent_tray_obj.reload_profiles(event)
-            self.parent_tray_obj.start_profile(event, saved_profile, force_reload=True)
+            wx.Yield()
+            thrd = self.parent_tray_obj.start_profile(event, saved_profile, force_reload=True)
+            if thrd:
+                while thrd.is_alive():
+                    time.sleep(0.5)
         else:
             pass
+        del busy
 
     def onSave(self, event):
         """Saves currently open profile into file. A test method is called to verify data."""
@@ -1076,6 +1083,8 @@ class WallpaperSettingsPanel(wx.Panel):
             self.ch_persp.GetSelection()
         )
 
+        busy = wx.BusyCursor()
+
         # Use the simplified CLI profile class
         wpproc.refresh_display_data()
         profile = CLIProfileData(testimage,
@@ -1085,7 +1094,10 @@ class WallpaperSettingsPanel(wx.Panel):
                                  flat_offsets,
                                  perspective
                                 )
-        change_wallpaper_job(profile)
+        thrd = change_wallpaper_job(profile)
+        while thrd.is_alive():
+            time.sleep(0.5)
+        del busy
 
     def onPerspectives(self, event):
         """Open perspective configuration dialog."""

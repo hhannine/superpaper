@@ -2,6 +2,7 @@
 GUI dialogs for Superpaper.
 """
 import os
+import time
 
 import superpaper.perspective as persp
 import superpaper.sp_logging as sp_logging
@@ -771,6 +772,8 @@ class PerspectiveConfig(wx.Dialog):
             for pix in off:
                 flat_offsets.append(pix)
 
+        busy = wx.BusyCursor()
+
         # Save entered perspective values and get its name
         self.onSave()
         perspective = self.choice_profiles.GetString(
@@ -786,7 +789,10 @@ class PerspectiveConfig(wx.Dialog):
                                  flat_offsets,
                                  perspective
                                 )
-        change_wallpaper_job(profile)
+        thrd = change_wallpaper_job(profile)
+        while thrd.is_alive():
+            time.sleep(0.5)
+        del busy
         return 1
 
     def onChooseTestImage(self, event):

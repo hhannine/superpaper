@@ -1575,14 +1575,14 @@ def run_profile_job(profile):
     if not profile.slideshow:
         if sp_logging.DEBUG:
             sp_logging.G_LOGGER.info("Running a one-off wallpaper change.")
-        change_wallpaper_job(profile)
+        thrd = change_wallpaper_job(profile)
     elif profile.slideshow:
         if sp_logging.DEBUG:
             sp_logging.G_LOGGER.info("Running wallpaper slideshow.")
-        change_wallpaper_job(profile)
+        thrd = change_wallpaper_job(profile)
         repeating_timer = RepeatedTimer(
             profile.delay_list[0], change_wallpaper_job, profile)
-    return repeating_timer
+    return (repeating_timer, thrd)
 
 
 def quick_profile_job(profile):
@@ -1610,18 +1610,18 @@ def quick_profile_job(profile):
                     sp_logging.G_LOGGER.info("Use wallpaper crop pieces: %s",
                                              image_pieces)
                 thrd = Thread(target=set_wallpaper_piecewise,
-                            args=(image_pieces ,),
-                            daemon=True)
+                              args=(image_pieces,),
+                              daemon=True)
                 thrd.start()
             else:
                 thrd = Thread(target=set_wallpaper,
-                            args=(os.path.join(TEMP_PATH, files[0]),),
-                            daemon=True)
+                              args=(os.path.join(TEMP_PATH, files[0]),),
+                              daemon=True)
                 thrd.start()
         else:
             if sp_logging.DEBUG:
                 sp_logging.G_LOGGER.info("Old file for quickswitch was not found. %s",
-                              files)
+                                         files)
 
 def use_image_pieces():
     """Determine if it improves perfomance to use existing image pieces.
