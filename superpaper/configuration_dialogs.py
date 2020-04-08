@@ -730,6 +730,19 @@ class PerspectiveConfig(wx.Dialog):
 
     def onAlignTest(self, event=None, image=None):
         """Sets a test image wallpaper using the current perspectve config."""
+        use_persp = self.cb_master.GetValue()
+        if not use_persp:
+            msg = "Perspective corrections are disabled. Enable them to test?"
+            res = show_message_dialog(msg, style="YES_NO")
+            if res:
+                self.cb_master.SetValue(True)
+                self.checkCbmaster() # update & save display_sys
+            else:
+                # Don't enable, stop testing.
+                msg = "Perspective corrections are disabled, abort test."
+                res = show_message_dialog(msg)
+                return 0
+
         if image:
             testimage = [os.path.realpath(image)]
         else:
