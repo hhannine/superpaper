@@ -775,11 +775,16 @@ class PerspectiveConfig(wx.Dialog):
         busy = wx.BusyCursor()
 
         # Save entered perspective values and get its name
-        self.onSave()
+        save_succ = self.onSave()
+        if save_succ == 0:
+            # Save failed or canceled, abort test.
+            del busy
+            return 0
         perspective = self.choice_profiles.GetString(
             self.choice_profiles.GetSelection()
         )
 
+        wx.Yield()
         # Use the simplified CLI profile class
         wpproc.refresh_display_data()
         profile = CLIProfileData(testimage,
