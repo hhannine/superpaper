@@ -197,7 +197,7 @@ def get_backprojected_display(display_size, display_center,
         swiv_ax = "right"
     tilt_ang, tilt_voff, tilt_depth = tilt_ang_off
     # convert angles to radians
-    swiv_ang *= 2*pi/360
+    swiv_ang *= -1*2*pi/360 # something causes swivels go the wrong way; maybe the y-axis flip?
     tilt_ang *= 2*pi/360
 
     display_plane = XYPlaneRectangle(display_center, display_size)
