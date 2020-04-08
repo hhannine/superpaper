@@ -446,7 +446,6 @@ class DisplaySystem():
     def update_ppinorm_offsets(self, offsets, bezels_included=False):
         """Write ppi_norm resolution offsets as determined
         in the GUI into Displays."""
-        # self.offsets_include_bezels = bezels_included # TODO unused? cleanup?
         for dsp, offs in zip(self.disp_list, offsets):
             dsp.ppi_norm_offset = offs
 

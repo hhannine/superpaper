@@ -1446,7 +1446,7 @@ class WallpaperPreviewPanel(wx.Panel):
     #
     def get_canvas(self, disp_data, use_ppi_px = False):
         """Returns a size tuple for the desktop are in pixels or millimeters."""
-        if use_ppi_px: # TODO This is unnecessary if digital offsets contain the bezels
+        if use_ppi_px:
             rightmost_edge = max(
                 [disp.resolution[0] + disp.digital_offset[0] + disp.ppi_norm_bezels[0] for disp in disp_data]
             )
@@ -1519,7 +1519,7 @@ class WallpaperPreviewPanel(wx.Panel):
                         ),
                         # tuple 2: pos
                         (
-                            (scaling_fac * doff[0]) + off[0], # TODO do you add bezel here?
+                            (scaling_fac * doff[0]) + off[0],
                             (scaling_fac * doff[1]) + off[1]
                         )
                     )

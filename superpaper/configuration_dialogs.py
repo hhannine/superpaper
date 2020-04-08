@@ -196,7 +196,6 @@ class BrowsePaths(wx.Dialog):
 
     def onRemove(self, event):
         """Removes last appended path from export field."""
-        # TODO remove btn should be disabled if not in valid selection
         item = self.paths_listctrl.GetFocusedItem()
         if item != -1:
             self.paths_listctrl.DeleteItem(item)
