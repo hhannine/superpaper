@@ -462,7 +462,7 @@ class PerspectiveConfig(wx.Dialog):
         self.button_test_pick = wx.Button(self, label="Pick image")
         self.button_test_imag = wx.Button(self, label="Test image")
         self.button_ok = wx.Button(self, label="OK")
-        self.button_cancel = wx.Button(self, label="Cancel")
+        self.button_cancel = wx.Button(self, label="Close")
 
         self.button_align_test.Bind(wx.EVT_BUTTON, self.onAlignTest)
         self.button_test_pick.Bind(wx.EVT_BUTTON, self.onChooseTestImage)
@@ -614,6 +614,11 @@ class PerspectiveConfig(wx.Dialog):
             ]
         except ValueError:
             msg = "Viewer offsets should be lenghts in millimeters, separate decimals with a point."
+            show_message_dialog(msg)
+            return 0
+        if viewer_offset[2] <= 0:
+            msg = "Viewer distance must be entered and positive."
+            show_message_dialog(msg)
             return 0
         viewer_data = (centr_disp, viewer_offset)
         swivels = []
