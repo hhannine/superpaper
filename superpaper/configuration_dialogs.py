@@ -3,6 +3,7 @@ GUI dialogs for Superpaper.
 """
 import os
 
+import superpaper.perspective as persp
 import superpaper.sp_logging as sp_logging
 import superpaper.wallpaper_processing as wpproc
 from superpaper.data import GeneralSettingsData, ProfileData, TempProfileData, CLIProfileData, list_profiles
@@ -245,17 +246,25 @@ class PerspectiveConfig(wx.Dialog):
                            #    size=(750, 850)
                           )
         self.tc_width = 150
-        self.parent = parent
+        self.frame = parent
         self.display_sys = parent.display_sys
-        self.persp_dict = parent.display_sys.perspective_dict
+        self.persp_dict = self.display_sys.perspective_dict
         self.test_image = None
+        self.help_bmp = wx.ArtProvider.GetBitmap(wx.ART_QUESTION, wx.ART_BUTTON, (16, 16))
+        self.warn_large_img = GeneralSettingsData().warn_large_img
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)
 
         # Master options
+        sizer_top = wx.BoxSizer(wx.HORIZONTAL)
         self.cb_master = wx.CheckBox(self, -1, "Use perspective corrections")
         self.cb_master.SetValue(self.display_sys.use_perspective)
         # self.cb_master.Bind(wx.EVT_CHECKBOX, self.onCbmaster)
+        self.button_help_persp = wx.BitmapButton(self, bitmap=self.help_bmp)
+        self.button_help_persp.Bind(wx.EVT_BUTTON, self.onHelpPerspective)
+        sizer_top.Add(self.cb_master, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
+        sizer_top.AddStretchSpacer()
+        sizer_top.Add(self.button_help_persp, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 10)
 
         # Profile options
         self.create_profile_opts()
@@ -266,7 +275,8 @@ class PerspectiveConfig(wx.Dialog):
         # Bottom row buttons
         self.create_bottom_butts()
 
-        sizer_main.Add(self.cb_master, 0, wx.ALL|wx.ALIGN_LEFT, 5)
+        # sizer_main.Add(self.cb_master, 0, wx.ALL|wx.ALIGN_LEFT, 5)
+        sizer_main.Add(sizer_top, 0, wx.ALL|wx.EXPAND, 0)
         sizer_main.Add(self.sizer_prof_opts, 0, wx.ALL|wx.ALIGN_CENTER|wx.EXPAND, 5)
         sizer_main.Add(self.sizer_disp_opts, 0, wx.ALL|wx.ALIGN_CENTER|wx.EXPAND, 5)
         sizer_main.Add(self.sizer_buttons, 0, wx.ALL|wx.EXPAND, 5)
@@ -297,9 +307,11 @@ class PerspectiveConfig(wx.Dialog):
         self.button_new = wx.Button(statbox_profs, label="New")
         self.button_save = wx.Button(statbox_profs, label="Save")
         self.button_delete = wx.Button(statbox_profs, label="Delete")
+        self.button_help_perspprof = wx.BitmapButton(statbox_profs, bitmap=self.help_bmp)
         self.button_new.Bind(wx.EVT_BUTTON, self.onCreateNewProfile)
         self.button_save.Bind(wx.EVT_BUTTON, self.onSave)
         self.button_delete.Bind(wx.EVT_BUTTON, self.onDeleteProfile)
+        self.button_help_perspprof.Bind(wx.EVT_BUTTON, self.onHelpPersProfile)
 
         # Add profile bar items to the sizer
         self.sizer_prof_bar.Add(st_choice_profiles, 0, wx.CENTER|wx.ALL, 5)
@@ -309,8 +321,11 @@ class PerspectiveConfig(wx.Dialog):
         self.sizer_prof_bar.Add(self.button_new, 0, wx.CENTER|wx.ALL, 5)
         self.sizer_prof_bar.Add(self.button_save, 0, wx.CENTER|wx.ALL, 5)
         self.sizer_prof_bar.Add(self.button_delete, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_prof_bar.AddStretchSpacer()
+        self.sizer_prof_bar.Add(self.button_help_perspprof, 0, wx.CENTER|wx.LEFT, 5)
 
-        self.sizer_prof_opts.Add(self.sizer_prof_bar, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_prof_opts.Add(self.sizer_prof_bar, 0,
+                                 wx.ALIGN_CENTER_VERTICAL|wx.EXPAND|wx.ALL, 5)
         sline = wx.StaticLine(statbox_profs, -1, style=wx.LI_HORIZONTAL)
         self.sizer_prof_opts.Add(sline, 0, wx.EXPAND|wx.ALL, 5)
 
@@ -350,66 +365,81 @@ class PerspectiveConfig(wx.Dialog):
             sizer_viewer_off.Add(st[0], st[1], st[2], st[3])
             sizer_viewer_off.Add(tc[0], tc[1], tc[2], tc[3])
 
+        self.button_help_centrald = wx.BitmapButton(statbox_profs, bitmap=self.help_bmp)
+        self.button_help_centrald.Bind(wx.EVT_BUTTON, self.onHelpCentralDisp)
+        sizer_viewer_off.AddStretchSpacer()
+        sizer_viewer_off.Add(self.button_help_centrald, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+
         # Add remaining options to persp profile sizer
         self.sizer_prof_opts.Add(self.cb_dispsys_def, 0, wx.ALL, 5)
         self.sizer_prof_opts.Add(sizer_centr_disp, 0, wx.LEFT, 5)
-        self.sizer_prof_opts.Add(sizer_viewer_off, 0, wx.LEFT, 5)
+        self.sizer_prof_opts.Add(sizer_viewer_off, 0, wx.LEFT|wx.EXPAND, 5)
 
     def create_display_opts(self, num_disps):
         """Create sizer for display perspective options."""
-        self.sizer_disp_opts = wx.StaticBoxSizer(wx.VERTICAL, self,
+        self.sizer_disp_opts = wx.StaticBoxSizer(wx.HORIZONTAL, self,
                                                  "Display perspective configuration")
+        statbox_disp_opts = self.sizer_disp_opts.GetStaticBox()
         cols = 8
         gap = 5
         self.grid = wx.FlexGridSizer(cols, gap, gap)
 
         # header
-        hd_id = wx.StaticText(self, -1, "Display")
-        hd_sax = wx.StaticText(self, -1, "Swivel axis")
-        hd_san = wx.StaticText(self, -1, "Swivel angle")
-        hd_sol = wx.StaticText(self, -1, "Swiv. ax. lat. offs.")
-        hd_sod = wx.StaticText(self, -1, "Swiv. ax. dep. offs.")
-        hd_tan = wx.StaticText(self, -1, "Tilt angle")
-        hd_tov = wx.StaticText(self, -1, "Tilt ax. ver. offs.")
-        hd_tod = wx.StaticText(self, -1, "Tilt ax. dep. offs.")
-        self.grid.Add(hd_id, 0, wx.ALL, 5)
-        self.grid.Add(hd_sax, 0, wx.ALL, 5)
-        self.grid.Add(hd_san, 0, wx.ALL, 5)
-        self.grid.Add(hd_sol, 0, wx.ALL, 5)
-        self.grid.Add(hd_sod, 0, wx.ALL, 5)
-        self.grid.Add(hd_tan, 0, wx.ALL, 5)
-        self.grid.Add(hd_tov, 0, wx.ALL, 5)
-        self.grid.Add(hd_tod, 0, wx.ALL, 5)
+        hd_id = wx.StaticText(statbox_disp_opts, -1, "Display")
+        hd_sax = wx.StaticText(statbox_disp_opts, -1, "Swivel axis")
+        hd_san = wx.StaticText(statbox_disp_opts, -1, "Swivel angle")
+        hd_sol = wx.StaticText(statbox_disp_opts, -1, "Sw. ax. lat. off.")
+        hd_sod = wx.StaticText(statbox_disp_opts, -1, "Sw. ax. dep. off.")
+        hd_tan = wx.StaticText(statbox_disp_opts, -1, "Tilt angle")
+        hd_tov = wx.StaticText(statbox_disp_opts, -1, "Ti. ax. ver. off.")
+        hd_tod = wx.StaticText(statbox_disp_opts, -1, "Ti. ax. dep. off.")
+        self.grid.Add(hd_id, 0, wx.LEFT|wx.RIGHT|wx.BOTTOM, 1)
+        self.grid.Add(hd_sax, 0, wx.LEFT|wx.RIGHT|wx.BOTTOM, 1)
+        self.grid.Add(hd_san, 0, wx.LEFT|wx.RIGHT|wx.BOTTOM, 1)
+        self.grid.Add(hd_sol, 0, wx.LEFT|wx.RIGHT|wx.BOTTOM, 1)
+        self.grid.Add(hd_sod, 0, wx.LEFT|wx.RIGHT|wx.BOTTOM, 1)
+        self.grid.Add(hd_tan, 0, wx.LEFT|wx.RIGHT|wx.BOTTOM, 1)
+        self.grid.Add(hd_tov, 0, wx.LEFT|wx.RIGHT|wx.BOTTOM, 1)
+        self.grid.Add(hd_tod, 0, wx.LEFT|wx.RIGHT|wx.BOTTOM, 1)
 
         # Fill grid rows
         self.grid_rows = []
         for i in range(num_disps):
             row = self.display_opt_widget_row(i)
             self.grid_rows.append(row)
-            sizer_row = [(item, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+            sizer_row = [(item, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 1)
                          for item in row]
             self.grid.AddMany(sizer_row)
 
         # Build sizer
         self.sizer_disp_opts.Add(self.grid, 0, wx.ALL|wx.EXPAND, 5)
 
+        # help
+        self.button_help_data = wx.BitmapButton(statbox_disp_opts, bitmap=self.help_bmp)
+        self.button_help_data.Bind(wx.EVT_BUTTON, self.onHelpData)
+        self.sizer_disp_opts.AddStretchSpacer()
+        self.sizer_disp_opts.Add(self.button_help_data, 0,
+                                 wx.ALIGN_TOP|wx.ALIGN_RIGHT|wx.RIGHT, 5)
+
+
     def display_opt_widget_row(self, row_id):
         """Return a display option widget row."""
-        row_id = wx.StaticText(self, -1, str(row_id))
-        row_sax = wx.Choice(self, -1, name="SwivelAxisChoice",
+        statbox_disp_opts = self.sizer_disp_opts.GetStaticBox()
+        row_id = wx.StaticText(statbox_disp_opts, -1, str(row_id))
+        row_sax = wx.Choice(statbox_disp_opts, -1, name="SwivelAxisChoice",
                             size=(self.tc_width*0.7, -1),
                             choices=["No swivel", "Left", "Right"])
-        row_san = wx.TextCtrl(self, -1, size=(self.tc_width*0.69, -1),
+        row_san = wx.TextCtrl(statbox_disp_opts, -1, size=(self.tc_width*0.69, -1),
                               style=wx.TE_RIGHT)
-        row_sol = wx.TextCtrl(self, -1, size=(self.tc_width*0.69, -1),
+        row_sol = wx.TextCtrl(statbox_disp_opts, -1, size=(self.tc_width*0.69, -1),
                               style=wx.TE_RIGHT)
-        row_sod = wx.TextCtrl(self, -1, size=(self.tc_width*0.69, -1),
+        row_sod = wx.TextCtrl(statbox_disp_opts, -1, size=(self.tc_width*0.69, -1),
                               style=wx.TE_RIGHT)
-        row_tan = wx.TextCtrl(self, -1, size=(self.tc_width*0.69, -1),
+        row_tan = wx.TextCtrl(statbox_disp_opts, -1, size=(self.tc_width*0.69, -1),
                               style=wx.TE_RIGHT)
-        row_tov = wx.TextCtrl(self, -1, size=(self.tc_width*0.69, -1),
+        row_tov = wx.TextCtrl(statbox_disp_opts, -1, size=(self.tc_width*0.69, -1),
                               style=wx.TE_RIGHT)
-        row_tod = wx.TextCtrl(self, -1, size=(self.tc_width*0.69, -1),
+        row_tod = wx.TextCtrl(statbox_disp_opts, -1, size=(self.tc_width*0.69, -1),
                               style=wx.TE_RIGHT)
         # Prefill neutral data
         row_sax.SetSelection(0)
@@ -518,6 +548,35 @@ class PerspectiveConfig(wx.Dialog):
         self.profnames.append("Create a new profile")
         self.choice_profiles.SetItems(self.profnames)
 
+    def check_for_large_image_size(self, persp_name):
+        """Compute how large an image the current perspective
+        settings would produce as an intermediate step."""
+        if self.frame.cb_offsets.GetValue():
+            offsets = []
+            for tc in self.frame.tc_list_offsets:
+                off_str = tc.GetValue().split(",")
+                try:
+                    offsets.append(
+                        (int(off_str[0]), int(off_str[1]))
+                    )
+                except (ValueError, IndexError):
+                    offsets.append(
+                        (0, 0)
+                    )
+        else:
+            offsets = wpproc.NUM_DISPLAYS * [(0, 0)]
+        crops = self.display_sys.get_ppi_norm_crops(offsets)
+        persp_data = self.display_sys.get_persp_data(persp_name)
+        if persp_data:
+            proj_plane_crops, persp_coeffs = persp.get_backprojected_display_system(crops,
+                                                                                    persp_data)
+            # Canvas containing back-projected displays
+            canv = wpproc.compute_working_canvas(proj_plane_crops)
+        max_size = 12000
+        if canv[0] > max_size or canv[1] > max_size:
+            return (True, canv)
+        return (False, canv)
+
     #
     # Button methods
     #
@@ -576,9 +635,45 @@ class PerspectiveConfig(wx.Dialog):
             )
 
         # update and save data
-        self.display_sys.update_perspectives(
-            persp_name, toggle, is_ds_def, viewer_data, swivels, tilts
-        )
+        # check for large images
+        if self.warn_large_img:
+            self.display_sys.update_perspectives(
+                "temp", toggle, is_ds_def, viewer_data, swivels, tilts
+            )
+            too_large, canvas = self.check_for_large_image_size("temp")
+            if too_large:
+                msg = ("These perspective settings will produce large intermediate images "
+                       + "which might use a large amount of system memory during processing. "
+                       + "Take care not to set the perspective so that you would see arbitrarily "
+                       + "far into the projected image as this will produce unboundedly large "
+                       + "images and will cause problems, even a system crash."
+                       + "\n\n"
+                       + "Intermediate resolution with these settings is {}x{}".format(canvas[0], canvas[1])
+                       + "\n\n"
+                       + "Do you want to continue?\n"
+                       + "\n"
+                       + "This warning may be disabled from settings.")
+                res = show_message_dialog(msg, "Info", style="YES_NO")
+                if not res:
+                    # Stop saving, remove temp
+                    self.persp_dict.pop("temp", None)
+                    return 0
+                else:
+                    # Continue and write profile
+                    self.persp_dict.pop("temp", None)
+                    self.display_sys.update_perspectives(
+                        persp_name, toggle, is_ds_def, viewer_data, swivels, tilts
+                    )
+            else:
+                # No large images, temp not needed
+                self.persp_dict.pop("temp", None)
+                self.display_sys.update_perspectives(
+                        persp_name, toggle, is_ds_def, viewer_data, swivels, tilts
+                )
+        else:
+            self.display_sys.update_perspectives(
+                persp_name, toggle, is_ds_def, viewer_data, swivels, tilts
+            )
         self.display_sys.save_perspectives()
 
         # update dialog profile list
@@ -591,6 +686,9 @@ class PerspectiveConfig(wx.Dialog):
     def onDeleteProfile(self, evt):
         """Delete selected perspective profile."""
         persp_name = self.choice_profiles.GetString(self.choice_profiles.GetSelection())
+        if self.display_sys.default_perspective == persp_name:
+            self.display_sys.default_perspective = None
+            self.display_sys.save_system()
         self.persp_dict.pop(persp_name, None)
         self.display_sys.save_perspectives()
         # update dialog profile list
@@ -617,7 +715,8 @@ class PerspectiveConfig(wx.Dialog):
     def onOk(self, event):
         """Apply/save perspective settings and close dialog."""
         # self.checkCbmaster()
-        self.onSave()
+        if self.tc_name.GetValue():
+            self.onSave()
         self.EndModal(wx.ID_OK)
 
     def onCancel(self, event):
@@ -639,7 +738,7 @@ class PerspectiveConfig(wx.Dialog):
         inches = [dsp.diagonal_size()[1] for dsp in self.display_sys.disp_list]
 
         offsets = []
-        for off_tc in self.parent.tc_list_offsets:
+        for off_tc in self.frame.tc_list_offsets:
             off = off_tc.GetLineText(0).split(",")
             try:
                 offsets.append([int(off[0]), int(off[1])])
@@ -677,7 +776,7 @@ class PerspectiveConfig(wx.Dialog):
         with wx.FileDialog(self, "Choose a test image",
                            wildcard=("Image files (*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tiff;*.webp)"
                                      "|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tiff;*.webp"),
-                           defaultDir=self.parent.defdir,
+                           defaultDir=self.frame.defdir,
                            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as file_dialog:
 
             if file_dialog.ShowModal() == wx.ID_CANCEL:
@@ -700,6 +799,99 @@ class PerspectiveConfig(wx.Dialog):
             show_message_dialog(msg, "Error")
             return 0
         return 1
+
+    def onHelpPerspective(self, evt):
+        """Popup perspectives main help."""
+        text = ("Perspective corrections were created to fix the\n"
+                "wallpaper misalignment that arises when your diplays\n"
+                "are not in a common plane, like they would be on the\n"
+                "wall. Straight lines are cut into pieces when displays\n"
+                "are both tilted and turned respective to each other.\n"
+                "These corrections work by undoing the perspective changes\n"
+                "caused by the rotation of the displays.\n"
+                "\n"
+                "In this dialog you may configure perspective setting\n"
+                "profiles, and test their effects with the tools in the\n"
+                "lower left corner."
+                )
+        # use_per = self.cb_master.GetValue()
+        # persname = self.choice_profiles.GetString(self.choice_profiles.GetSelection())
+        pop = HelpPopup(self, text,
+                        show_image_quality=False,
+                        # use_perspective=use_per,
+                        # persp_name=persname
+                        )
+        btn = evt.GetEventObject()
+        pos = btn.ClientToScreen((0, 0))
+        sz = btn.GetSize()
+        pop.Position(pos, (0, sz[1]))
+        pop.Popup()
+
+    def onHelpPersProfile(self, evt):
+        """Popup perspective profile help."""
+        text = ("Perspective corrections do not work equally well\n"
+                "with different kinds of images so you can create\n"
+                "separate profiles, such as 'tilts_only' or 'swivel+tilt'")
+        pop = HelpPopup(self, text)
+        btn = evt.GetEventObject()
+        pos = btn.ClientToScreen((0, 0))
+        sz = btn.GetSize()
+        pop.Position(pos, (0, sz[1]))
+        pop.Popup()
+
+    def onHelpCentralDisp(self, evt):
+        """Popup central display & viewer position help."""
+        text = ("To compute the perspective transforms the (rough)\n"
+                "position of your eyes relative to your displays\n"
+                "needs to be known. This is entered by selecting\n"
+                "one display as the central display and entering\n"
+                "distance offsets relative to that display's center.\n"
+                "\n"
+                "Distance must be entered and non-zero, horizontal\n"
+                "and vertical offsets are optional. Lenghts are\n"
+                "in millimeters."
+                )
+        pop = HelpPopup(self, text)
+        btn = evt.GetEventObject()
+        pos = btn.ClientToScreen((0, 0))
+        sz = btn.GetSize()
+        pop.Position(pos, (0, sz[1]))
+        pop.Popup()
+
+    def onHelpData(self, evt):
+        """Popup central display & viewer position help."""
+        text = ("Here you enter the display rotation (tilt and swivel)\n"
+                "parameters. Use these parameters to tell how your displays\n"
+                "are rotated relative to the setup where they would be in a\n"
+                "common plane.\n"
+                "The parameters are:\n"
+                "\t- swivel axis: left or right edge of the display\n"
+                "\t- swivel angle in degrees\n"
+                "\t- swivel axis lateral offset from display edge [mm] (optional)\n"
+                "\t- swivel axis depth offset from display edge [mm] (optional)\n"
+                "\t- tilt angle in degrees\n"
+                "\t- tilt axis vertical offset from horizontal midline [mm] (optional)\n"
+                "\t- tilt axis depth offset from display surface [mm] (optional)\n"
+                "\n"
+                "Signs of angles are determined by the right hand rule:\n"
+                "Grab the rotation axis with your right hand fist and extend\n"
+                "your thumb in the direction of the axis: up for swivels and\n"
+                "left for tilts. Now the direction of your curled fingers will\n"
+                "tell the direction the display will rotate with a positive angle\n"
+                "and the rotation is reversed for a negative angle.\n"
+                "\n"
+                "The axis offsets are completely optional. The most important\n"
+                "one is the tilt axis DEPTH offset since the actual axis\n"
+                "of the tilt is the joint in the display mount behind the panel.\n"
+                "Without this depth offset the tilt is performed around the display\n"
+                "horizontal midline which is on the display surface."
+                )
+        pop = HelpPopup(self, text)
+        btn = evt.GetEventObject()
+        pos = btn.ClientToScreen((0, 0))
+        sz = btn.GetSize()
+        pop.Position(pos, (0, sz[1]))
+        pop.Popup()
 
 
 
@@ -725,16 +917,18 @@ class SettingsPanel(wx.Panel):
         self.frame = parent
         self.parent_tray_obj = parent_tray_obj
         self.sizer_main = wx.BoxSizer(wx.VERTICAL)
-        self.sizer_grid_settings = wx.GridSizer(5, 2, 5, 5)
+        self.sizer_grid_settings = wx.GridSizer(6, 2, 5, 5)
         self.sizer_buttons = wx.BoxSizer(wx.HORIZONTAL)
         pnl = self
         st_logging = wx.StaticText(pnl, -1, "Logging")
         st_usehotkeys = wx.StaticText(pnl, -1, "Use hotkeys")
+        st_warn_large = wx.StaticText(pnl, -1, "Large image warning")
         st_hk_next = wx.StaticText(pnl, -1, "Hotkey: Next wallpaper")
         st_hk_pause = wx.StaticText(pnl, -1, "Hotkey: Pause slideshow")
         st_setcmd = wx.StaticText(pnl, -1, "Custom command")
         self.cb_logging = wx.CheckBox(pnl, -1, "")
         self.cb_usehotkeys = wx.CheckBox(pnl, -1, "")
+        self.cb_warn_large = wx.CheckBox(pnl, -1, "")
         self.tc_hk_next = wx.TextCtrl(pnl, -1, size=(200, -1))
         self.tc_hk_pause = wx.TextCtrl(pnl, -1, size=(200, -1))
         self.tc_setcmd = wx.TextCtrl(pnl, -1, size=(200, -1))
@@ -745,6 +939,8 @@ class SettingsPanel(wx.Panel):
                 (self.cb_logging, 0, wx.ALIGN_LEFT),
                 (st_usehotkeys, 0, wx.ALIGN_RIGHT),
                 (self.cb_usehotkeys, 0, wx.ALIGN_LEFT),
+                (st_warn_large, 0, wx.ALIGN_RIGHT),
+                (self.cb_warn_large, 0, wx.ALIGN_LEFT),
                 (st_hk_next, 0, wx.ALIGN_RIGHT),
                 (self.tc_hk_next, 0, wx.ALIGN_LEFT),
                 (st_hk_pause, 0, wx.ALIGN_RIGHT),
@@ -758,10 +954,11 @@ class SettingsPanel(wx.Panel):
         self.button_close = wx.Button(self, label="Close")
         self.button_save.Bind(wx.EVT_BUTTON, self.onSave)
         self.button_close.Bind(wx.EVT_BUTTON, self.onClose)
-        self.sizer_buttons.Add(self.button_save, 0, wx.CENTER|wx.ALL, 5)
-        self.sizer_buttons.Add(self.button_close, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_buttons.AddStretchSpacer()
+        self.sizer_buttons.Add(self.button_save, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
+        self.sizer_buttons.Add(self.button_close, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
         self.sizer_main.Add(self.sizer_grid_settings, 0, wx.CENTER|wx.EXPAND)
-        self.sizer_main.Add(self.sizer_buttons, 0, wx.CENTER|wx.EXPAND)
+        self.sizer_main.Add(self.sizer_buttons, 0, wx.EXPAND)
         self.SetSizer(self.sizer_main)
         self.sizer_main.Fit(parent)
 
@@ -770,6 +967,7 @@ class SettingsPanel(wx.Panel):
         g_settings = GeneralSettingsData()
         self.cb_logging.SetValue(g_settings.logging)
         self.cb_usehotkeys.SetValue(g_settings.use_hotkeys)
+        self.cb_warn_large.SetValue(g_settings.warn_large_img)
         self.tc_hk_next.ChangeValue(self.show_hkbinding(g_settings.hk_binding_next))
         self.tc_hk_pause.ChangeValue(self.show_hkbinding(g_settings.hk_binding_pause))
         self.tc_setcmd.ChangeValue(g_settings.set_command)
@@ -785,6 +983,7 @@ class SettingsPanel(wx.Panel):
 
         current_settings.logging = self.cb_logging.GetValue()
         current_settings.use_hotkeys = self.cb_usehotkeys.GetValue()
+        current_settings.warn_large_img = self.cb_warn_large.GetValue()
         if self.tc_hk_next.GetLineText(0):
             current_settings.hk_binding_next = tuple(
                 self.tc_hk_next.GetLineText(0).strip().split("+")
@@ -913,17 +1112,24 @@ Tips:
 class HelpPopup(wx.PopupTransientWindow):
     """Popup to show a bit of static text"""
     def __init__(self, parent, text,
-                 show_image_quality = False,
-                 advanced_span = False,
-                 style = wx.BORDER_DEFAULT):
+                 show_image_quality=False,
+                 use_perspective=False,
+                 persp_name=None,
+                 style=wx.BORDER_DEFAULT):
         wx.PopupTransientWindow.__init__(self, parent, style)
-        self.preview = parent
+        self.mainframe = parent.frame
+        self.display_sys = self.mainframe.display_sys
+            # self.mainframe = parent.parent # persp dialog
         if show_image_quality:
-            self.advanced_on = self.preview.frame.show_advanced_settings
-            self.show_image_quality = not self.preview.frame.use_multi_image
+            self.advanced_on = self.mainframe.show_advanced_settings
+            self.show_image_quality = not self.mainframe.use_multi_image
+            self.use_perspective = use_perspective
+            self.persp_name = persp_name
         else:
             self.advanced_on = False
             self.show_image_quality = False
+            self.use_perspective = False
+            self.persp_name = None
         pnl = wx.Panel(self)
         # pnl.SetBackgroundColour("CADET BLUE")
 
@@ -949,9 +1155,9 @@ class HelpPopup(wx.PopupTransientWindow):
         senten = ("For the best image quality with current settings your\n"
                   r" wallpapers should be {} or larger.")
         if self.advanced_on:
-            if self.preview.frame.cb_offsets.GetValue():
+            if self.mainframe.cb_offsets.GetValue():
                 offsets = []
-                for tc in self.preview.frame.tc_list_offsets:
+                for tc in self.mainframe.tc_list_offsets:
                     off_str = tc.GetValue().split(",")
                     try:
                         offsets.append(
@@ -963,8 +1169,17 @@ class HelpPopup(wx.PopupTransientWindow):
                         )
             else:
                 offsets = wpproc.NUM_DISPLAYS * [(0, 0)]
-            crops = self.preview.display_sys.get_ppi_norm_crops(offsets)
-            canv = wpproc.compute_working_canvas(crops)
+            crops = self.display_sys.get_ppi_norm_crops(offsets)
+            persp_data = None
+            if self.use_perspective:
+                persp_data = self.display_sys.get_persp_data(self.persp_name)
+            if persp_data:
+                proj_plane_crops, persp_coeffs = persp.get_backprojected_display_system(crops,
+                                                                                        persp_data)
+                # Canvas containing back-projected displays
+                canv = wpproc.compute_working_canvas(proj_plane_crops)
+            else:
+                canv = wpproc.compute_working_canvas(crops)
         else:
             canv = wpproc.compute_canvas(
                 wpproc.RESOLUTION_ARRAY,
