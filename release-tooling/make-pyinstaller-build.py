@@ -12,7 +12,7 @@ def main():
     if platform_sys == "Linux":
         cmd = ["pyinstaller", "--onefile",
                "--name", "superpaper",
-               "superpaper/__maın__.py"]
+               "superpaper/__main__.py"]
         wrap_run(cmd)
     elif platform_sys == "Windows":
         if len(sys.argv) == 2:
@@ -20,14 +20,14 @@ def main():
                 cmd = ["pyinstaller", "--onefile",
                        "--name", "superpaper",
                        "-i", r".\superpaper\resources\superpaper.ico",
-                       r".\superpaper\__maın__.py"]
+                       r".\superpaper\__main__.py"]
                 wrap_run(cmd)
             elif sys.argv[1] == "dist":
                 cmd = ["pyinstaller", "--onefile",
                        "--noconsole",
                        "--name", "superpaper",
                        "-i", r".\superpaper\resources\superpaper.ico",
-                       r".\superpaper\__maın__.py"]
+                       r".\superpaper\__main__.py"]
                 wrap_run(cmd)
         else:
             print("A type of build must be passed as the only argument: 'testing' or 'dist'.")
