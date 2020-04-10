@@ -603,6 +603,10 @@ class PerspectiveConfig(wx.Dialog):
     def onSave(self, evt=None):
         """Save perspective config to file and update display system state."""
         persp_name = self.tc_name.GetLineText(0)
+        if not persp_name:
+            msg = "Profile name is required."
+            show_message_dialog(msg)
+            return 0
         toggle = self.cb_master.GetValue()
         is_ds_def = self.cb_dispsys_def.GetValue()
         centr_disp = int(self.choice_centr_disp.GetSelection())
@@ -673,7 +677,7 @@ class PerspectiveConfig(wx.Dialog):
                 # No large images, temp not needed
                 self.persp_dict.pop("temp", None)
                 self.display_sys.update_perspectives(
-                        persp_name, toggle, is_ds_def, viewer_data, swivels, tilts
+                    persp_name, toggle, is_ds_def, viewer_data, swivels, tilts
                 )
         else:
             self.display_sys.update_perspectives(
