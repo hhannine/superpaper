@@ -4,7 +4,7 @@ Wallpaper image processing back-end for Superpaper.
 Applies image corrections, crops, merges etc. and sets the wallpaper
 with native platform methods whenever possible.
 
-Written by Henri Hänninen, copyright 2019 under MIT licence.
+Written by Henri Hänninen, copyright 2020 under MIT licence.
 """
 
 import configparser

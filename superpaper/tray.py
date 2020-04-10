@@ -441,7 +441,7 @@ It is already registered for another action.".format(profile.hk_binding, profile
         info.SetName('Superpaper')
         info.SetVersion(__version__)
         info.SetDescription(description)
-        info.SetCopyright('(C) 2019 Henri Hänninen')
+        info.SetCopyright('(C) 2020 Henri Hänninen')
         info.SetWebSite('https://github.com/hhannine/Superpaper/')
         info.SetLicence(licence)
         info.AddDeveloper('Henri Hänninen')
