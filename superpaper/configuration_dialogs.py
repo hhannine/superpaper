@@ -895,19 +895,17 @@ class PerspectiveConfig(wx.Dialog):
                 "The parameters are:\n"
                 "\t- swivel axis: left or right edge of the display\n"
                 "\t- swivel angle in degrees\n"
-                "\t- swivel axis lateral offset from display edge [mm] (optional)\n"
-                "\t- swivel axis depth offset from display edge [mm] (optional)\n"
+                "\t- swivel axis lateral offset from display edge [mm]\n"
+                "\t- swivel axis depth offset from display edge [mm]\n"
                 "\t- tilt angle in degrees\n"
-                "\t- tilt axis vertical offset from horizontal midline [mm] (optional)\n"
-                "\t- tilt axis depth offset from display surface [mm] (optional)\n"
-                "\n"
+                "\t- tilt axis vertical offset from horizontal midline [mm]\n"
+                "\t- tilt axis depth offset from display surface [mm]",
                 "Signs of angles are determined by the right hand rule:\n"
                 "Grab the rotation axis with your right hand fist and extend\n"
                 "your thumb in the direction of the axis: up for swivels and\n"
                 "left for tilts. Now the direction of your curled fingers will\n"
                 "tell the direction the display will rotate with a positive angle\n"
-                "and the rotation is reversed for a negative angle.\n"
-                "\n"
+                "and the rotation is reversed for a negative angle.",
                 "The axis offsets are completely optional. The most important\n"
                 "one is the tilt axis DEPTH offset since the actual axis\n"
                 "of the tilt is the joint in the display mount behind the panel.\n"
@@ -1085,8 +1083,8 @@ IMPORTANT NOTE: For the wallpapers to be set correctly, you must set in your OS 
 fitting option to 'Span'.
 
 Description of Wallpaper Configuration 'advanced span' options:
-    In advanced mode PPI and bezel corrections are applied to the wallpaper. The following settings
-    are used to configure this:
+    In advanced span mode PPI, bezel and perspective corrections are applied to the wallpaper. The
+    following settings are used to configure this:
 
     - Physical display positions:
             In 'advanced span' mode Superpaper corrects for different pixel densities between displays
@@ -1105,10 +1103,15 @@ Description of Wallpaper Configuration 'advanced span' options:
             are  attempted to be detected  automatically.  If this fails,  you can enter  the  correct  values
             under 'Display Diagonal Sizes'.
 
+    - Display rotations and viewer position
+            Perspective corrections use the position of the viewer and the 3D alignment of the displays to
+            adjust the shown image. Details on how to configure this are in the helps of the perspective
+            configuration dialog.
+
 Tips:
     - You can use the given example profiles as templates: just change the name and whatever else,
       save, and its a new profile.
-    - 'Align Test' feature allows you to test your offset and bezel settings.
+    - 'Align Test' feature allows you to test your alignment settings.
 """
         st_help = wx.StaticText(self, -1, help_str)
         self.sizer_helpcontent.Add(st_help, 0, wx.EXPAND|wx.CENTER|wx.ALL, 5)
@@ -1146,9 +1149,10 @@ class HelpPopup(wx.PopupTransientWindow):
                  style=wx.BORDER_DEFAULT):
         wx.PopupTransientWindow.__init__(self, parent, style)
         self.mainframe = parent.frame
-        self.display_sys = self.mainframe.display_sys
+        self.display_sys = None
             # self.mainframe = parent.parent # persp dialog
         if show_image_quality:
+            self.display_sys = self.mainframe.display_sys
             self.advanced_on = self.mainframe.show_advanced_settings
             self.show_image_quality = not self.mainframe.use_multi_image
             self.use_perspective = use_perspective
@@ -1161,9 +1165,17 @@ class HelpPopup(wx.PopupTransientWindow):
         pnl = wx.Panel(self)
         # pnl.SetBackgroundColour("CADET BLUE")
 
-        st = wx.StaticText(pnl, -1, text)
+        stlist = []
+        if isinstance(text, str):
+            st = wx.StaticText(pnl, -1, text)
+            stlist.append(st)
+        else:
+            for textstr in text:
+                st = wx.StaticText(pnl, -1, textstr)
+                stlist.append(st)
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(st, 0, wx.ALL, 5)
+        for st in stlist:
+            sizer.Add(st, 0, wx.ALL, 5)
         if self.show_image_quality:
             st_qual = wx.StaticText(pnl, -1, self.string_ideal_image_size())
             sizer.Add(st_qual, 0, wx.ALL, 5)
