@@ -1657,6 +1657,7 @@ class WallpaperPreviewPanel(wx.Panel):
         self.draggable_shapes = []  # Destroys DragShapes
         self.frame.toggle_radio_and_profile_choice(True)
         self.frame.toggle_bezel_buttons(False, True)
+        self.Refresh()
 
     def onReset(self, evt):
         """Reset Display preview positions to the initial guess."""
@@ -1690,6 +1691,7 @@ class WallpaperPreviewPanel(wx.Panel):
         self.show_staticbmps(True)
         self.frame.toggle_radio_and_profile_choice(True)
         self.frame.toggle_bezel_buttons(False, True)
+        self.Refresh()
 
     def onHelp(self, evt):
         """Popup a help dialog."""
