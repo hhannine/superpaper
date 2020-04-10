@@ -250,7 +250,7 @@ class PerspectiveConfig(wx.Dialog):
         self.display_sys = parent.display_sys
         self.persp_dict = self.display_sys.perspective_dict
         self.test_image = None
-        self.help_bmp = wx.ArtProvider.GetBitmap(wx.ART_QUESTION, wx.ART_BUTTON, (16, 16))
+        self.help_bmp = wx.ArtProvider.GetBitmap(wx.ART_QUESTION, wx.ART_BUTTON, (20, 20))
         self.warn_large_img = GeneralSettingsData().warn_large_img
 
         sizer_main = wx.BoxSizer(wx.VERTICAL)

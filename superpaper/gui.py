@@ -211,7 +211,7 @@ class WallpaperSettingsPanel(wx.Panel):
         self.hotkey_bind_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.hotkey_bind_sizer.Add(st_hotkey_bind, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
         self.hotkey_bind_sizer.Add(self.tc_hotkey_bind, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
-        help_bmp =  wx.ArtProvider.GetBitmap(wx.ART_QUESTION, wx.ART_BUTTON, (16, 16))
+        help_bmp = wx.ArtProvider.GetBitmap(wx.ART_QUESTION, wx.ART_BUTTON, (20, 20))
         self.button_help_hotkey = wx.BitmapButton(statbox_parent_hkey, bitmap=help_bmp, name="butt_help_hk")
         self.button_help_hotkey.Bind(wx.EVT_BUTTON, self.onHelpHotkey)
         self.button_help_hotkey.Disable()
@@ -309,7 +309,7 @@ class WallpaperSettingsPanel(wx.Panel):
         self.button_bezels.Bind(wx.EVT_BUTTON, self.onConfigureBezels)
         self.button_bezels_save.Bind(wx.EVT_BUTTON, self.onConfigureBezelsSave)
         self.button_bezels_canc.Bind(wx.EVT_BUTTON, self.onConfigureBezelsCanc)
-        help_bmp = wx.ArtProvider.GetBitmap(wx.ART_QUESTION, wx.ART_BUTTON, (16, 16))
+        help_bmp = wx.ArtProvider.GetBitmap(wx.ART_QUESTION, wx.ART_BUTTON, (20, 20))
         self.button_help_bezel = wx.BitmapButton(statbox_parent_bezels, bitmap=help_bmp, name="butt_help_bez")
         self.button_help_bezel.Bind(wx.EVT_BUTTON, self.onHelpBezels)
 
@@ -1568,7 +1568,7 @@ class WallpaperPreviewPanel(wx.Panel):
         self.button_save = wx.Button(self, label="Save")
         self.button_reset = wx.Button(self, label="Reset")
         self.button_cancel = wx.Button(self, label="Cancel")
-        help_bmp =  wx.ArtProvider.GetBitmap(wx.ART_QUESTION, wx.ART_BUTTON, (16, 16))
+        help_bmp = wx.ArtProvider.GetBitmap(wx.ART_QUESTION, wx.ART_BUTTON, (20, 20))
         self.button_help = wx.BitmapButton(self, bitmap=help_bmp, name="butt_help")
 
 
