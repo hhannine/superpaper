@@ -1106,6 +1106,22 @@ class WallpaperSettingsPanel(wx.Panel):
         # if res == wx.ID_OK:
             # pass
         dlg.Destroy()
+        # Update perspective profile choices
+        open_item = self.choice_profiles.GetSelection()
+        if (self.choice_profiles.GetString(open_item) == "Create a new profile"
+            or not self.choice_profiles.GetString(open_item)):
+            old_persp_str = "default"
+        else:
+            old_persp_str = self.list_of_profiles[open_item].perspective
+        persp_choices = (["default"]
+                         + list(self.display_sys.perspective_dict.keys())
+                         + ["disabled"])
+        self.ch_persp.SetItems(persp_choices)
+        if old_persp_str in persp_choices:
+            self.ch_persp.SetSelection(self.ch_persp.FindString(old_persp_str))
+        else:
+            self.ch_persp.SetSelection(0)
+            self.onSave(None)
 
     def onHelp(self, event):
         """Open help dialog."""
