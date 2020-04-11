@@ -87,10 +87,10 @@ class BrowsePaths(wx.Dialog):
         sizer_buttons.Add(self.button_ok, 0, wx.CENTER|wx.ALL, 5)
         sizer_buttons.Add(self.button_cancel, 0, wx.CENTER|wx.ALL, 5)
 
-        sizer_main.Add(sizer_browse, 1, wx.ALL|wx.ALIGN_CENTER|wx.EXPAND)
+        sizer_main.Add(sizer_browse, 1, wx.ALL|wx.EXPAND)
         sizer_main.Add(self.sizer_paths_list, 0, wx.ALL|wx.ALIGN_CENTER)
         if self.use_multi_image:
-            sizer_main.Add(sizer_radio, 0, wx.ALL|wx.ALIGN_CENTER|wx.EXPAND, 5)
+            sizer_main.Add(sizer_radio, 0, wx.ALL|wx.EXPAND, 5)
         sizer_main.Add(sizer_buttons, 0, wx.ALL|wx.EXPAND, 5)
         self.SetSizer(sizer_main)
         self.SetAutoLayout(True)
@@ -277,8 +277,8 @@ class PerspectiveConfig(wx.Dialog):
 
         # sizer_main.Add(self.cb_master, 0, wx.ALL|wx.ALIGN_LEFT, 5)
         sizer_main.Add(sizer_top, 0, wx.ALL|wx.EXPAND, 0)
-        sizer_main.Add(self.sizer_prof_opts, 0, wx.ALL|wx.ALIGN_CENTER|wx.EXPAND, 5)
-        sizer_main.Add(self.sizer_disp_opts, 0, wx.ALL|wx.ALIGN_CENTER|wx.EXPAND, 5)
+        sizer_main.Add(self.sizer_prof_opts, 0, wx.ALL|wx.EXPAND, 5)
+        sizer_main.Add(self.sizer_disp_opts, 0, wx.ALL|wx.EXPAND, 5)
         sizer_main.Add(self.sizer_buttons, 0, wx.ALL|wx.EXPAND, 5)
         self.SetSizer(sizer_main)
         self.Fit()
@@ -325,7 +325,7 @@ class PerspectiveConfig(wx.Dialog):
         self.sizer_prof_bar.Add(self.button_help_perspprof, 0, wx.CENTER|wx.LEFT, 5)
 
         self.sizer_prof_opts.Add(self.sizer_prof_bar, 0,
-                                 wx.ALIGN_CENTER_VERTICAL|wx.EXPAND|wx.ALL, 5)
+                                 wx.EXPAND|wx.ALL, 5)
         sline = wx.StaticLine(statbox_profs, -1, style=wx.LI_HORIZONTAL)
         self.sizer_prof_opts.Add(sline, 0, wx.EXPAND|wx.ALL, 5)
 
@@ -356,9 +356,9 @@ class PerspectiveConfig(wx.Dialog):
         for tc in self.tclist_vieweroffs:
             if isinstance(tc, wx.TextCtrl):
                 tc.SetValue("0")
-        szr_stlist = [(item, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+        szr_stlist = [(item, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
                       for item in self.stlist_vieweroffs]
-        szr_tclist = [(item, 0, wx.ALL|wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL, 5)
+        szr_tclist = [(item, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
                       for item in self.tclist_vieweroffs]
         sizer_viewer_off.Add(st_vwroffs, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
         for st, tc in zip(szr_stlist, szr_tclist):
@@ -419,7 +419,7 @@ class PerspectiveConfig(wx.Dialog):
         self.button_help_data.Bind(wx.EVT_BUTTON, self.onHelpData)
         self.sizer_disp_opts.AddStretchSpacer()
         self.sizer_disp_opts.Add(self.button_help_data, 0,
-                                 wx.ALIGN_TOP|wx.ALIGN_RIGHT|wx.RIGHT, 5)
+                                 wx.ALIGN_TOP|wx.RIGHT, 5)
 
 
     def display_opt_widget_row(self, row_id):

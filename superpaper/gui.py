@@ -287,9 +287,9 @@ class WallpaperSettingsPanel(wx.Panel):
                                              "Display diagonal sizes:")
         self.button_override = wx.Button(statbox_parent_diaginch, label="Override detected sizes")
         self.button_override.Bind(wx.EVT_BUTTON, self.onOverrideSizes)
-        self.sizer_setting_diaginch.Add(st_diaginch_override, 0, wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL|wx.BOTTOM, 5)
+        self.sizer_setting_diaginch.Add(st_diaginch_override, 0, wx.ALIGN_LEFT|wx.BOTTOM, 5)
         self.sizer_setting_diaginch.Add(self.button_override, 0,
-                                        wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL|wx.LEFT, 10)
+                                        wx.ALIGN_LEFT|wx.LEFT, 10)
 
         # Bezels
         # self.sizer_setting_bezels = wx.StaticBoxSizer(wx.VERTICAL, self, "Bezel Correction")
@@ -426,8 +426,8 @@ class WallpaperSettingsPanel(wx.Panel):
         self.sizer_bottom_buttonrow.Hide(self.button_perspectives)
         self.sizer_bottom_buttonrow.Layout()
         self.sizer_bottom_buttonrow.AddStretchSpacer()
-        self.sizer_bottom_buttonrow.Add(self.button_apply, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
-        self.sizer_bottom_buttonrow.Add(self.button_close, 0, wx.ALIGN_RIGHT|wx.ALL, 5)
+        self.sizer_bottom_buttonrow.Add(self.button_apply, 0, wx.ALL, 5)
+        self.sizer_bottom_buttonrow.Add(self.button_close, 0, wx.ALL, 5)
 
 
 
