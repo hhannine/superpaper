@@ -488,23 +488,23 @@ class WallpaperSettingsPanel(wx.Panel):
 
 
         # Advanced settings
-        if self.show_advanced_settings:
-            self.show_adv_setting_sizer(True)
-            # profile.inches: not stored in profile anymore
-            # profile.bezels: not stored in profile anymore
-            if profile.manual_offsets_useronly:
-                self.cb_offsets.SetValue(True)
-                for tc, off in zip(self.tc_list_offsets, profile.manual_offsets_useronly):
-                    offstr = "{},{}".format(off[0], off[1])
-                    tc.SetValue(offstr)
-            else:
-                self.cb_offsets.SetValue(False)
-            wx.PostEvent(self.cb_offsets, wx.CommandEvent(commandEventType=wx.EVT_CHECKBOX.typeId))
+        self.show_adv_setting_sizer(self.show_advanced_settings)
+        # profile.inches: not stored in profile anymore
+        # profile.bezels: not stored in profile anymore
+        if profile.manual_offsets_useronly:
+            self.cb_offsets.SetValue(True)
+            for tc, off in zip(self.tc_list_offsets, profile.manual_offsets_useronly):
+                offstr = "{},{}".format(off[0], off[1])
+                tc.SetValue(offstr)
+        else:
+            self.cb_offsets.SetValue(False)
+        wx.PostEvent(self.cb_offsets, wx.CommandEvent(commandEventType=wx.EVT_CHECKBOX.typeId))
+        if profile.perspective:
             self.ch_persp.SetSelection(
                 self.ch_persp.FindString(profile.perspective, False)
             )
         else:
-            self.show_adv_setting_sizer(False)
+            self.ch_persp.SetSelection(0)
 
         # Paths displays: get number to show from profile.
         self.paths_array_to_listctrl(profile.paths_array)
