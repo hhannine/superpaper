@@ -1969,8 +1969,8 @@ class WallpaperPreviewPanel(wx.Panel):
         # create bitmap buttons
         for st_bmp in self.preview_img_list:
             butts = []
-            butt_rb = wx.BitmapButton(self, bitmap=rb_bmp, name="butt_bez_r")
-            butt_bb = wx.BitmapButton(self, bitmap=bb_bmp, name="butt_bez_b")
+            butt_rb = wx.BitmapButton(self, bitmap=rb_bmp, name="butt_bez_r", style=wx.BORDER_NONE)
+            butt_bb = wx.BitmapButton(self, bitmap=bb_bmp, name="butt_bez_b", style=wx.BORDER_NONE)
             bez_butt_color = wx.Colour(41, 47, 52)
             butt_rb.SetBackgroundColour(bez_butt_color)
             butt_bb.SetBackgroundColour(bez_butt_color)
