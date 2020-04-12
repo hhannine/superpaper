@@ -1312,7 +1312,7 @@ class WallpaperPreviewPanel(wx.Panel):
 
 
     def refresh_preview(self, use_ppi_px = False):
-        if not self.config_mode:
+        if not self.config_mode or not self.bezel_conifg_mode:
             self.dtop_canvas_px = self.get_canvas(self.display_data, use_ppi_px)
             self.dtop_canvas_relsz, self.dtop_canvas_pos, scaling_fac = self.fit_canvas_wrkarea(self.dtop_canvas_px)
             self.st_bmp_canvas.SetPosition(self.dtop_canvas_pos)
@@ -1334,6 +1334,8 @@ class WallpaperPreviewPanel(wx.Panel):
                 offs = disp[1]
                 st_bmp.SetPosition(offs)
                 st_bmp.SetSize(size)
+        # if self.bezel_conifg_mode:
+            # pass
 
         self.move_buttons()
         self.move_bezel_buttons()
@@ -1349,6 +1351,12 @@ class WallpaperPreviewPanel(wx.Panel):
                 self.refresh_preview(use_ppi_px)
                 self.resize_displays(use_ppi_px)
                 self.move_bezel_buttons()
+            if self.bezel_conifg_mode:
+                # on top of the above, hide StaticBitmaps and trigger PaintDC bitmap recreation
+                self.show_staticbmps(False)
+                self.draggable_shapes = []
+                self.create_shapes(enable_movement=False)
+                self.Refresh()
 
     def preview_wallpaper(self, image_list, use_ppi_px = False, use_multi_image = False, display_data = None):
         if display_data:
@@ -1657,6 +1665,7 @@ class WallpaperPreviewPanel(wx.Panel):
     def onSave(self, evt):
         """Save current Display offsets into DisplaySystem."""
         self.config_mode = False
+        self.bind_movement_binds(False)
         self.toggle_buttons(True, False)
         # Export and save offsets to DisplaySystem
         self.export_offsets(self.display_sys)
@@ -1700,6 +1709,7 @@ class WallpaperPreviewPanel(wx.Panel):
     def onCancel(self, evt):
         """Cancel out of diplay position config mode."""
         self.config_mode = False
+        self.bind_movement_binds(False)
         self.toggle_buttons(True, False)
         self.draggable_shapes = []  # Destroys DragShapes
         self.refresh_preview()
@@ -1807,7 +1817,7 @@ class WallpaperPreviewPanel(wx.Panel):
 
 
 
-    def create_shapes(self):
+    def create_shapes(self, enable_movement=True):
         """Create draggable objects from display previews."""
         self.draggable_shapes = []
         self.drag_image = None
@@ -1819,10 +1829,21 @@ class WallpaperPreviewPanel(wx.Panel):
             self.draggable_shapes.append(shape)
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
-        self.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
-        self.Bind(wx.EVT_LEFT_UP, self.OnLeftUp)
-        self.Bind(wx.EVT_MOTION, self.OnMotion)
-        self.Bind(wx.EVT_LEAVE_WINDOW, self.OnLeaveWindow)
+        if enable_movement:
+            self.bind_movement_binds(True)
+
+    def bind_movement_binds(self, toggle):
+        """Bind or unbind DragImage dragging bindings."""
+        if toggle:
+            self.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
+            self.Bind(wx.EVT_LEFT_UP, self.OnLeftUp)
+            self.Bind(wx.EVT_MOTION, self.OnMotion)
+            self.Bind(wx.EVT_LEAVE_WINDOW, self.OnLeaveWindow)
+        else:
+            self.Unbind(wx.EVT_LEFT_DOWN)
+            self.Unbind(wx.EVT_LEFT_UP)
+            self.Unbind(wx.EVT_MOTION)
+            self.Unbind(wx.EVT_LEAVE_WINDOW)
 
 
     def draw_shapes(self, dc):
@@ -1928,6 +1949,9 @@ class WallpaperPreviewPanel(wx.Panel):
         self.old_bezels = self.display_sys.bezels_in_mm()
         self.old_ppinorm_offs = self.display_sys.get_ppinorm_offsets()
         self.bezel_conifg_mode = True
+        # Draw bitmaps manually, widgets can't overlap
+        self.show_staticbmps(False)
+        self.create_shapes(enable_movement=False)
         self.show_bezel_buttons(True)
         # Hide preview positioning config button
         self.toggle_buttons(False, False)
@@ -1938,7 +1962,10 @@ class WallpaperPreviewPanel(wx.Panel):
         self.show_bezel_buttons(False)
         # Show preview positioning config button
         self.toggle_buttons(True, False)
+        self.draggable_shapes = []  # Destroys DragShapes / manually drawn previews
         self.full_refresh_preview(True, True, False)
+        self.show_staticbmps(True)
+        self.Refresh()
         # trigger a DisplaySystem save.
         self.display_sys.save_system()
 
@@ -1954,8 +1981,10 @@ class WallpaperPreviewPanel(wx.Panel):
             pops[0].set_bezel_value(bez_mms[0])
             pops[1].set_bezel_value(bez_mms[1])
         self.display_data = self.display_sys.get_disp_list(True)
+        self.draggable_shapes = []  # Destroys DragShapes / manually drawn previews
         self.full_refresh_preview(True, True, False)
-
+        self.show_staticbmps(True)
+        self.Refresh()
 
     def create_bezel_buttons(self):
         # load icons into bitmaps
@@ -2145,6 +2174,9 @@ class WallpaperPreviewPanel(wx.Panel):
             self.preview.display_sys.update_bezels(bezel_mms)
             self.preview.display_data = self.preview.display_sys.get_disp_list(True)
             self.preview.full_refresh_preview(True, True, False)
+            self.preview.show_staticbmps(False)
+            self.preview.draggable_shapes = []
+            self.preview.create_shapes(enable_movement=False)
 
         def onCancel(self, event):
             if self.current_bez_val:
