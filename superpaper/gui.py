@@ -1192,6 +1192,7 @@ class WallpaperPreviewPanel(wx.Panel):
         self.display_rel_sizes = self.displays_on_canvas(self.display_data, self.dtop_canvas_pos, scaling_fac)
 
         # bitmaps to be shown
+        self.use_multi_image = use_multi_image
         self.current_preview_images = []
         self.preview_img_list = []
         self.bmp_list = []
@@ -1202,6 +1203,10 @@ class WallpaperPreviewPanel(wx.Panel):
         # Create bezel buttons for displays in preview
         self.bez_buttons = []
         self.create_bezel_buttons()
+
+        self.draggable_shapes = []
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+
 
 
     #
@@ -1226,6 +1231,7 @@ class WallpaperPreviewPanel(wx.Panel):
                 bmp = wx.Bitmap.FromRGBA(size[0], size[1], red=0, green=0, blue=0, alpha=255)
                 self.bmp_list.append(bmp)
                 st_bmp = wx.StaticBitmap(self, wx.ID_ANY, bmp)
+                st_bmp.Hide()
                 # st_bmp.SetScaleMode(wx.Scale_AspectFill)  # New in wxpython 4.1
                 st_bmp.SetPosition(offs)
                 self.preview_img_list.append(st_bmp)
@@ -1244,6 +1250,8 @@ class WallpaperPreviewPanel(wx.Panel):
                 bmp = wx.Bitmap.FromRGBA(size[0], size[1], red=0, green=0, blue=0, alpha=255)
                 st_bmp.SetBitmap(bmp)
                 st_bmp.SetPosition(offs)
+                st_bmp.Hide()
+
 
         self.draw_monitor_numbers(use_ppi_px)
 
@@ -1336,27 +1344,34 @@ class WallpaperPreviewPanel(wx.Panel):
                 st_bmp.SetSize(size)
         # if self.bezel_conifg_mode:
             # pass
+        self.st_bmp_canvas.Hide()
 
         self.move_buttons()
         self.move_bezel_buttons()
 
     def full_refresh_preview(self, is_resized, use_ppi_px, use_multi_image):
+        self.use_multi_image = use_multi_image
         if is_resized and not self.config_mode:
             dtop_canvas_relsz, dtop_canvas_pos, scaling_fac = self.fit_canvas_wrkarea(self.dtop_canvas_px)
             # if (self.current_preview_images and dtop_canvas_relsz is not self.dtop_canvas_relsz):
             if (self.current_preview_images):
                 self.preview_wallpaper(self.current_preview_images, use_ppi_px, use_multi_image)
                 self.move_bezel_buttons()
+                self.st_bmp_canvas.Hide()
+                self.Refresh()
             else:
                 self.refresh_preview(use_ppi_px)
                 self.resize_displays(use_ppi_px)
                 self.move_bezel_buttons()
-            if self.bezel_conifg_mode:
-                # on top of the above, hide StaticBitmaps and trigger PaintDC bitmap recreation
-                self.show_staticbmps(False)
-                self.draggable_shapes = []
-                self.create_shapes(enable_movement=False)
+                self.st_bmp_canvas.Hide()
                 self.Refresh()
+            # if self.bezel_conifg_mode:
+            #     # on top of the above, hide StaticBitmaps and trigger PaintDC bitmap recreation
+            #     self.show_staticbmps(False)
+            #     self.draggable_shapes = []
+            #     self.create_shapes(enable_movement=False)
+            #     self.Refresh()
+            # self.st_bmp_canvas.Hide()
 
     def preview_wallpaper(self, image_list, use_ppi_px = False, use_multi_image = False, display_data = None):
         if display_data:
@@ -1367,10 +1382,11 @@ class WallpaperPreviewPanel(wx.Panel):
         if use_multi_image:
             # hide canvas and set images to monitor previews
             self.st_bmp_canvas.Hide()
-            for img_nm, dprev in zip(image_list, self.preview_img_list):
-                prev_sz = dprev.GetSize()
-                dprev.SetBitmap(self.resize_and_bitmap(img_nm, prev_sz))
-                dprev.Show()
+            # self.Refresh()
+            for img_nm, st_bmp in zip(image_list, self.preview_img_list):
+                prev_sz = st_bmp.GetSize()
+                st_bmp.SetBitmap(self.resize_and_bitmap(img_nm, prev_sz))
+                # st_bmp.Show()
         elif use_ppi_px:
             img = image_list[0]
             # set canvas to fit with keeping aspect the image, with dim/blur
@@ -1379,7 +1395,7 @@ class WallpaperPreviewPanel(wx.Panel):
             canv_sz = self.st_bmp_canvas.GetSize()
             bmp_clr, bmp_bw = self.resize_and_bitmap(img, canv_sz, True)
             self.st_bmp_canvas.SetBitmap(bmp_bw)
-            self.st_bmp_canvas.Show()
+            # self.st_bmp_canvas.Show()
 
             canvas_pos = self.dtop_canvas_pos
             for (disp,
@@ -1394,7 +1410,7 @@ class WallpaperPreviewPanel(wx.Panel):
                 crop = bmp_clr.GetSubBitmap(wx.Rect(pos, img_sz))
                 crop_w_bez = self.bezels_to_bitmap(crop, sz, bez_szs)
                 st_bmp.SetBitmap(crop_w_bez)
-                st_bmp.Show()
+                # st_bmp.Show()
         else:
             img = image_list[0]
             # set canvas to fit with keeping aspect the image, with dim/blur
@@ -1402,7 +1418,7 @@ class WallpaperPreviewPanel(wx.Panel):
             canv_sz = self.st_bmp_canvas.GetSize()
             bmp_clr, bmp_bw = self.resize_and_bitmap(img, canv_sz, True)
             self.st_bmp_canvas.SetBitmap(bmp_bw)
-            self.st_bmp_canvas.Show()
+            # self.st_bmp_canvas.Show()
 
             canvas_pos = self.dtop_canvas_pos
             for disp, st_bmp in zip(self.display_rel_sizes, self.preview_img_list):
@@ -1410,7 +1426,7 @@ class WallpaperPreviewPanel(wx.Panel):
                 pos = (disp[1][0] - canvas_pos[0], disp[1][1] - canvas_pos[1])
                 crop = bmp_clr.GetSubBitmap(wx.Rect(pos, sz))
                 st_bmp.SetBitmap(crop)
-                st_bmp.Show()
+                # st_bmp.Show()
         self.draw_monitor_numbers(use_ppi_px)
 
     def resize_and_bitmap(self, fname, size, enhance_color=False):
@@ -1661,6 +1677,7 @@ class WallpaperPreviewPanel(wx.Panel):
         self.toggle_buttons(False, True)
         self.show_staticbmps(False)
         self.create_shapes()
+        self.Refresh()
 
     def onSave(self, evt):
         """Save current Display offsets into DisplaySystem."""
@@ -1678,7 +1695,7 @@ class WallpaperPreviewPanel(wx.Panel):
             self.display_data = display_data
             self.refresh_preview(True)
             self.resize_displays(True)
-            self.show_staticbmps(True)
+            # self.show_staticbmps(True)
         self.draggable_shapes = []  # Destroys DragShapes
         self.frame.toggle_radio_and_profile_choice(True)
         self.frame.toggle_bezel_buttons(False, True)
@@ -1714,7 +1731,7 @@ class WallpaperPreviewPanel(wx.Panel):
         self.draggable_shapes = []  # Destroys DragShapes
         self.refresh_preview()
         self.full_refresh_preview(True, True, False)
-        self.show_staticbmps(True)
+        # self.show_staticbmps(True)
         self.frame.toggle_radio_and_profile_choice(True)
         self.frame.toggle_bezel_buttons(False, True)
         self.Refresh()
@@ -1851,6 +1868,46 @@ class WallpaperPreviewPanel(wx.Panel):
             if shape.shown:
                 shape.Draw(dc)
 
+    def draw_canvas(self, dc, draw=True):
+        if self.st_bmp_canvas:
+            pos = self.st_bmp_canvas.GetPosition()
+            bmp = self.st_bmp_canvas.GetBitmap()
+            bmp_sz = bmp.GetSize()
+            if not draw:
+                bmp = wx.Bitmap.FromRGBA(bmp_sz[0], bmp_sz[1], red=30, green=30, blue=30, alpha=255)
+            op = wx.COPY
+            if bmp.IsOk():
+                memDC = wx.MemoryDC()
+                memDC.SelectObject(bmp)
+
+                dc.Blit(pos[0], pos[1],
+                        bmp_sz[0], bmp_sz[1],
+                        memDC, 0, 0, op, True)
+
+                return True
+            else:
+                return False
+
+    def draw_st_bmps(self, dc):
+        for st_bmp in self.preview_img_list:
+            pos = st_bmp.GetPosition()
+            bmp = st_bmp.GetBitmap()
+            self.draw_bmp(dc, pos, bmp)
+
+    def draw_bmp(self, dc, pos, bmp):
+        bmp_sz = bmp.GetSize()
+        op = wx.COPY
+        if bmp.IsOk():
+            memDC = wx.MemoryDC()
+            memDC.SelectObject(bmp)
+
+            dc.Blit(pos[0], pos[1],
+                    bmp_sz[0], bmp_sz[1],
+                    memDC, 0, 0, op, True)
+            return True
+        else:
+            return False
+
     def find_shape(self, pt):
         for shape in self.draggable_shapes:
             if shape.HitTest(pt):
@@ -1859,7 +1916,23 @@ class WallpaperPreviewPanel(wx.Panel):
 
     def OnPaint(self, evt):
         dc = wx.PaintDC(self)
-        self.draw_shapes(dc)
+        # Hiding bitmap widgets, probably unnecessary
+        # for st_bmp in self.preview_img_list:
+            # st_bmp.Hide()
+        
+        # Canvas drawing
+        if (not self.config_mode
+            and not self.use_multi_image
+            and self.current_preview_images):
+            self.draw_canvas(dc)
+        else:
+            self.draw_canvas(dc, False)
+
+        # Display drawing
+        if self.config_mode:
+            self.draw_shapes(dc)
+        else:
+            self.draw_st_bmps(dc)
 
     def OnLeftDown(self, evt):
         # Did the mouse go down on one of our shapes?
@@ -1950,8 +2023,8 @@ class WallpaperPreviewPanel(wx.Panel):
         self.old_ppinorm_offs = self.display_sys.get_ppinorm_offsets()
         self.bezel_conifg_mode = True
         # Draw bitmaps manually, widgets can't overlap
-        self.show_staticbmps(False)
-        self.create_shapes(enable_movement=False)
+        # self.show_staticbmps(False)
+        # self.create_shapes(enable_movement=False)
         self.show_bezel_buttons(True)
         # Hide preview positioning config button
         self.toggle_buttons(False, False)
@@ -1962,9 +2035,9 @@ class WallpaperPreviewPanel(wx.Panel):
         self.show_bezel_buttons(False)
         # Show preview positioning config button
         self.toggle_buttons(True, False)
-        self.draggable_shapes = []  # Destroys DragShapes / manually drawn previews
+        # self.draggable_shapes = []  # Destroys DragShapes / manually drawn previews
         self.full_refresh_preview(True, True, False)
-        self.show_staticbmps(True)
+        # self.show_staticbmps(True)
         self.Refresh()
         # trigger a DisplaySystem save.
         self.display_sys.save_system()
@@ -1981,9 +2054,9 @@ class WallpaperPreviewPanel(wx.Panel):
             pops[0].set_bezel_value(bez_mms[0])
             pops[1].set_bezel_value(bez_mms[1])
         self.display_data = self.display_sys.get_disp_list(True)
-        self.draggable_shapes = []  # Destroys DragShapes / manually drawn previews
+        # self.draggable_shapes = []  # Destroys DragShapes / manually drawn previews
         self.full_refresh_preview(True, True, False)
-        self.show_staticbmps(True)
+        # self.show_staticbmps(True)
         self.Refresh()
 
     def create_bezel_buttons(self):
@@ -2174,9 +2247,9 @@ class WallpaperPreviewPanel(wx.Panel):
             self.preview.display_sys.update_bezels(bezel_mms)
             self.preview.display_data = self.preview.display_sys.get_disp_list(True)
             self.preview.full_refresh_preview(True, True, False)
-            self.preview.show_staticbmps(False)
-            self.preview.draggable_shapes = []
-            self.preview.create_shapes(enable_movement=False)
+            # self.preview.show_staticbmps(False) # Use PaintDC drawing separately from staticbitmaps
+            # self.preview.draggable_shapes = []
+            # self.preview.create_shapes(enable_movement=False)
 
         def onCancel(self, event):
             if self.current_bez_val:
