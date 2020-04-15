@@ -61,6 +61,7 @@ class WallpaperSettingsPanel(wx.Panel):
         self.tc_width = 160  # standard width for wx.TextCtrl etc elements.
         self.show_advanced_settings = False
         self.use_multi_image = False
+        self.multi_column_listc = False
         BMP_SIZE = 32
         self.tsize = (BMP_SIZE, BMP_SIZE)
         self.image_list = wx.ImageList(BMP_SIZE, BMP_SIZE)
@@ -630,29 +631,46 @@ class WallpaperSettingsPanel(wx.Panel):
         self.button_bezels_canc.Enable(bezel_mode)
         self.button_help_bezel.Enable(True)
 
-    def refresh_path_listctrl(self, mult_img_bool):
-        self.path_listctrl.Destroy()
-        self.image_list.RemoveAll()
-        if mult_img_bool:
-            self.path_listctrl = wx.ListCtrl(self.statbox_parent_paths, -1,
-                                              style=wx.LC_REPORT
-                                              | wx.BORDER_SIMPLE
-                                              | wx.LC_SORT_ASCENDING
-                                             )
-            self.path_listctrl.InsertColumn(0, 'Display', wx.LIST_FORMAT_RIGHT, width = 100)
-            self.path_listctrl.InsertColumn(1, 'Source', width = 400)
+    def refresh_path_listctrl(self, use_multi_image, migrate_paths=False):
+        if use_multi_image == self.multi_column_listc and migrate_paths:
+            self.sizer_main.Layout()
         else:
-            # show simpler listing without header if only one wallpaper target
-            self.path_listctrl = wx.ListCtrl(self.statbox_parent_paths, -1,
-                                              style=wx.LC_REPORT
-                                              | wx.BORDER_SIMPLE
-                                              | wx.LC_NO_HEADER
-                                             )
-            self.path_listctrl.InsertColumn(0, 'Source', width = 500)
-        self.path_listctrl.SetImageList(self.image_list, wx.IMAGE_LIST_SMALL)
-        self.sizer_setting_paths.Insert(1, self.path_listctrl, 1, wx.CENTER|wx.EXPAND|wx.ALL, 5)
-        self.path_listctrl.InvalidateBestSize()
-        self.sizer_main.Layout()
+            if migrate_paths and self.path_listctrl.GetItemCount():
+                # warn that paths can't be migrated
+                msg = ("Wallpaper sources cannot be migrated between span"
+                       " and multi image, continue?"
+                       "\n"
+                       "Saved sources are not affected until you overwrite.")
+                res = show_message_dialog(msg, style="YES_NO")
+                if not res:
+                    # user canceled
+                    return False
+            self.path_listctrl.Destroy()
+            self.image_list.RemoveAll()
+            if use_multi_image:
+                self.multi_column_listc = True
+                self.path_listctrl = wx.ListCtrl(self.statbox_parent_paths, -1,
+                                                 style=wx.LC_REPORT
+                                                 | wx.BORDER_SIMPLE
+                                                 | wx.LC_SORT_ASCENDING
+                                                )
+                self.path_listctrl.InsertColumn(0, 'Display', wx.LIST_FORMAT_RIGHT, width=100)
+                self.path_listctrl.InsertColumn(1, 'Source', width=400)
+            else:
+                self.multi_column_listc = False
+                # show simpler listing without header if only one wallpaper target
+                self.path_listctrl = wx.ListCtrl(self.statbox_parent_paths, -1,
+                                                 style=wx.LC_REPORT
+                                                 | wx.BORDER_SIMPLE
+                                                 | wx.LC_NO_HEADER
+                                                )
+                self.path_listctrl.InsertColumn(0, 'Source', width=500)
+            self.path_listctrl.SetImageList(self.image_list, wx.IMAGE_LIST_SMALL)
+            self.sizer_setting_paths.Insert(1, self.path_listctrl, 1,
+                                            wx.CENTER | wx.EXPAND | wx.ALL, 5)
+            self.path_listctrl.InvalidateBestSize()
+            self.sizer_main.Layout()
+        return True
 
     def test_diag_value(self, inch_str):
         """Test that entered inch_str is a valid size and return it."""
@@ -684,6 +702,8 @@ class WallpaperSettingsPanel(wx.Panel):
 
 
     def onSpanRadio(self, event):
+        old_adv_set = self.show_advanced_settings
+        old_mult_img_set = self.use_multi_image
         selection = self.radiobox_spanmode.GetSelection()
         if selection == 1:
             self.show_advanced_settings = True
@@ -694,8 +714,18 @@ class WallpaperSettingsPanel(wx.Panel):
         else:
             self.show_advanced_settings = False
             self.use_multi_image = False
+        cont = self.refresh_path_listctrl(self.use_multi_image, migrate_paths=True)
+        if not cont:
+            self.show_advanced_settings = old_adv_set
+            self.use_multi_image = old_mult_img_set
+            if old_adv_set and not old_mult_img_set:
+                self.radiobox_spanmode.SetSelection(1)
+            elif not old_adv_set and old_mult_img_set:
+                self.radiobox_spanmode.SetSelection(2)
+            else:
+                self.radiobox_spanmode.SetSelection(0)
+            return
         self.show_adv_setting_sizer(self.show_advanced_settings)
-        self.refresh_path_listctrl(self.use_multi_image)
         display_data = self.display_sys.get_disp_list(self.show_advanced_settings)
         self.wpprev_pnl.update_display_data(
             display_data,
