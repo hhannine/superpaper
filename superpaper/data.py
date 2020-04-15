@@ -27,11 +27,19 @@ def list_profiles():
         try:
             profile_list.append(ProfileData(os.path.join(sp_paths.PROFILES_PATH, files[i])))
         except Exception as exep:  # TODO implement proper error catching for ProfileData init
-            msg = "There was an error when loading profile '{}'. Exiting.".format(files[i])
+            msg = ("There was an error when loading profile '{}'.\n".format(files[i])
+                   + "Would you like to delete it? Choosing 'No' will just ignore the profile."
+            )
             sp_logging.G_LOGGER.info(msg)
             sp_logging.G_LOGGER.info(exep)
-            show_message_dialog(msg, "Error")
-            exit()
+            res = show_message_dialog(msg, "Error", style="YES_NO")
+            if res:
+                # remove files[i]
+                print("removing:", os.path.join(sp_paths.PROFILES_PATH, files[i]))
+                os.remove(os.path.join(sp_paths.PROFILES_PATH, files[i]))
+                continue
+            else:
+                continue
         if sp_logging.DEBUG:
             sp_logging.G_LOGGER.info("Listed profile: %s", profile_list[i].name)
     return profile_list
@@ -84,7 +92,9 @@ class GeneralSettingsData(object):
         self.hk_binding_next = None
         self.hk_binding_pause = None
         self.set_command = ""
+        self.browse_default_dir = ""
         self.show_help = True
+        self.warn_large_img = True
         self.parse_settings()
 
     def parse_settings(self):
@@ -141,8 +151,16 @@ class GeneralSettingsData(object):
                             self.show_help = False
                         else:
                             pass
+                    elif words[0].strip() == "warn_large_img":
+                        show_state = words[1].strip().lower()
+                        if show_state == "false":
+                            self.warn_large_img = False
+                        else:
+                            pass
+                    elif words[0].strip() == "browse_default_dir":
+                        self.browse_default_dir = words[1].strip()
                     else:
-                        sp_logging.G_LOGGER.info("Exception: Unkown general setting: %s",
+                        sp_logging.G_LOGGER.info("GeneralSettings parse Exception: Unkown general setting: %s",
                                                  words[0])
             finally:
                 general_settings_file.close()
@@ -155,7 +173,9 @@ class GeneralSettingsData(object):
             self.hk_binding_next = ("control", "super", "w")
             general_settings_file.write("pause wallpaper hotkey=control+super+shift+p\n")
             self.hk_binding_pause = ("control", "super", "shift", "p")
-            general_settings_file.write("set_command=")
+            general_settings_file.write("set_command=\n")
+            general_settings_file.write("browse_default_dir=\n")
+            general_settings_file.write("warn_large_img=true")
             general_settings_file.close()
 
     def save_settings(self):
@@ -187,7 +207,13 @@ class GeneralSettingsData(object):
         else:
             general_settings_file.write("show_help_at_start=false\n")
 
-        general_settings_file.write("set_command={}".format(self.set_command))
+        general_settings_file.write("set_command={}\n".format(self.set_command))
+        general_settings_file.write("browse_default_dir={}\n".format(self.browse_default_dir))
+
+        if self.warn_large_img:
+            general_settings_file.write("warn_large_img=true")
+        else:
+            general_settings_file.write("warn_large_img=false")
         general_settings_file.close()
 
 
@@ -231,6 +257,7 @@ class ProfileData(object):
         self.bezels = []
         self.bezel_px_offsets = []
         self.hk_binding = None
+        self.perspective = "default"
         self.paths_array = []
 
         self.parse_profile(self.file)
@@ -253,6 +280,8 @@ class ProfileData(object):
                     wrd1 = words[1].strip().lower()
                     if wrd1 == "single":
                         self.spanmode = wrd1
+                    elif wrd1 == "advanced":
+                        self.spanmode = wrd1
                     elif wrd1 == "multi":
                         self.spanmode = wrd1
                     else:
@@ -268,12 +297,12 @@ class ProfileData(object):
                     self.delay_list = []
                     delay_strings = words[1].strip().split(";")
                     for delstr in delay_strings:
-                        self.delay_list.append(int(delstr))
+                        self.delay_list.append(float(delstr))
                 elif words[0] == "sortmode":
                     wrd1 = words[1].strip().lower()
                     if wrd1 == "shuffle":
                         self.sortmode = wrd1
-                    elif wrd1 == "sort":
+                    elif wrd1 == "alphabetical":
                         self.sortmode = wrd1
                     else:
                         sp_logging.G_LOGGER.info("Exception: unknown sortmode: %s \
@@ -282,17 +311,25 @@ class ProfileData(object):
                     # Use PPI mode algorithm to do cuts.
                     # Defaults assume uniform pixel density
                     # if no custom values are given.
-                    self.ppimode = True
-                    self.manual_offsets = []
-                    self.manual_offsets_useronly = []
+                    offs = []
+                    offs_user_only = []
                     # w1,h1;w2,h2;...
                     offset_strings = words[1].strip().split(";")
                     for offstr in offset_strings:
                         res_str = offstr.split(",")
-                        self.manual_offsets.append((int(res_str[0]),
-                                                    int(res_str[1])))
-                        self.manual_offsets_useronly.append((int(res_str[0]),
-                                                             int(res_str[1])))
+                        try:
+                            offs.append((int(res_str[0]), int(res_str[1])))
+                            offs_user_only.append((int(res_str[0]),
+                                                   int(res_str[1])))
+                        except (ValueError, IndexError):
+                            offs.append((0, 0))
+                            offs_user_only.append((0, 0))
+                    while len(offs) < wpproc.NUM_DISPLAYS:
+                        offs.append((0, 0))
+                        offs_user_only.append((0, 0))
+                    self.ppimode = True
+                    self.manual_offsets = offs
+                    self.manual_offsets_useronly = offs_user_only
                 elif words[0] == "bezels":
                     bez_mm_strings = words[1].strip().split(";")
                     for bezstr in bez_mm_strings:
@@ -320,6 +357,10 @@ class ProfileData(object):
                     self.hk_binding = tuple(binding_strings)
                     if sp_logging.DEBUG:
                         sp_logging.G_LOGGER.info("hkBinding: %s", self.hk_binding)
+                elif words[0] == "perspective":
+                    self.perspective = words[1].strip()
+                    if sp_logging.DEBUG:
+                        sp_logging.G_LOGGER.info("perspective preset: %s", self.perspective)
                 elif words[0].startswith("display"):
                     paths = words[1].strip().split(";")
                     paths = list(filter(None, paths))  # drop empty strings
@@ -327,6 +368,7 @@ class ProfileData(object):
                 else:
                     sp_logging.G_LOGGER.info("Unknown setting line in config: %s", line)
         except Exception as excep:
+            profile_file.close()
             raise ProfileDataException("There was an error parsing the profile:",
                                        self.name, self.file, excep)
         finally:
@@ -457,10 +499,16 @@ Use absolute paths for best reliabilty.".format(path)
                         continue
                     else:
                         # List only images that are of supported type.
-                        list_of_images += [os.path.join(path, f)
-                                           for f in os.listdir(path)
-                                           if f.endswith(wpproc.G_SUPPORTED_IMAGE_EXTENSIONS)
-                                          ]
+                        if os.path.isfile(path):
+                            if path.endswith(wpproc.G_SUPPORTED_IMAGE_EXTENSIONS):
+                                list_of_images += [path]
+                            else:
+                                pass
+                        else:
+                            list_of_images += [os.path.join(path, f)
+                                            for f in os.listdir(path)
+                                            if f.endswith(wpproc.G_SUPPORTED_IMAGE_EXTENSIONS)
+                                            ]
                 # Append the list of monitor_i specific files to the list of
                 # lists of images.
                 self.all_files_in_paths.append(list_of_images)
@@ -537,7 +585,8 @@ class CLIProfileData(ProfileData):
     the images given as input.
     """
 
-    def __init__(self, files, ppiarr, inches, bezels, offsets):
+    def __init__(self, files, ppiarr=None, inches=None,
+                 bezels=None, offsets=None, perspective=None):
         self.name = "cli"
         self.spanmode = ""  # single / multi
         if len(files) == 1:
@@ -572,6 +621,7 @@ class CLIProfileData(ProfileData):
         self.ppi_array_relative_density = []
         self.bezels = bezels
         self.bezel_px_offsets = []
+        self.perspective = perspective
         #self.files = files
         self.files = []
         for item in files:
@@ -598,6 +648,7 @@ class TempProfileData(object):
         self.manual_offsets = None
         self.bezels = None
         self.hk_binding = None
+        self.perspective = None
         self.paths_array = []
 
     def save(self):
@@ -627,6 +678,8 @@ class TempProfileData(object):
                 tpfile.write("bezels=" + str(self.bezels) + "\n")
             if self.hk_binding:
                 tpfile.write("hotkey=" + str(self.hk_binding) + "\n")
+            if self.perspective:
+                tpfile.write("perspective=" + str(self.perspective) + "\n")
             if self.paths_array:
                 for paths in self.paths_array:
                     tpfile.write("display" + str(self.paths_array.index(paths))
@@ -641,7 +694,7 @@ class TempProfileData(object):
     def test_save(self):
         """Tests whether the user input for profile settings is valid."""
         valid_profile = False
-        if self.name is not None and self.name.strip() is not "":
+        if self.name is not None and self.name.strip() != "":
             fname = os.path.join(PROFILES_PATH, self.name + ".deleteme")
             try:
                 testfile = open(fname, "w")
@@ -669,7 +722,7 @@ each display needs its own paths field."
                 return False
             if self.delay:
                 try:
-                    val = int(self.delay)
+                    val = float(self.delay)
                     if val < 20:
                         msg = "It is advisable to set the slideshow delay to \
 be at least 20 seconds due to the time the image processing takes."
@@ -693,8 +746,8 @@ using decimal point and separated by semicolon ';'."
                 if self.is_list_offsets(self.manual_offsets):
                     pass
                 else:
-                    msg = "Display offsets must be given in width,height pixel \
-pairs and separated by semicolon ';'."
+                    msg = "Display offsets must be given in (width,height) pixel \
+pairs."
                     show_message_dialog(msg, "Error")
                     return False
             if self.bezels:
@@ -765,7 +818,7 @@ Valid modifiers are 'control', 'super', 'alt', 'shift'."
         try:
             for off_pair in list_input:
                 offset = off_pair.split(",")
-                if len(offset) > 2:
+                if len(offset) != 2:
                     return False
                 try:
                     val_w = int(offset[0])
@@ -793,7 +846,7 @@ Valid modifiers are 'control', 'super', 'alt', 'shift'."
             show_message_dialog(msg, "Error")
             return False
         if "" in input_list:
-            msg = "Take care not to save a profile with an empty display paths field."
+            msg = "Add an image source for every display present."
             show_message_dialog(msg, "Error")
             return False
         for path_list_str in input_list:
@@ -806,6 +859,13 @@ Valid modifiers are 'control', 'super', 'alt', 'shift'."
                         continue
                     else:
                         msg = "Path '{}' does not contain supported image files.".format(path)
+                        show_message_dialog(msg, "Error")
+                        return False
+                elif os.path.isfile(path) is True:
+                    if path.endswith(wpproc.G_SUPPORTED_IMAGE_EXTENSIONS):
+                        continue
+                    else:
+                        msg = "Image '{}' is not a supported image file.".format(path)
                         show_message_dialog(msg, "Error")
                         return False
                 else:

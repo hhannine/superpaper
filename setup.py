@@ -1,7 +1,6 @@
 import os
-import platform
 import sys
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 def read_version():
@@ -51,7 +50,7 @@ if __name__ == "__main__":
             "Natural Language :: English",
             "Operating System :: POSIX :: Linux",
             # "Operating System :: Microsoft :: Windows",
-            "Programming Language :: Python :: 3.5",
+            "Programming Language :: Python :: 3.6",
             "Topic :: Utilities",
         ],
         keywords="dual-monitor multi-monitor wallpaper background manager",
@@ -59,20 +58,24 @@ if __name__ == "__main__":
 
         # python_requires="~=3.5",
         install_requires=[
-            "Pillow>=6.0.0",
+            "Pillow>=7.0.0",
             "screeninfo>=0.6.1",
+            "numpy>=1.18.0",
             "system_hotkey>=1.0.3",
             "xcffib>=0.8.0",
             "xpybutil>=0.0.5"
         ],
-        packages=["superpaper"],
+        # packages=["superpaper"],
+        packages=find_packages(),
         entry_points={
-            "console_scripts": ["superpaper = superpaper.superpaper:main"]
+            "console_scripts": ["superpaper = superpaper.__main__:main"]
             # "gui_scripts": ["superpaper = superpaper.superpaper:main"]    # for possible future windows install support.
         },
         package_data={
             "superpaper": ["resources/superpaper.png",
                            "resources/test.png",
+                           "resources/icons8-merge-vertical-96.png",
+                           "resources/icons8-merge-horizontal-96.png",
                            "profiles/example.profile",
                            "profiles/example_multi.profile"
                           ]

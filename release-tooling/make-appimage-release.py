@@ -21,6 +21,12 @@ def make_appimage(dist_path, version):
     executable = "./dist/superpaper"
     desktop_file = "./superpaper/resources/superpaper.desktop"
     icon = "./superpaper/resources/superpaper.png"
+    include_resources = [
+        icon,
+        "./superpaper/resources/icons8-merge-vertical-96.png",
+        "./superpaper/resources/icons8-merge-horizontal-96.png",
+        "./superpaper/resources/test.png"
+    ]
 
     # first create appdir with linuxdeploy
     cmd = [
@@ -40,7 +46,8 @@ def make_appimage(dist_path, version):
     appdir_resource_target = os.path.join(appdir_usr, "superpaper/resources")
     if not os.path.exists(appdir_resource_target):
         os.makedirs(appdir_resource_target)
-    shutil.copy2(icon, appdir_resource_target)
+    for resrc in include_resources:
+        shutil.copy2(resrc, appdir_resource_target)
     
     # final step: package AppImage from appdir
     cmd2 = [

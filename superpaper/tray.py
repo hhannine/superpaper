@@ -10,7 +10,9 @@ from threading import Lock
 from superpaper.__version__ import __version__
 import superpaper.sp_logging as sp_logging
 import superpaper.sp_paths as sp_paths
-from superpaper.configuration_dialogs import ConfigFrame, SettingsFrame, HelpFrame
+import superpaper.wallpaper_processing as wpproc
+from superpaper.gui import ConfigFrame
+from superpaper.configuration_dialogs import SettingsFrame, HelpFrame
 from superpaper.message_dialog import show_message_dialog
 from superpaper.data import (GeneralSettingsData,
                   list_profiles, read_active_profile, write_active_profile)
@@ -68,9 +70,11 @@ class TaskBarIcon(wx.adv.TaskBarIcon):
         super(TaskBarIcon, self).__init__()
         self.set_icon(TRAY_ICON)
         self.Bind(wx.adv.EVT_TASKBAR_LEFT_DOWN, self.on_left_down)
+        # Initialize display data
+        # get_display_data()
+        wpproc.refresh_display_data()
         # profile initialization
         self.job_lock = Lock()
-        get_display_data()
         self.repeating_timer = None
         self.pause_item = None
         self.is_paused = False
@@ -231,16 +235,20 @@ It is already registered for another action.".format(profile.hk_binding, profile
     def read_general_settings(self):
         """Refreshes general settings from file and applies hotkey bindings."""
         self.g_settings = GeneralSettingsData()
+        try:
+            self.seen_binding
+        except NameError:
+            self.seen_binding = set()
         self.register_hotkeys()
-        msg = "New settings are applied after an application restart. \
-New hotkeys are registered."
-        show_message_dialog(msg, "Info")
+        if self.g_settings.logging:
+            msg = "Logging is enabled after an application restart."
+            show_message_dialog(msg, "Info")
 
     def CreatePopupMenu(self):
         """Method called by WX library when user right clicks tray icon. Opens tray menu."""
         menu = wx.Menu()
         create_menu_item(menu, "Open Config Folder", self.open_config)
-        create_menu_item(menu, "Profile Configuration", self.configure_profiles)
+        create_menu_item(menu, "Wallpaper Configuration", self.configure_wallpapers)
         create_menu_item(menu, "Settings", self.configure_settings)
         create_menu_item(menu, "Reload Profiles", self.reload_profiles)
         menu.AppendSeparator()
@@ -283,8 +291,8 @@ New hotkeys are registered."
             except subprocess.CalledProcessError:
                 show_message_dialog("There was an error trying to open the config folder.")
 
-    def configure_profiles(self, event):
-        """Opens profile configuration panel."""
+    def configure_wallpapers(self, event):
+        """Opens wallpaper configuration panel."""
         config_frame = ConfigFrame(self)
 
     def configure_settings(self, event):
@@ -301,9 +309,9 @@ New hotkeys are registered."
             if profile is None:
                 sp_logging.G_LOGGER.info("No previous profile was found.")
             else:
-                self.repeating_timer = run_profile_job(profile)
+                self.repeating_timer, thrd = run_profile_job(profile)
 
-    def start_profile(self, event, profile):
+    def start_profile(self, event, profile, force_reload=False):
         """
         Starts a profile job, i.e. runs a slideshow or a one time wallpaper change.
 
@@ -323,7 +331,7 @@ New hotkeys are registered."
                 sp_logging.G_LOGGER.info(
                     "name check: %s, %s",
                     profile.name, self.active_profile.name)
-            if profile.name == self.active_profile.name:
+            if profile.name == self.active_profile.name and not force_reload:
                 self.next_wallpaper(event)
                 return 0
             else:
@@ -340,13 +348,13 @@ New hotkeys are registered."
                         sp_logging.G_LOGGER.info(
                             "Starting timed profile job with profile: %s",
                             profile.name)
-                    self.repeating_timer = run_profile_job(profile)
+                    self.repeating_timer, thrd = run_profile_job(profile)
                     self.active_profile = profile
                     write_active_profile(profile.name)
                     if sp_logging.DEBUG:
                         sp_logging.G_LOGGER.info("Wrote active profile: %s",
                                                  profile.name)
-                    return 0
+                    return thrd
         else:
             with self.job_lock:
                 if (self.repeating_timer is not None
@@ -361,13 +369,13 @@ New hotkeys are registered."
                     sp_logging.G_LOGGER.info(
                         "Starting timed profile job with profile: %s",
                         profile.name)
-                self.repeating_timer = run_profile_job(profile)
+                self.repeating_timer, thrd = run_profile_job(profile)
                 self.active_profile = profile
                 write_active_profile(profile.name)
                 if sp_logging.DEBUG:
                     sp_logging.G_LOGGER.info("Wrote active profile: %s",
                                              profile.name)
-                return 0
+                return thrd
 
     def next_wallpaper(self, event):
         """Calls the next wallpaper changer method of the running profile."""
@@ -433,7 +441,7 @@ New hotkeys are registered."
         info.SetName('Superpaper')
         info.SetVersion(__version__)
         info.SetDescription(description)
-        info.SetCopyright('(C) 2019 Henri Hänninen')
+        info.SetCopyright('(C) 2020 Henri Hänninen')
         info.SetWebSite('https://github.com/hhannine/Superpaper/')
         info.SetLicence(licence)
         info.AddDeveloper('Henri Hänninen')
