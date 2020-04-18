@@ -303,6 +303,7 @@ class PerspectiveConfig(wx.Dialog):
         # name txt ctrl
         st_name = wx.StaticText(statbox_profs, -1, "Profile name:")
         self.tc_name = wx.TextCtrl(statbox_profs, -1, size=(self.tc_width, -1))
+        self.tc_name.SetMaxLength(14)
         # buttons
         self.button_new = wx.Button(statbox_profs, label="New")
         self.button_save = wx.Button(statbox_profs, label="Save")

@@ -143,6 +143,7 @@ class WallpaperSettingsPanel(wx.Panel):
         # name txt ctrl
         st_name = wx.StaticText(self, -1, "Profile name:")
         self.tc_name = wx.TextCtrl(self, -1, size=(self.tc_width, -1))
+        self.tc_name.SetMaxLength(14)
         # buttons
         self.button_new = wx.Button(self, label="New")
         self.button_save = wx.Button(self, label="Save")
@@ -360,7 +361,7 @@ class WallpaperSettingsPanel(wx.Panel):
                          + list(self.display_sys.perspective_dict.keys())
                          + ["disabled"])
         self.ch_persp = wx.Choice(self, -1, name="PerspChoice",
-                                       size=(self.tc_width*0.7, -1),
+                                       size=(165, -1),
                                        choices=persp_choices)
         self.sizer_setting_persp.Add(st_perspprof, 0, wx.ALIGN_LEFT|wx.ALL|wx.ALIGN_CENTER_VERTICAL, 0)
         self.sizer_setting_persp.Add(self.ch_persp, 0, wx.ALIGN_LEFT|wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5)
