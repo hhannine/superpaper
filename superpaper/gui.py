@@ -1046,6 +1046,8 @@ class WallpaperSettingsPanel(wx.Panel):
 
         self.tc_name.ChangeValue("")
 
+        self.refresh_path_listctrl(False, migrate_paths=False)
+
         self.radiobox_spanmode.SetSelection(0)
         self.onSpanRadio(None)
 
@@ -1062,8 +1064,6 @@ class WallpaperSettingsPanel(wx.Panel):
         self.cb_hotkey.SetValue(False)
         self.tc_hotkey_bind.ChangeValue("")
         self.onCheckboxHotkey(None)
-
-        self.refresh_path_listctrl(False)
 
         # refresh wallpaper preview back to black previews
         self.wpprev_pnl.draw_displays()
