@@ -918,7 +918,7 @@ class WallpaperSettingsPanel(wx.Panel):
     def onApply(self, event):
         """Applies the currently open profile. Saves it first."""
         busy = wx.BusyCursor()
-        saved_file = self.onSave(event)
+        saved_file = self.onSave(None)
         sp_logging.G_LOGGER.info("onApply profile: saved %s", saved_file)
         if saved_file:
             saved_profile = ProfileData(saved_file)
@@ -934,6 +934,9 @@ class WallpaperSettingsPanel(wx.Panel):
 
     def onSave(self, event):
         """Saves currently open profile into file. A test method is called to verify data."""
+        busy = None
+        if event:
+            busy = wx.BusyCursor()
         tmp_profile = TempProfileData()
         tmp_profile.name = self.tc_name.GetLineText(0)
         tmp_profile.slideshow = self.cb_slideshow.GetValue()
@@ -1027,9 +1030,11 @@ class WallpaperSettingsPanel(wx.Panel):
                 self.use_multi_image,
                 display_data
             )
+            del busy
             return saved_file
         else:
             sp_logging.G_LOGGER.info("test_save failed.")
+            del busy
             return None
 
 
