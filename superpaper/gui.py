@@ -179,12 +179,14 @@ class WallpaperSettingsPanel(wx.Panel):
         sizer_sshow_subsettings = wx.GridSizer(2, 5, 5)
         self.st_sshow_sort = wx.StaticText(statbox_parent_sshow, -1, "Slideshow order:")
         self.ch_sshow_sort = wx.Choice(statbox_parent_sshow, -1, name="SortChoice",
-                                 size=(self.tc_width*0.7, -1),
-                                 choices=["Shuffle", "Alphabetical"])
+                                       #  size=(self.tc_width*0.7, -1),
+                                       choices=["Shuffle", "Alphabetical"])
+        # ch_sort_size = self.ch_sshow_sort.GetClientSize()
         self.st_sshow_delay = wx.StaticText(statbox_parent_sshow, -1, "Delay (minutes):")
         self.tc_sshow_delay = wx.TextCtrl(
             statbox_parent_sshow, -1,
-            size=(self.tc_width*0.69, -1),
+            # size=(self.tc_width*0.69, -1),
+            # size=ch_sort_size,
             style=wx.TE_RIGHT
         )
         self.cb_slideshow = wx.CheckBox(statbox_parent_sshow, -1, "Slideshow")
