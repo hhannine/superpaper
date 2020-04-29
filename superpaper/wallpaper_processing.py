@@ -24,11 +24,21 @@ import superpaper.sp_logging as sp_logging
 from superpaper.message_dialog import show_message_dialog
 from superpaper.sp_paths import CONFIG_PATH, TEMP_PATH
 
+
+def running_kde():
+    """Detect if running in a KDE session."""
+    d_ses = os.environ.get("DESKTOP_SESSION")
+    kde_f_ses = os.environ.get("KDE_FULL_SESSION")
+    if kde_f_ses != "" or "plasma" in d_ses or "kde" in d_ses:
+        return True
+    return False
+
 if platform.system() == "Windows":
     import ctypes
 elif platform.system() == "Linux":
     # KDE has special needs
-    if os.environ.get("DESKTOP_SESSION") in ["/usr/share/xsessions/plasma", "plasma"]:
+    # if os.environ.get("DESKTOP_SESSION") in ["/usr/share/xsessions/plasma", "plasma"]:
+    if running_kde():
         import dbus
 
 
@@ -1348,7 +1358,8 @@ def set_wallpaper_linux(outputfile):
                     sp_logging.G_LOGGER.info("Exception: failure to find either command \
 'pcmanfm' or 'pcmanfm-qt'. Exiting.")
                     sys.exit(1)
-        elif desk_env in ["/usr/share/xsessions/plasma", "plasma"]:
+        # elif desk_env in ["/usr/share/xsessions/plasma", "plasma"]:
+        elif running_kde():
             kdeplasma_actions(outputfile)
         elif "i3" in desk_env or desk_env in ["/usr/share/xsessions/bspwm"]:
             subprocess.run(["feh", "--bg-scale", "--no-xinerama", outputfile])
@@ -1382,7 +1393,8 @@ def set_wallpaper_piecewise(image_piece_list):
     pltform = platform.system()
     if pltform == "Linux":
         desk_env = os.environ.get("DESKTOP_SESSION")
-        if desk_env in ["/usr/share/xsessions/plasma", "plasma"]:
+        # if desk_env in ["/usr/share/xsessions/plasma", "plasma"]:
+        if running_kde():
             kdeplasma_actions(None, image_piece_list)
         elif desk_env in ["xfce", "xubuntu"]:
             xfce_actions(None, image_piece_list)
@@ -1685,7 +1697,8 @@ def use_image_pieces():
     pltform = platform.system()
     if pltform == "Linux":
         desk_env = os.environ.get("DESKTOP_SESSION")
-        if desk_env in ["/usr/share/xsessions/plasma", "plasma"]:
+        # if desk_env in ["/usr/share/xsessions/plasma", "plasma"]:
+        if running_kde():
             return True
         elif desk_env in ["xfce", "xubuntu"]:
             return True
