@@ -367,14 +367,48 @@ class DisplaySystem():
                 else:
                     columns.append(work_col)
                     work_col = [dsp]
-                    if dsp == self.disp_list[-1]:
-                        columns.append(work_col)
+                if dsp == self.disp_list[-1]:
+                    columns.append(work_col)
+            # print("columns", columns)
+            # print("work_col", work_col)
+        # print("columns done", columns)
+        # for col in columns:
+            # for dsp in col:
+                # print(str(dsp))
 
-        # print("columns", columns)
+        col_ids = [list(range(len(col))) for col in columns]
+        # sort columns in place vertically in digital offset
+        sorted_ids = []
+        sorted_columns = []
+        for ids, col in zip(col_ids, columns):
+            # col.sort(key=lambda x: x.digital_offset[1])
+            srt_id, srt_col = (list(t) for t in zip(*sorted(zip(ids, col), key=lambda pair: pair[1].digital_offset[1])))
+            sorted_ids.append(srt_id)
+            sorted_columns.append(srt_col)
+        columns = sorted_columns
+
+        # print("columns sorted", columns, "sorted_ids", sorted_ids)
+        # for col in columns:
+            # for dsp in col:
+                # print(str(dsp))
+        if columns == []:
+            sp_logging.G_LOGGER.info(
+                "DisplaySystem column recostruction has failed completely. Exit.")
+            sys.exit()
+
 
         # Tile columns on to the plane with vertical centering
-        col_sizes = [self.column_size(col) for col in columns]
-        max_col_h = max([sz[1] for sz in col_sizes])
+        try:
+            col_sizes = [self.column_size(col) for col in columns]
+        except (ValueError, IndexError):
+            sp_logging.G_LOGGER.info("Problem with column sizes. col_sizes: %s",
+                                     col_sizes)
+        # print("col_sizes", col_sizes)
+        try:
+            max_col_h = max([sz[1] for sz in col_sizes])
+        except ValueError:
+            sp_logging.G_LOGGER.info("There are no column sizes? col_sizes: %s",
+                                     col_sizes)
         col_left_tops = []
         current_left = 0
         for sz in col_sizes:
@@ -401,12 +435,20 @@ class DisplaySystem():
                 )
                 # print(dsp.ppi_norm_offset)
                 current_top += dsp.ppi_norm_resolution[1] + dsp.ppi_norm_bezels[1]
+        # Restore column order to the original order that matches self.disp_list and other sorts (kde).
+        restored_columns = []
+        for ids, col in zip(sorted_ids, columns):
+            srt_id, srt_col = (list(t) for t in zip(*sorted(zip(ids, col), key=lambda pair: pair[0])))
+            restored_columns.append(srt_col)
+        columns = restored_columns
+
         # Update offsets to disp_list
         flattened_cols = [dsp for col in columns for dsp in col]
         for scope_dsp, dsp in zip(flattened_cols, self.disp_list):
             dsp.ppi_norm_offset = scope_dsp.ppi_norm_offset
         # print("PPI NORM RESOLUTIONS AND OFFSETS")
         # print([(dsp.ppi_norm_resolution, dsp.ppi_norm_offset) for dsp in self.disp_list])
+        # sys.exit()
 
     def get_disp_list(self, use_ppi_norm = False):
         if use_ppi_norm:
