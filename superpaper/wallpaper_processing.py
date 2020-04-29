@@ -16,7 +16,7 @@ import sys
 from operator import itemgetter
 from threading import Lock, Thread, Timer
 
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from screeninfo import get_monitors
 
 import superpaper.perspective as persp
@@ -1088,7 +1088,11 @@ def span_single_image_simple(profile):
     file = profile.next_wallpaper_files()[0]
     if sp_logging.DEBUG:
         sp_logging.G_LOGGER.info(file)
-    img = Image.open(file)
+    try:
+        img = Image.open(file)
+    except UnidentifiedImageError:
+        sp_logging.G_LOGGER.info(("Opening image '%s' failed with PIL.UnidentifiedImageError."
+                                  "It could be corrupted or is of foreign type."), file)
     canvas_tuple = tuple(compute_canvas(RESOLUTION_ARRAY, DISPLAY_OFFSET_ARRAY))
     img_resize = resize_to_fill(img, canvas_tuple)
     outputfile = os.path.join(TEMP_PATH, profile.name + "-a.png")
@@ -1115,7 +1119,11 @@ def span_single_image_advanced(profile):
     file = profile.next_wallpaper_files()[0]
     if sp_logging.DEBUG:
         sp_logging.G_LOGGER.info(file)
-    img = Image.open(file)
+    try:
+        img = Image.open(file)
+    except UnidentifiedImageError:
+        sp_logging.G_LOGGER.info(("Opening image '%s' failed with PIL.UnidentifiedImageError."
+                                  "It could be corrupted or is of foreign type."), file)
 
     # Cropping now sections of the image to be shown, USE EFFECTIVE WORKING
     # SIZES. Also EFFECTIVE SIZE Offsets are now required.
@@ -1206,7 +1214,12 @@ def set_multi_image_wallpaper(profile):
         sp_logging.G_LOGGER.info(str(files))
     img_resized = []
     for file, res in zip(files, RESOLUTION_ARRAY):
-        image = Image.open(file)
+        # image = Image.open(file)
+        try:
+            image = Image.open(file)
+        except UnidentifiedImageError:
+            sp_logging.G_LOGGER.info(("Opening image '%s' failed with PIL.UnidentifiedImageError."
+                                      "It could be corrupted or is of foreign type."), file)
         img_resized.append(resize_to_fill(image, res))
     canvas_tuple = tuple(compute_canvas(RESOLUTION_ARRAY, DISPLAY_OFFSET_ARRAY))
     combined_image = Image.new("RGB", canvas_tuple, color=0)

@@ -4,7 +4,7 @@ New wallpaper configuration GUI for Superpaper.
 import os
 import time
 from operator import itemgetter
-from PIL import Image, ImageEnhance
+from PIL import Image, ImageEnhance, UnidentifiedImageError
 
 import superpaper.sp_logging as sp_logging
 import superpaper.wallpaper_processing as wpproc
@@ -1467,7 +1467,17 @@ class WallpaperPreviewPanel(wx.Panel):
 
     def resize_and_bitmap(self, fname, size, enhance_color=False):
         """Take filename of an image and resize and center crop it to size."""
-        pil = resize_to_fill(Image.open(fname), size, quality="fast")
+        try:
+            pil = resize_to_fill(Image.open(fname), size, quality="fast")
+        except UnidentifiedImageError:
+            msg = ("Opening image '%s' failed with PIL.UnidentifiedImageError."
+                   "It could be corrupted or is of foreign type.") % fname
+            sp_logging.G_LOGGER.info(msg)
+            # show_message_dialog(msg)
+            black_bmp = wx.Bitmap.FromRGBA(size[0], size[1], red=0, green=0, blue=0, alpha=255)
+            if enhance_color:
+                return (black_bmp, black_bmp)
+            return black_bmp
         img = wx.Image(pil.size[0], pil.size[1])
         img.SetData(pil.convert("RGB").tobytes())
         if enhance_color:
