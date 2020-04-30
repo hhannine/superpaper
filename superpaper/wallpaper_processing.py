@@ -403,8 +403,8 @@ class DisplaySystem():
                 # print(str(dsp))
         if columns == []:
             sp_logging.G_LOGGER.info(
-                "DisplaySystem column recostruction has failed completely. Exit.")
-            sys.exit()
+                "DisplaySystem column recostruction has failed completely. Trigger fallback.")
+            columns = [[dsp] for dsp in self.disp_list]
 
 
         # Tile columns on to the plane with vertical centering
