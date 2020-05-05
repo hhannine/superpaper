@@ -404,6 +404,7 @@ class WallpaperSettingsPanel(wx.Panel):
         self.button_diaginch_save.Disable()
         self.sizer_setting_diaginch.Add(tc_list_sizer_diag, 0, wx.ALIGN_LEFT|wx.LEFT, 5)
         self.sizer_setting_adv.Layout()
+        self.sizer_main.Layout()
         self.sizer_main.Fit(self.frame)
         # Check cb according to DisplaySystem 'use_user_diags'
         self.cb_diaginch.SetValue(self.display_sys.use_user_diags)
