@@ -491,7 +491,7 @@ class DisplaySystem():
             get_id = self.default_perspective
         else:
             get_id = persp_name
-        if not get_id or get_id == "disabled":
+        if not get_id or get_id == "disabled" or get_id not in self.perspective_dict:
             return None
         return self.perspective_dict[get_id]
 
