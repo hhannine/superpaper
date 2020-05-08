@@ -27,7 +27,7 @@ class BrowsePaths(wx.Dialog):
         wx.Dialog.__init__(self, parent, -1,
                            'Choose image source directories or image files',
                            size=(250, 250),
-                           style=wx.RESIZE_BORDER)
+                           style=wx.RESIZE_BORDER|wx.DEFAULT_DIALOG_STYLE)
         self.SetMinSize((250, 250))
         BMP_SIZE = 32
         self.tsize = (BMP_SIZE, BMP_SIZE)
@@ -93,7 +93,7 @@ class BrowsePaths(wx.Dialog):
         sizer_buttons.Add(self.button_cancel, 0, wx.CENTER|wx.ALL, 5)
 
         sizer_main.Add(sizer_browse, 1, wx.ALL|wx.EXPAND)
-        sizer_main.Add(self.sizer_paths_list, 0, wx.ALL|wx.ALIGN_CENTER|wx.EXPAND)
+        sizer_main.Add(self.sizer_paths_list, 0, wx.ALL|wx.EXPAND)
         if self.use_multi_image:
             sizer_main.Add(sizer_radio, 0, wx.ALL|wx.EXPAND, 5)
         sizer_main.Add(sizer_buttons, 0, wx.ALL|wx.EXPAND, 5)
