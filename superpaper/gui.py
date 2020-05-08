@@ -1168,7 +1168,7 @@ class WallpaperSettingsPanel(wx.Panel):
 
     def onHelp(self, event):
         """Open help dialog."""
-        help_frame = HelpFrame()
+        help_frame = HelpFrame(self)
 
     def onHelpHotkey(self, evt):
         """Popup hotkey help."""

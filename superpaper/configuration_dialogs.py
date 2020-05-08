@@ -18,7 +18,8 @@ try:
 except ImportError:
     exit()
 
-
+RESOURCES_PATH = os.path.join(PATH, "superpaper/resources")
+TRAY_ICON = os.path.join(RESOURCES_PATH, "superpaper.png")
 
 class BrowsePaths(wx.Dialog):
     """Path picker dialog class."""
@@ -1051,13 +1052,14 @@ class SettingsPanel(wx.Panel):
 
 class HelpFrame(wx.Frame):
     """Help dialog frame."""
-    def __init__(self):
-        wx.Frame.__init__(self, parent=None, title="Superpaper Help")
+    def __init__(self, parent=None):
+        wx.Frame.__init__(self, parent=parent, title="Superpaper Help")
         self.frame_sizer = wx.BoxSizer(wx.VERTICAL)
         help_panel = HelpPanel(self)
         self.frame_sizer.Add(help_panel, 1, wx.EXPAND)
         self.SetAutoLayout(True)
         self.SetSizer(self.frame_sizer)
+        self.SetIcon(wx.Icon(TRAY_ICON, wx.BITMAP_TYPE_PNG))
         self.Fit()
         self.Layout()
         self.Center()
@@ -1075,13 +1077,14 @@ class HelpPanel(wx.Panel):
         current_settings = GeneralSettingsData()
         show_help = current_settings.show_help
 
-        st_show_at_start = wx.StaticText(self, -1, "Show this help at start")
-        self.cb_show_at_start = wx.CheckBox(self, -1, "")
+        # st_show_at_start = wx.StaticText(self, -1, "Show this help at start")
+        self.cb_show_at_start = wx.CheckBox(self, -1, "Show this help at start")
         self.cb_show_at_start.SetValue(show_help)
         self.button_close = wx.Button(self, label="Close")
         self.button_close.Bind(wx.EVT_BUTTON, self.onClose)
-        self.sizer_buttons.Add(st_show_at_start, 0, wx.CENTER|wx.ALL, 5)
-        self.sizer_buttons.Add(self.cb_show_at_start, 0, wx.CENTER|wx.ALL, 5)
+        self.sizer_buttons.AddStretchSpacer()
+        # self.sizer_buttons.Add(st_show_at_start, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        self.sizer_buttons.Add(self.cb_show_at_start, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
         self.sizer_buttons.Add(self.button_close, 0, wx.CENTER|wx.ALL, 5)
 
         help_str = """
@@ -1124,10 +1127,12 @@ Tips:
       save, and its a new profile.
     - 'Align Test' feature allows you to test your alignment settings.
 """
-        st_help = wx.StaticText(self, -1, help_str)
-        self.sizer_helpcontent.Add(st_help, 0, wx.EXPAND|wx.CENTER|wx.ALL, 5)
+        # st_help = wx.StaticText(self, -1, help_str)
+        st_help = wx.TextCtrl(self, -1, help_str, size=(700, 400),
+                              style=wx.TE_MULTILINE|wx.TE_READONLY)
+        self.sizer_helpcontent.Add(st_help, 1, wx.EXPAND|wx.CENTER|wx.ALL, 5)
 
-        self.sizer_main.Add(self.sizer_helpcontent, 0, wx.CENTER|wx.EXPAND)
+        self.sizer_main.Add(self.sizer_helpcontent, 1, wx.CENTER|wx.EXPAND)
         self.sizer_main.Add(self.sizer_buttons, 0, wx.CENTER|wx.EXPAND)
         self.SetSizer(self.sizer_main)
         self.sizer_main.Fit(parent)
