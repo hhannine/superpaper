@@ -29,7 +29,8 @@ def running_kde():
     """Detect if running in a KDE session."""
     d_ses = os.environ.get("DESKTOP_SESSION")
     kde_f_ses = os.environ.get("KDE_FULL_SESSION")
-    if kde_f_ses != "" or "plasma" in d_ses or "kde" in d_ses:
+    xdg_ses_dtop = os.environ.get("XDG_SESSION_DESKTOP")
+    if kde_f_ses == "true" or xdg_ses_dtop == "KDE" or "plasma" in d_ses or "kde" in d_ses:
         return True
     return False
 
