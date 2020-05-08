@@ -23,7 +23,11 @@ except ImportError:
 class BrowsePaths(wx.Dialog):
     """Path picker dialog class."""
     def __init__(self, parent, use_multi_image, defdir):
-        wx.Dialog.__init__(self, parent, -1, 'Choose image source directories or image files', size=(750, 850))
+        wx.Dialog.__init__(self, parent, -1,
+                           'Choose image source directories or image files',
+                           size=(250, 250),
+                           style=wx.RESIZE_BORDER)
+        self.SetMinSize((250, 250))
         BMP_SIZE = 32
         self.tsize = (BMP_SIZE, BMP_SIZE)
         self.il = wx.ImageList(BMP_SIZE, BMP_SIZE)
@@ -88,17 +92,19 @@ class BrowsePaths(wx.Dialog):
         sizer_buttons.Add(self.button_cancel, 0, wx.CENTER|wx.ALL, 5)
 
         sizer_main.Add(sizer_browse, 1, wx.ALL|wx.EXPAND)
-        sizer_main.Add(self.sizer_paths_list, 0, wx.ALL|wx.ALIGN_CENTER)
+        sizer_main.Add(self.sizer_paths_list, 0, wx.ALL|wx.ALIGN_CENTER|wx.EXPAND)
         if self.use_multi_image:
             sizer_main.Add(sizer_radio, 0, wx.ALL|wx.EXPAND, 5)
         sizer_main.Add(sizer_buttons, 0, wx.ALL|wx.EXPAND, 5)
-        self.SetSizer(sizer_main)
-        self.SetAutoLayout(True)
+        # self.SetSizer(sizer_main)
+        self.SetSizerAndFit(sizer_main)
+        self.SetSize((450, 650))
+        # self.SetAutoLayout(True)
 
     def create_paths_listctrl(self, use_multi_image):
         if use_multi_image:
             self.paths_listctrl = wx.ListCtrl(self, -1,
-                                              size=(740, 200),
+                                              size=(-1, -1),
                                               style=wx.LC_REPORT
                                               #  | wx.BORDER_SUNKEN
                                               | wx.BORDER_SIMPLE
@@ -112,12 +118,12 @@ class BrowsePaths(wx.Dialog):
                                               #  | wx.LC_HRULES
                                               #  | wx.LC_SINGLE_SEL
                                              )
-            self.paths_listctrl.InsertColumn(0, 'Display', wx.LIST_FORMAT_RIGHT, width = 100)
-            self.paths_listctrl.InsertColumn(1, 'Source', width = 620)
+            self.paths_listctrl.InsertColumn(0, 'Display', wx.LIST_FORMAT_RIGHT, width=100)
+            self.paths_listctrl.InsertColumn(1, 'Source', width=620)
         else:
             # show simpler listing without header if only one wallpaper target
             self.paths_listctrl = wx.ListCtrl(self, -1,
-                                              size=(740, 200),
+                                              size=(-1, -1),
                                               style=wx.LC_REPORT
                                               #  | wx.BORDER_SUNKEN
                                               | wx.BORDER_SIMPLE
@@ -131,12 +137,12 @@ class BrowsePaths(wx.Dialog):
                                               #  | wx.LC_HRULES
                                               #  | wx.LC_SINGLE_SEL
                                              )
-            self.paths_listctrl.InsertColumn(0, 'Source', width = 720)
+            self.paths_listctrl.InsertColumn(0, 'Source', width=720)
 
         # Add the item list to the control
         self.paths_listctrl.SetImageList(self.il, wx.IMAGE_LIST_SMALL)
 
-        self.sizer_paths_list.Add(self.paths_listctrl, 0, wx.CENTER|wx.ALL|wx.EXPAND, 5)
+        self.sizer_paths_list.Add(self.paths_listctrl, 1, wx.CENTER|wx.ALL|wx.EXPAND, 5)
 
     def append_to_listctrl(self, data_row):
         if self.use_multi_image:
