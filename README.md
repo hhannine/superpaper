@@ -215,6 +215,8 @@ python superpaper.pyw --debug
 ## Known issues
 
 ### Linux
+- Ubuntu (or Gnome in general?): Tray icon does not show up:
+  - One workaround for now is to use the Gnome extension `TopIcons plus`.
 - Ubuntu (others?): gsettings memory back-end issue:
   - Solution: run superpaper with
   ```
@@ -222,7 +224,7 @@ python superpaper.pyw --debug
   ```
 
 ### Windows
-- A rare issue where setting the wallpaper fails and leads to a black wallpaper. Might be related to source image properties.
+- :)
 
 ### Mac OS X
 - It is not known whether this works at all. If you try it, tell me how it goes!
