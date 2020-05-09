@@ -909,6 +909,9 @@ def resize_to_fill(img, res, quality=Image.LANCZOS):
         quality = Image.LANCZOS
         reducing_gap = None
 
+    if not img.mode == "RGB":
+        img = img.convert("RGB")
+
     image_size = img.size  # returns image (width,height)
     if image_size == res:
         # input image is already of the correct size, no action needed.
@@ -1087,6 +1090,25 @@ def compute_working_canvas(crop_tuples):
     canvas_size = [rightmost - leftmost, bottommost - topmost]
     return canvas_size
 
+def alternating_outputfile(prof_name):
+    """Return alternating output filename and old filename.
+    
+    This is done so that the cache doesn't become a huge dump of unused files,
+    and it is alternating since some OSs don't update their wallpapers if the
+    current image file is overwritten.
+    """
+    platf = platform.system()
+    if platf == "Windows":
+        ftype = "jpg"
+    else:
+        ftype = "png"
+    outputfile = os.path.join(TEMP_PATH, prof_name + "-a." + ftype)
+    if os.path.isfile(outputfile):
+        outputfile_old = outputfile
+        outputfile = os.path.join(TEMP_PATH, prof_name + "-b." + ftype)
+    else:
+        outputfile_old = os.path.join(TEMP_PATH, prof_name + "-b." + ftype)
+    return (outputfile, outputfile_old)
 
 def span_single_image_simple(profile):
     """
@@ -1106,13 +1128,9 @@ def span_single_image_simple(profile):
                                   "It could be corrupted or is of foreign type."), file)
     canvas_tuple = tuple(compute_canvas(RESOLUTION_ARRAY, DISPLAY_OFFSET_ARRAY))
     img_resize = resize_to_fill(img, canvas_tuple)
-    outputfile = os.path.join(TEMP_PATH, profile.name + "-a.png")
-    if os.path.isfile(outputfile):
-        outputfile_old = outputfile
-        outputfile = os.path.join(TEMP_PATH, profile.name + "-b.png")
-    else:
-        outputfile_old = os.path.join(TEMP_PATH, profile.name + "-b.png")
-    img_resize.save(outputfile, "PNG")
+
+    outputfile, outputfile_old = alternating_outputfile(profile.name)
+    img_resize.save(outputfile, quality=95) # set quality if jpg is used, png unaffected
     set_wallpaper(outputfile)
     if os.path.exists(outputfile_old):
         os.remove(outputfile_old)
@@ -1198,14 +1216,10 @@ def span_single_image_advanced(profile):
     combined_image.load()
     for i in range(len(cropped_images)):
         combined_image.paste(cropped_images[i], DISPLAY_OFFSET_ARRAY[i])
+
     # Saving combined image
-    outputfile = os.path.join(TEMP_PATH, profile.name + "-a.png")
-    if os.path.isfile(outputfile):
-        outputfile_old = outputfile
-        outputfile = os.path.join(TEMP_PATH, profile.name + "-b.png")
-    else:
-        outputfile_old = os.path.join(TEMP_PATH, profile.name + "-b.png")
-    combined_image.save(outputfile, "PNG")
+    outputfile, outputfile_old = alternating_outputfile(profile.name)
+    combined_image.save(outputfile, quality=95) # set quality if jpg is used, png unaffected
     set_wallpaper(outputfile)
     if os.path.exists(outputfile_old):
         os.remove(outputfile_old)
@@ -1237,13 +1251,9 @@ def set_multi_image_wallpaper(profile):
     combined_image.load()
     for i in range(len(files)):
         combined_image.paste(img_resized[i], DISPLAY_OFFSET_ARRAY[i])
-    outputfile = os.path.join(TEMP_PATH, profile.name + "-a.png")
-    if os.path.isfile(outputfile):
-        outputfile_old = outputfile
-        outputfile = os.path.join(TEMP_PATH, profile.name + "-b.png")
-    else:
-        outputfile_old = os.path.join(TEMP_PATH, profile.name + "-b.png")
-    combined_image.save(outputfile, "PNG")
+
+    outputfile, outputfile_old = alternating_outputfile(profile.name)
+    combined_image.save(outputfile, quality=95) # set quality if jpg is used, png unaffected
     set_wallpaper(outputfile)
     if os.path.exists(outputfile_old):
         os.remove(outputfile_old)
