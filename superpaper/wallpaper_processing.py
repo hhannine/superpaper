@@ -28,9 +28,11 @@ from superpaper.sp_paths import CONFIG_PATH, TEMP_PATH
 def running_kde():
     """Detect if running in a KDE session."""
     d_ses = os.environ.get("DESKTOP_SESSION")
+    if d_ses and ("plasma" in d_ses or "kde" in d_ses):
+        return True
     kde_f_ses = os.environ.get("KDE_FULL_SESSION")
     xdg_ses_dtop = os.environ.get("XDG_SESSION_DESKTOP")
-    if kde_f_ses == "true" or xdg_ses_dtop == "KDE" or "plasma" in d_ses or "kde" in d_ses:
+    if kde_f_ses == "true" or xdg_ses_dtop == "KDE":
         return True
     return False
 
