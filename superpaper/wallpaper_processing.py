@@ -1361,7 +1361,7 @@ def set_wallpaper_linux(outputfile):
                             "org.mate.background",
                             "picture-filename",
                             outputfile])
-        elif desk_env in ["xfce", "xubuntu"]:
+        elif desk_env in ["xfce", "xubuntu", "ubuntustudio"]:
             xfce_actions(outputfile)
         elif desk_env in ["lubuntu", "Lubuntu"]:
             try:
@@ -1411,7 +1411,7 @@ def set_wallpaper_piecewise(image_piece_list):
         # if desk_env in ["/usr/share/xsessions/plasma", "plasma"]:
         if running_kde():
             kdeplasma_actions(None, image_piece_list)
-        elif desk_env in ["xfce", "xubuntu"]:
+        elif desk_env in ["xfce", "xubuntu", "ubuntustudio"]:
             xfce_actions(None, image_piece_list)
     else:
         pass
@@ -1715,7 +1715,7 @@ def use_image_pieces():
         # if desk_env in ["/usr/share/xsessions/plasma", "plasma"]:
         if running_kde():
             return True
-        elif desk_env in ["xfce", "xubuntu"]:
+        elif desk_env in ["xfce", "xubuntu", "ubuntustudio"]:
             return True
         else:
             return False
