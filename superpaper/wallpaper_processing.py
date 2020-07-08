@@ -1335,6 +1335,7 @@ def set_wallpaper_linux(outputfile):
     if desk_env:
         if set_command != "":
             if set_command == "feh":
+                sp_logging.G_LOGGER.info("Using 'feh' command mode!")
                 subprocess.run(["feh", "--bg-scale", "--no-xinerama", outputfile])
             else:
                 command_string_list = set_command.split()
