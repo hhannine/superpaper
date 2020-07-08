@@ -1345,7 +1345,8 @@ def set_wallpaper_linux(outputfile):
                 subprocess.run(formatted_command)
         elif desk_env in ["gnome", "gnome-wayland",
                           "unity", "ubuntu",
-                          "pantheon", "budgie-desktop"]:
+                          "pantheon", "budgie-desktop",
+                          "pop"]:
             subprocess.run(["gsettings", "set",
                             "org.gnome.desktop.background", "picture-uri",
                             file])
