@@ -1123,6 +1123,8 @@ Description of Wallpaper Configuration 'advanced span' options:
             configuration dialog.
 
 Tips:
+    - Superpaper running in the background is controlled from the Tray Icon/Applet.
+    - To start Superpaper in the background, disable the 'Show this help at start' checkbox.
     - You can use the given example profiles as templates: just change the name and whatever else,
       save, and its a new profile.
     - 'Align Test' feature allows you to test your alignment settings.
