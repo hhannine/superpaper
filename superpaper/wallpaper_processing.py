@@ -1363,12 +1363,12 @@ def set_wallpaper_linux(outputfile):
                             outputfile])
         elif desk_env in ["xfce", "xubuntu", "ubuntustudio"]:
             xfce_actions(outputfile)
-        elif desk_env in ["lubuntu", "Lubuntu"]:
+        elif desk_env.lower() == "lubuntu" or "lxqt" in desk_env.lower():
             try:
-                subprocess.run("pcmanfm", "-w", outputfile)
+                subprocess.run(["pcmanfm", "-w", outputfile])
             except OSError:
                 try:
-                    subprocess.run("pcmanfm-qt", "-w", outputfile)
+                    subprocess.run(["pcmanfm-qt", "-w", outputfile])
                 except OSError:
                     sp_logging.G_LOGGER.info("Exception: failure to find either command \
 'pcmanfm' or 'pcmanfm-qt'. Exiting.")
