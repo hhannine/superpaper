@@ -12,10 +12,11 @@ import sys
 
 from superpaper.cli import cli_logic
 from superpaper.tray import tray_loop
-
+from superpaper.spanmode import set_spanmode
 
 def main():
     """Runs tray applet if no command line arguments are passed, CLI parsing otherwise."""
+    set_spanmode()
     if len(sys.argv) <= 1:
         tray_loop()
     else:
