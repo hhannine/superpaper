@@ -24,6 +24,9 @@ import superpaper.sp_logging as sp_logging
 from superpaper.message_dialog import show_message_dialog
 from superpaper.sp_paths import CONFIG_PATH, TEMP_PATH
 
+# Disables PIL.Image.DecompressionBombError.
+Image.MAX_IMAGE_PIXELS = None # 715827880 would be 4x default max.
+
 
 def running_kde():
     """Detect if running in a KDE session."""
