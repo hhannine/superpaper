@@ -540,6 +540,18 @@ class DisplaySystem():
             )
         return bezels_mm
 
+    def bezels_in_px(self):
+        """Return list of bezel thicknesses in ppi norm px."""
+        bezels = []
+        for dsp in self.disp_list:
+            bezels.append(
+                (
+                    dsp.ppi_norm_bezels[0],
+                    dsp.ppi_norm_bezels[1]
+                )
+            )
+        return bezels
+
     def update_display_diags(self, diag_inches):
         """Overwrite detected display sizes with user input."""
         if diag_inches == "auto":

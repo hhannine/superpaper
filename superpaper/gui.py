@@ -8,7 +8,7 @@ from PIL import Image, ImageEnhance, UnidentifiedImageError
 
 import superpaper.sp_logging as sp_logging
 import superpaper.wallpaper_processing as wpproc
-from superpaper.configuration_dialogs import BrowsePaths, PerspectiveConfig, HelpFrame, HelpPopup
+from superpaper.configuration_dialogs import BrowsePaths, PerspectiveConfig, DisplayPositionEntry, HelpFrame, HelpPopup
 from superpaper.data import GeneralSettingsData, ProfileData, TempProfileData, CLIProfileData, list_profiles
 from superpaper.message_dialog import show_message_dialog
 from superpaper.sp_paths import PATH, CONFIG_PATH, PROFILES_PATH
@@ -1361,8 +1361,8 @@ class WallpaperPreviewPanel(wx.Panel):
             st_bmp.SetBitmap(bmp)
 
 
-    def refresh_preview(self, use_ppi_px = False):
-        if not self.config_mode or not self.bezel_conifg_mode:
+    def refresh_preview(self, use_ppi_px=False, force_refresh=False):
+        if force_refresh or (not self.config_mode or not self.bezel_conifg_mode):
             self.dtop_canvas_px = self.get_canvas(self.display_data, use_ppi_px)
             self.dtop_canvas_relsz, self.dtop_canvas_pos, scaling_fac = self.fit_canvas_wrkarea(self.dtop_canvas_px)
             self.st_bmp_canvas.SetPosition(self.dtop_canvas_pos)
@@ -1655,6 +1655,7 @@ class WallpaperPreviewPanel(wx.Panel):
         self.button_save = wx.Button(self, label="Save")
         self.button_reset = wx.Button(self, label="Reset")
         self.button_cancel = wx.Button(self, label="Cancel")
+        self.button_entry = wx.Button(self, label="Exact entry")
         help_bmp = wx.ArtProvider.GetBitmap(wx.ART_QUESTION, wx.ART_BUTTON, (20, 20))
         self.button_help = wx.BitmapButton(self, bitmap=help_bmp, name="butt_help")
 
@@ -1663,6 +1664,7 @@ class WallpaperPreviewPanel(wx.Panel):
         self.button_save.Bind(wx.EVT_BUTTON, self.onSave)
         self.button_reset.Bind(wx.EVT_BUTTON, self.onReset)
         self.button_cancel.Bind(wx.EVT_BUTTON, self.onCancel)
+        self.button_entry.Bind(wx.EVT_BUTTON, self.onEntry)
         self.button_help.Bind(wx.EVT_BUTTON, self.onHelp)
 
         self.move_buttons()
@@ -1670,6 +1672,7 @@ class WallpaperPreviewPanel(wx.Panel):
         self.button_config.Show(use_ppi_px)
         self.button_save.Show(False)
         self.button_reset.Show(False)
+        self.button_entry.Show(False)
         self.button_cancel.Show(False)
 
     def move_buttons(self):
@@ -1696,6 +1699,12 @@ class WallpaperPreviewPanel(wx.Panel):
                 sz_area[1] - 2*(sz_butt[1] + self.butt_gap)
             )
         )
+        self.button_entry.SetPosition(
+            (
+                sz_area[0] - sz_butt[0] - self.butt_gap,
+                sz_area[1] - 3*(sz_butt[1] + self.butt_gap)
+            )
+        )
         self.button_cancel.SetPosition(
             (
                 sz_area[0] - sz_butt[0] - self.butt_gap,
@@ -1714,10 +1723,12 @@ class WallpaperPreviewPanel(wx.Panel):
         self.button_config.Show(show_config)
         self.button_save.Show(in_config)
         self.button_reset.Show(in_config)
+        self.button_entry.Show(in_config)
         self.button_cancel.Show(in_config)
 
     def onConfigure(self, evt):
         """Start diplay position config mode."""
+        self.old_ppinorm_offs = self.display_sys.get_ppinorm_offsets()  # back up the offsets
         self.frame.toggle_radio_and_profile_choice(False)
         self.frame.toggle_bezel_buttons(False, False)
         self.config_mode = True
@@ -1734,10 +1745,11 @@ class WallpaperPreviewPanel(wx.Panel):
         # Export and save offsets to DisplaySystem
         self.export_offsets(self.display_sys)
         self.display_sys.save_system()
-        display_data = self.display_sys.get_disp_list(use_ppi_norm = True)
+        display_data = self.display_sys.get_disp_list(use_ppi_norm=True)
         # Full redraw of preview with new offset data
         if self.current_preview_images:
-            self.preview_wallpaper(self.current_preview_images, True, False, display_data=display_data)
+            self.preview_wallpaper(self.current_preview_images, True, False,
+                                   display_data=display_data)
         else:
             self.display_data = display_data
             self.refresh_preview(True)
@@ -1770,12 +1782,19 @@ class WallpaperPreviewPanel(wx.Panel):
         self.display_sys.update_ppinorm_offsets(ppinorm_offs)
         self.Refresh()
 
+    def onEntry(self, evt):
+        """Opens display positions accurate entry dialog."""
+        dlg = DisplayPositionEntry(self)
+
     def onCancel(self, evt):
         """Cancel out of diplay position config mode."""
         self.config_mode = False
         self.bind_movement_binds(False)
         self.toggle_buttons(True, False)
         self.draggable_shapes = []  # Destroys DragShapes
+        self.display_sys.update_ppinorm_offsets(self.old_ppinorm_offs)
+        # redraw preview with restored data
+        self.display_data = self.display_sys.get_disp_list(True)
         self.refresh_preview()
         self.full_refresh_preview(True, True, False)
         # self.show_staticbmps(True)
@@ -1798,7 +1817,7 @@ class WallpaperPreviewPanel(wx.Panel):
                         use_perspective=use_per,
                         persp_name=persname)
         btn = evt.GetEventObject()
-        pos = btn.ClientToScreen( (0,0) )
+        pos = btn.ClientToScreen((0,0))
         sz =  btn.GetSize()
         pop.Position(pos, (0, sz[1]))
         pop.Popup()
@@ -1830,7 +1849,7 @@ class WallpaperPreviewPanel(wx.Panel):
                     off[1]*scaling
                 )
             )
-        display_sys.update_ppinorm_offsets(ppi_norm_offsets, bezels_included = False)
+        display_sys.update_ppinorm_offsets(ppi_norm_offsets, bezels_included=False)
 
     def sanitize_shape_offs(self):
         """Return shapes' relative offsets, anchoring to (0,0)."""
