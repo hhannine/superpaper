@@ -245,6 +245,7 @@ class ProfileData(object):
         self.file = profile_file
         self.name = "default_profile"
         self.spanmode = "single"  # single / multi
+        self.spangroups = None
         self.slideshow = True
         self.delay_list = [600]
         self.sortmode = "shuffle"  # shuffle ( random , sorted? )
@@ -287,6 +288,15 @@ class ProfileData(object):
                     else:
                         sp_logging.G_LOGGER.info("Exception: unknown spanmode: %s \
                                 in profile: %s", words[1], self.name)
+                elif words[0] == "spangroups":
+                    self.spangroups = []
+                    groups = words[1].strip().split(",")
+                    for grp in groups:
+                        try:
+                            ids = [int(idx) for idx in grp]
+                            self.spangroups.append(sorted(list(set(ids)))) # drop duplicates
+                        except ValueError:
+                            self.spangroups = None
                 elif words[0] == "slideshow":
                     wrd1 = words[1].strip().lower()
                     if wrd1 == "true":
@@ -641,6 +651,7 @@ class TempProfileData(object):
     def __init__(self):
         self.name = None
         self.spanmode = None
+        self.spangroups = None
         self.slideshow = None
         self.delay = None
         self.sortmode = None
@@ -664,6 +675,8 @@ class TempProfileData(object):
             tpfile.write("name=" + str(self.name) + "\n")
             if self.spanmode:
                 tpfile.write("spanmode=" + str(self.spanmode) + "\n")
+            if self.spangroups:
+                tpfile.write("spangroups=" + str(self.spangroups) + "\n")
             if self.slideshow is not None:
                 tpfile.write("slideshow=" + str(self.slideshow) + "\n")
             if self.delay:
@@ -716,6 +729,14 @@ only one paths field is needed."
 each display needs its own paths field."
                     show_message_dialog(msg, "Error")
                     return False
+            if self.spangroups:
+                list_grps = self.spangroups.split(",")
+                for grp in list_grps:
+                    for idx in grp:
+                        try:
+                            val = int(idx)
+                        except ValueError:
+                            return False
             if self.slideshow is True and not self.delay:
                 msg = "When using slideshow you need to enter a delay."
                 show_message_dialog(msg, "Info")
