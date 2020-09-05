@@ -283,8 +283,6 @@ class WallpaperSettingsPanel(wx.Panel):
         statbox_parent_adv = self.sizer_setting_adv.GetStaticBox()
 
         # Fallback Diagonal Inches
-        # self.sizer_setting_diaginch = wx.StaticBoxSizer(wx.VERTICAL, self, "Display diagonal sizes")
-        # statbox_parent_diaginch = self.sizer_setting_diaginch.GetStaticBox()
         self.sizer_setting_diaginch = wx.BoxSizer(wx.VERTICAL)
         statbox_parent_diaginch = self
         st_diaginch_override = wx.StaticText(statbox_parent_diaginch, -1,
@@ -296,13 +294,8 @@ class WallpaperSettingsPanel(wx.Panel):
                                         wx.ALIGN_LEFT|wx.LEFT, 10)
 
         # Bezels
-        # self.sizer_setting_bezels = wx.StaticBoxSizer(wx.VERTICAL, self, "Bezel Correction")
-        # statbox_parent_bezels = self.sizer_setting_bezels.GetStaticBox()
         self.sizer_setting_bezels = wx.BoxSizer(wx.VERTICAL)
         statbox_parent_bezels = self
-        # self.cb_bezels = wx.CheckBox(statbox_parent_bezels, -1, "Apply bezel correction")
-        # self.cb_bezels.Bind(wx.EVT_CHECKBOX, self.onCheckboxBezels)
-        # self.sizer_setting_bezels.Add(self.cb_bezels, 0, wx.ALIGN_LEFT|wx.LEFT, 5)
         st_bezels = wx.StaticText(statbox_parent_bezels, -1,
                                   "Adjust bezel sizes:")
 
@@ -323,14 +316,10 @@ class WallpaperSettingsPanel(wx.Panel):
         self.sizer_bezel_buttons.Add(self.button_help_bezel, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 10)
         self.sizer_setting_bezels.Add(st_bezels, 0, wx.ALL, 0)
         self.sizer_setting_bezels.Add(self.sizer_bezel_buttons, 1, wx.EXPAND, 0)
-        # self.button_bezels.Disable()
         self.button_bezels_save.Disable()
         self.button_bezels_canc.Disable()
-        # self.button_help_bezel.Disable()
 
         # Offsets
-        # self.sizer_setting_offsets = wx.StaticBoxSizer(wx.VERTICAL, self, "Manual Display Offsets")
-        # statbox_parent_offsets = self.sizer_setting_offsets.GetStaticBox()
         self.sizer_setting_offsets = wx.BoxSizer(wx.VERTICAL)
         statbox_parent_offsets = self
         self.cb_offsets = wx.CheckBox(statbox_parent_offsets, -1, "Apply manual offsets")
@@ -355,8 +344,6 @@ class WallpaperSettingsPanel(wx.Panel):
         self.sizer_setting_offsets.Add(tc_list_sizer_offs, 0, wx.ALIGN_LEFT|wx.LEFT, 5)
 
         #Perspective profile
-        # self.sizer_setting_persp = wx.StaticBoxSizer(wx.HORIZONTAL, self, "")
-        # statbox_parent_persp = self.sizer_setting_persp.GetStaticBox()
         self.sizer_setting_persp = wx.BoxSizer(wx.HORIZONTAL)
         st_perspprof = wx.StaticText(self, -1, "Perspective profile:")
         persp_choices = (["default"]
