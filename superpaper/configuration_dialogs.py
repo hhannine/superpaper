@@ -23,7 +23,7 @@ TRAY_ICON = os.path.join(RESOURCES_PATH, "superpaper.png")
 
 class BrowsePaths(wx.Dialog):
     """Path picker dialog class."""
-    def __init__(self, parent, use_multi_image, defdir):
+    def __init__(self, parent, use_multi_image, defdir, num_span_groups=None):
         wx.Dialog.__init__(self, parent, -1,
                            'Choose image source directories or image files',
                            size=(250, 250),
@@ -33,6 +33,12 @@ class BrowsePaths(wx.Dialog):
         self.tsize = (BMP_SIZE, BMP_SIZE)
         self.il = wx.ImageList(BMP_SIZE, BMP_SIZE)
 
+        if num_span_groups:
+            self.num_wallpaper_area = num_span_groups
+            self.wp_area_name = "Group"
+        else:
+            self.num_wallpaper_area = wpproc.NUM_DISPLAYS
+            self.wp_area_name = "Display"
         self.use_multi_image = use_multi_image
         self.path_list_data = []
         self.paths = []
@@ -60,7 +66,9 @@ class BrowsePaths(wx.Dialog):
 
         if self.use_multi_image:
             sizer_radio = wx.BoxSizer(wx.VERTICAL)
-            radio_choices_displays = ["Display {}".format(i) for i in range(wpproc.NUM_DISPLAYS)]
+            radio_choices_displays = [
+                self.wp_area_name + " {}".format(i) for i in range(self.num_wallpaper_area)
+            ]
             self.radiobox_displays = wx.RadioBox(self, wx.ID_ANY,
                                                  label="Select display to add sources to",
                                                  choices=radio_choices_displays,
@@ -119,7 +127,7 @@ class BrowsePaths(wx.Dialog):
                                               #  | wx.LC_HRULES
                                               #  | wx.LC_SINGLE_SEL
                                              )
-            self.paths_listctrl.InsertColumn(0, 'Display', wx.LIST_FORMAT_RIGHT, width=100)
+            self.paths_listctrl.InsertColumn(0, self.wp_area_name, wx.LIST_FORMAT_RIGHT, width=100)
             self.paths_listctrl.InsertColumn(1, 'Source', width=620)
         else:
             # show simpler listing without header if only one wallpaper target

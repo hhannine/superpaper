@@ -336,12 +336,40 @@ class WallpaperSettingsPanel(wx.Panel):
         for tc in self.tc_list_offsets:
             st = wx.StaticText(statbox_parent_offsets, -1,
                                str(self.tc_list_offsets.index(tc))+":")
-            tc_list_sizer_offs.Add(st, 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT|wx.TOP|wx.BOTTOM, 5)
-            tc_list_sizer_offs.Add(tc, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+            tc_st_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            tc_st_sizer.Add(st, 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT|wx.TOP|wx.BOTTOM, 5)
+            tc_st_sizer.Add(tc, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+            tc_list_sizer_offs.Add(tc_st_sizer, 0, wx.ALIGN_LEFT|wx.ALL, 0)
             tc.SetValue("0,0")
             st.Disable()
             tc.Disable()
         self.sizer_setting_offsets.Add(tc_list_sizer_offs, 0, wx.ALIGN_LEFT|wx.LEFT, 5)
+
+        # Span groups
+        self.sizer_setting_spangroups = wx.BoxSizer(wx.VERTICAL)
+        sizer_spangroups_cb = wx.BoxSizer(wx.HORIZONTAL)
+        self.cb_spangroups = wx.CheckBox(self, -1, "Use multiple span areas")
+        self.cb_spangroups.Bind(wx.EVT_CHECKBOX, self.onCheckboxSpanGroups)
+        self.button_help_spang = wx.BitmapButton(self, bitmap=help_bmp, name="butt_help_spang")
+        self.button_help_spang.Bind(wx.EVT_BUTTON, self.onHelpSpanGroups)
+        sizer_spangroups_cb.Add(self.cb_spangroups, 0, wx.ALIGN_LEFT|wx.LEFT, 5)
+        sizer_spangroups_cb.AddStretchSpacer()
+        sizer_spangroups_cb.Add(self.button_help_spang, 0, wx.ALIGN_RIGHT|wx.RIGHT, 5)
+        sizer_spangroups_data = wx.WrapSizer(wx.HORIZONTAL)
+        self.ch_list_spangroups = self.list_of_wxchoice(self, wpproc.NUM_DISPLAYS, 0.4)
+        for ch in self.ch_list_spangroups:
+            st = wx.StaticText(self, -1,
+                               str(self.ch_list_spangroups.index(ch))+":")
+            ch_st_sizer = wx.BoxSizer(wx.HORIZONTAL)
+            ch_st_sizer.Add(st, 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT|wx.TOP|wx.BOTTOM, 5)
+            ch_st_sizer.Add(ch, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+            sizer_spangroups_data.Add(ch_st_sizer, 0, wx.ALIGN_LEFT|wx.ALL, 0)
+            ch.SetItems([str(idx) for idx in range(self.ch_list_spangroups.index(ch) + 1)])
+            ch.SetSelection(0)
+            st.Disable()
+            ch.Disable()
+        self.sizer_setting_spangroups.Add(sizer_spangroups_cb, 1, wx.EXPAND, 5)
+        self.sizer_setting_spangroups.Add(sizer_spangroups_data, 0, wx.ALIGN_LEFT|wx.LEFT, 5)
 
         #Perspective profile
         self.sizer_setting_persp = wx.BoxSizer(wx.HORIZONTAL)
@@ -360,6 +388,7 @@ class WallpaperSettingsPanel(wx.Panel):
         self.sizer_setting_adv.Add(self.sizer_setting_diaginch, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
         self.sizer_setting_adv.Add(self.sizer_setting_bezels, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
         self.sizer_setting_adv.Add(self.sizer_setting_offsets, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
+        self.sizer_setting_adv.Add(self.sizer_setting_spangroups, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
         self.sizer_setting_adv.Add(self.sizer_setting_persp, 0, wx.CENTER|wx.EXPAND|wx.ALL, 5)
 
 
@@ -560,11 +589,22 @@ class WallpaperSettingsPanel(wx.Panel):
         for i in range(num_disp):
             tcrtl_list.append(
                 wx.TextCtrl(ctrl_parent, -1,
-                    size=(self.tc_width * fraction, -1),
-                    style=wx.TE_RIGHT
-                )
+                            size=(self.tc_width * fraction, -1),
+                            style=wx.TE_RIGHT
+                           )
             )
         return tcrtl_list
+
+    def list_of_wxchoice(self, ctrl_parent, num_disp, fraction=1/2):
+        ch_list = []
+        for i in range(num_disp):
+            ch_list.append(
+                wx.Choice(ctrl_parent, -1,
+                          size=(self.tc_width * fraction, -1),
+                          # style=wx.TE_RIGHT
+                         )
+            )
+        return ch_list
 
     def sizer_toggle_children(self, sizer, bool_state, toggle_cb=False):
         for child in sizer.GetChildren():
@@ -628,8 +668,8 @@ class WallpaperSettingsPanel(wx.Panel):
         else:
             if migrate_paths and self.path_listctrl.GetItemCount():
                 # warn that paths can't be migrated
-                msg = ("Wallpaper sources cannot be migrated between span"
-                       " and multi image, continue?"
+                msg = ("Wallpaper sources cannot be migrated between single span,"
+                       " span groups, or multi image, continue?"
                        "\n"
                        "Saved sources are not affected until you overwrite.")
                 res = show_message_dialog(msg, style="YES_NO")
@@ -645,7 +685,10 @@ class WallpaperSettingsPanel(wx.Panel):
                                                  | wx.BORDER_SIMPLE
                                                  | wx.LC_SORT_ASCENDING
                                                 )
-                self.path_listctrl.InsertColumn(0, 'Display', wx.LIST_FORMAT_RIGHT, width=100)
+                col0_str = 'Display'
+                if self.use_spangroups():
+                    col0_str = 'Group'
+                self.path_listctrl.InsertColumn(0, col0_str, wx.LIST_FORMAT_RIGHT, width=100)
                 self.path_listctrl.InsertColumn(1, 'Source', width=400)
             else:
                 self.multi_column_listc = False
@@ -674,6 +717,24 @@ class WallpaperSettingsPanel(wx.Panel):
         except ValueError:
             return False
 
+    def read_spangroups(self):
+        """Reads user input for span groups."""
+        groups = {}
+        for ch in self.ch_list_spangroups:
+            val = ch.GetSelection()
+            index = self.ch_list_spangroups.index(ch)
+            if val in groups:
+                groups[val].append(index)
+            else:
+                groups[val] = [index]
+        # if len(groups.keys()) > 1:
+        return groups
+        # return None
+
+    def use_spangroups(self):
+        """Check UI if spangroups are in use."""
+        cb_state = self.cb_spangroups.GetValue()
+        return cb_state and self.show_advanced_settings
 
     #
     # Event methods
@@ -749,6 +810,17 @@ class WallpaperSettingsPanel(wx.Panel):
         sizer = self.sizer_setting_offsets
         self.sizer_toggle_children(sizer, cb_state)
 
+    def onCheckboxSpanGroups(self, event):
+        cb_state = self.cb_spangroups.GetValue()
+        cont = self.refresh_path_listctrl(cb_state, migrate_paths=True)
+        if not cont:
+            self.cb_spangroups.SetValue(not cb_state)
+            return
+        sizer = self.sizer_setting_spangroups
+        self.sizer_toggle_children(sizer, cb_state)
+        for ch in self.ch_list_spangroups:
+            ch.Enable(cb_state)
+
     def onCheckboxDiaginch(self, event):
         cb_state = self.cb_diaginch.GetValue()
         sizer = self.sizer_setting_diaginch
@@ -772,7 +844,7 @@ class WallpaperSettingsPanel(wx.Panel):
     #
 
     def append_to_listctrl(self, data_row):
-        if (self.use_multi_image and len(data_row) == 2):
+        if ((self.use_multi_image or self.use_spangroups()) and len(data_row) == 2):
             img_id = self.add_to_imagelist(data_row[1])
             index = self.path_listctrl.InsertItem(self.path_listctrl.GetItemCount(), data_row[0], img_id)
             self.path_listctrl.SetItem(index, 1, data_row[1])
@@ -874,7 +946,11 @@ class WallpaperSettingsPanel(wx.Panel):
 
     def onBrowsePaths(self, event):
         """Opens the pick paths dialog."""
-        dlg = BrowsePaths(self, self.use_multi_image, self.defdir)
+        multiple_image_area = self.use_multi_image or self.use_spangroups()
+        num_groups = None
+        if self.use_spangroups():
+            num_groups = len(self.read_spangroups().keys())
+        dlg = BrowsePaths(self, multiple_image_area, self.defdir, num_groups)
         res = dlg.ShowModal()
         if res == wx.ID_OK:
             path_list_data = dlg.path_list_data
@@ -1184,6 +1260,20 @@ class WallpaperSettingsPanel(wx.Panel):
         pop.Position(pos, (0, sz[1]))
         pop.Popup()
 
+    def onHelpSpanGroups(self, evt):
+        """Popup span group config help."""
+        text = ("You can span wallpapers on groups of displays.\n"
+                "To configure this, select a group number for\n"
+                "each display. By default each display belongs\n"
+                "to the first group, group 0.\n"
+                "Once you have selected your groups, add at least\n"
+                "one wallpaper source for each group.")
+        pop = HelpPopup(self, text)
+        btn = evt.GetEventObject()
+        pos = btn.ClientToScreen((0, 0))
+        sz = btn.GetSize()
+        pop.Position(pos, (0, sz[1]))
+        pop.Popup()
 
 
 
