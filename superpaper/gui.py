@@ -1037,6 +1037,15 @@ class WallpaperSettingsPanel(wx.Panel):
             self.ch_persp.GetSelection()
         )
 
+        # span groups
+        if self.cb_spangroups.GetValue():
+            groups = self.read_spangroups()
+            flat_groups = []
+            for grp in groups.keys():
+                ids = ''.join([str(i) for i in groups[grp]])
+                flat_groups.append(ids)
+            tmp_profile.spangroups = ','.join(flat_groups)
+
         # Paths
         # extract data from path_listctrl
         path_lc_contents = []

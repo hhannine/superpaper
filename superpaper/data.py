@@ -586,6 +586,7 @@ Use absolute paths for best reliabilty.".format(path)
                         self.sortmode)
 
 
+
 class CLIProfileData(ProfileData):
     """
     Stripped down version of the ProfileData object for CLI usage.
@@ -645,6 +646,8 @@ class CLIProfileData(ProfileData):
     def next_wallpaper_files(self):
         """Returns the images given at construction time."""
         return self.files
+
+
 
 class TempProfileData(object):
     """Data object to test the validity of user input and for saving said input into profiles."""
