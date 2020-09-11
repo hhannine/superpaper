@@ -528,6 +528,25 @@ class WallpaperSettingsPanel(wx.Panel):
             )
         else:
             self.ch_persp.SetSelection(0)
+        if profile.spangroups:
+            self.cb_spangroups.SetValue(True)
+            for ch in self.ch_list_spangroups:
+                dsp_id = self.ch_list_spangroups.index(ch)
+                for grp in profile.spangroups:
+                    if dsp_id in grp:
+                        ch.SetSelection(profile.spangroups.index(grp))
+                        break
+                    else:
+                        continue
+                    # dsp_id wasn't in any group?
+                    ch.SetSelection(0)
+            self.toggle_spangroup_widgets(True)
+        else:
+            self.cb_spangroups.SetValue(False)
+            self.toggle_spangroup_widgets(False)
+            for ch in self.ch_list_spangroups:
+                ch.SetSelection(0)
+
 
         # Paths displays: get number to show from profile.
         self.paths_array_to_listctrl(profile.paths_array)
@@ -551,8 +570,9 @@ class WallpaperSettingsPanel(wx.Panel):
 
 
     def paths_array_to_listctrl(self, paths_array):
-        self.refresh_path_listctrl(self.use_multi_image)
-        if self.use_multi_image:
+        multi_img = self.use_multi_image or self.use_spangroups()
+        self.refresh_path_listctrl(multi_img)
+        if multi_img:
             for plist, idx in zip(paths_array, range(len(paths_array))):
                 for pth in plist:
                     self.append_to_listctrl(
@@ -736,6 +756,12 @@ class WallpaperSettingsPanel(wx.Panel):
         cb_state = self.cb_spangroups.GetValue()
         return cb_state and self.show_advanced_settings
 
+    def toggle_spangroup_widgets(self, enable):
+        sizer = self.sizer_setting_spangroups
+        self.sizer_toggle_children(sizer, enable)
+        for ch in self.ch_list_spangroups:
+            ch.Enable(enable)
+
     #
     # Event methods
     #
@@ -816,10 +842,7 @@ class WallpaperSettingsPanel(wx.Panel):
         if not cont:
             self.cb_spangroups.SetValue(not cb_state)
             return
-        sizer = self.sizer_setting_spangroups
-        self.sizer_toggle_children(sizer, cb_state)
-        for ch in self.ch_list_spangroups:
-            ch.Enable(cb_state)
+        self.toggle_spangroup_widgets(cb_state)
 
     def onCheckboxDiaginch(self, event):
         cb_state = self.cb_diaginch.GetValue()

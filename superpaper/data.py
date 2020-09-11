@@ -873,6 +873,12 @@ Valid modifiers are 'control', 'super', 'alt', 'shift'."
             msg = "Add an image source for every display present."
             show_message_dialog(msg, "Error")
             return False
+        if self.spangroups:
+            num_groups = len(self.spangroups.split(','))
+            if len(input_list) < num_groups:
+                msg = "Add an image source for every span group."
+                show_message_dialog(msg, "Error")
+                return False
         for path_list_str in input_list:
             path_list = path_list_str.split(";")
             for path in path_list:
