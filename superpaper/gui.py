@@ -560,7 +560,8 @@ class WallpaperSettingsPanel(wx.Panel):
             profile.next_wallpaper_files(),
             self.show_advanced_settings,
             self.use_multi_image,
-            display_data
+            display_data,
+            self.read_spangroups(True)
         )
         self.wpprev_pnl.toggle_buttons(
             show_config = self.show_advanced_settings,
@@ -737,7 +738,7 @@ class WallpaperSettingsPanel(wx.Panel):
         except ValueError:
             return False
 
-    def read_spangroups(self):
+    def read_spangroups(self, one_is_none=False):
         """Reads user input for span groups."""
         groups = {}
         for ch in self.ch_list_spangroups:
@@ -747,9 +748,9 @@ class WallpaperSettingsPanel(wx.Panel):
                 groups[val].append(index)
             else:
                 groups[val] = [index]
-        # if len(groups.keys()) > 1:
+        if one_is_none and len(groups.keys()) < 2:
+            return None
         return groups
-        # return None
 
     def use_spangroups(self):
         """Check UI if spangroups are in use."""
@@ -773,7 +774,10 @@ class WallpaperSettingsPanel(wx.Panel):
         leftdown = wx.GetMouseState().LeftIsDown()
         update = bool(self.resized and not leftdown)
         if update:
-            self.wpprev_pnl.full_refresh_preview(update, self.show_advanced_settings, self.use_multi_image)
+            self.wpprev_pnl.full_refresh_preview(update,
+                                                 self.show_advanced_settings,
+                                                 self.use_multi_image,
+                                                 spangroups=self.read_spangroups(True))
             self.resized = False
         else:
             event.Skip()
@@ -805,10 +809,14 @@ class WallpaperSettingsPanel(wx.Panel):
             return
         self.show_adv_setting_sizer(self.show_advanced_settings)
         display_data = self.display_sys.get_disp_list(self.show_advanced_settings)
+        spangroups = None
+        if self.cb_spangroups.GetValue():
+            spangroups = self.read_spangroups(True)
         self.wpprev_pnl.update_display_data(
             display_data,
             self.show_advanced_settings,
-            self.use_multi_image
+            self.use_multi_image,
+            spangroups=spangroups
         )
         self.wpprev_pnl.toggle_buttons(
             show_config = self.show_advanced_settings,
@@ -1126,7 +1134,8 @@ class WallpaperSettingsPanel(wx.Panel):
                 saved_profile.next_wallpaper_files(),
                 self.show_advanced_settings,
                 self.use_multi_image,
-                display_data
+                display_data,
+                groups
             )
             del busy
             return saved_file
@@ -1500,13 +1509,13 @@ class WallpaperPreviewPanel(wx.Panel):
         self.move_buttons()
         self.move_bezel_buttons()
 
-    def full_refresh_preview(self, is_resized, use_ppi_px, use_multi_image):
+    def full_refresh_preview(self, is_resized, use_ppi_px, use_multi_image, spangroups=None):
         self.use_multi_image = use_multi_image
         if is_resized and not self.config_mode:
             dtop_canvas_relsz, dtop_canvas_pos, scaling_fac = self.fit_canvas_wrkarea(self.dtop_canvas_px)
             # if (self.current_preview_images and dtop_canvas_relsz is not self.dtop_canvas_relsz):
             if (self.current_preview_images):
-                self.preview_wallpaper(self.current_preview_images, use_ppi_px, use_multi_image)
+                self.preview_wallpaper(self.current_preview_images, use_ppi_px, use_multi_image, spangroups=spangroups)
                 self.move_bezel_buttons()
                 # self.st_bmp_canvas.Hide()
             else:
@@ -1517,7 +1526,11 @@ class WallpaperPreviewPanel(wx.Panel):
                 # self.st_bmp_canvas.Hide()
 
 
-    def preview_wallpaper(self, image_list, use_ppi_px=False, use_multi_image=False, display_data=None):
+    def preview_wallpaper(self, image_list,
+                          use_ppi_px=False,
+                          use_multi_image=False,
+                          display_data=None,
+                          spangroups=None):
         self.use_multi_image = use_multi_image
         if display_data:
             self.display_data = display_data
@@ -1525,14 +1538,38 @@ class WallpaperPreviewPanel(wx.Panel):
         self.current_preview_images = image_list
 
         if use_multi_image:
-            # hide canvas and set images to monitor previews
-            # self.st_bmp_canvas.Hide()
-            # self.Refresh()
+            while len(image_list) < len(self.preview_img_list):
+                image_list.append(image_list[0])
             for img_nm, st_bmp in zip(image_list, self.preview_img_list):
                 prev_sz = st_bmp.GetSize()
                 st_bmp.SetBitmap(self.resize_and_bitmap(img_nm, prev_sz))
-                # st_bmp.Show()
-        elif use_ppi_px:
+        elif use_ppi_px and spangroups:
+            self.use_multi_image = True # disables canvas drawing
+            # for each group of displays, run span wallpaper preview
+            for grp_id, img_nm in zip(spangroups, image_list):
+                grp = spangroups[grp_id]
+                display_rel_sizes = [self.display_rel_sizes[i] for i in grp]
+                img_rel_sizes = [self.img_rel_sizes[i] for i in grp]
+                bz_rel_sizes = [self.bz_rel_sizes[i] for i in grp]
+                preview_img_list = [self.preview_img_list[i] for i in grp]
+
+                canv_sz, canvas_pos = self.canvas_display_group(display_rel_sizes, (0, 0))
+                print(canv_sz, canvas_pos)
+                bmp_clr, bmp_bw = self.resize_and_bitmap(img_nm, canv_sz, True)
+                for (disp,
+                     img_sz,
+                     bez_szs,
+                     st_bmp) in zip(display_rel_sizes,
+                                    img_rel_sizes,
+                                    bz_rel_sizes,
+                                    preview_img_list):
+                    sz = disp[0]
+                    pos = (disp[1][0] - canvas_pos[0], disp[1][1] - canvas_pos[1])
+                    print("pos", pos, "img_sz", img_sz)
+                    crop = bmp_clr.GetSubBitmap(wx.Rect(pos, img_sz))
+                    crop_w_bez = self.bezels_to_bitmap(crop, sz, bez_szs)
+                    st_bmp.SetBitmap(crop_w_bez)
+        elif use_ppi_px and not spangroups:
             img = image_list[0]
             # set canvas to fit with keeping aspect the image, with dim/blur
             # and crop pieces to show on monitor previews unaltered.
@@ -1631,10 +1668,10 @@ class WallpaperPreviewPanel(wx.Panel):
         return img_out.ConvertToBitmap()
 
 
-    def update_display_data(self, display_data, use_ppi_px, use_multi_image):
+    def update_display_data(self, display_data, use_ppi_px, use_multi_image, spangroups=None):
         self.display_data = display_data
         self.refresh_preview()
-        self.full_refresh_preview(True, use_ppi_px, use_multi_image)
+        self.full_refresh_preview(True, use_ppi_px, use_multi_image, spangroups=spangroups)
 
 
     #
@@ -1752,7 +1789,17 @@ class WallpaperPreviewPanel(wx.Panel):
                 )
             return display_szs_pos
 
-
+    def canvas_display_group(self, disp_szs_pos, major_canv_pos):
+        """Compute canvas size and positions for a subset of displays."""
+        canv_pos = (
+            round(min([sz_pos[1][0] for sz_pos in disp_szs_pos]) + major_canv_pos[0]),
+            round(min([sz_pos[1][1] for sz_pos in disp_szs_pos]) + major_canv_pos[1])
+        )
+        canv_sz = (
+            round(max([sz_pos[0][0] + sz_pos[1][0] for sz_pos in disp_szs_pos]) - canv_pos[0]),
+            round(max([sz_pos[0][1] + sz_pos[1][1] for sz_pos in disp_szs_pos]) - canv_pos[1])
+        )
+        return (canv_sz, canv_pos)
 
     #
     # Buttons
