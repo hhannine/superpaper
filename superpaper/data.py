@@ -510,14 +510,14 @@ Use absolute paths for best reliabilty.".format(path)
                     else:
                         # List only images that are of supported type.
                         if os.path.isfile(path):
-                            if path.endswith(wpproc.G_SUPPORTED_IMAGE_EXTENSIONS):
+                            if path.lower().endswith(wpproc.G_SUPPORTED_IMAGE_EXTENSIONS):
                                 list_of_images += [path]
                             else:
                                 pass
                         else:
                             list_of_images += [os.path.join(path, f)
                                             for f in os.listdir(path)
-                                            if f.endswith(wpproc.G_SUPPORTED_IMAGE_EXTENSIONS)
+                                            if f.lower().endswith(wpproc.G_SUPPORTED_IMAGE_EXTENSIONS)
                                             ]
                 # Append the list of monitor_i specific files to the list of
                 # lists of images.
