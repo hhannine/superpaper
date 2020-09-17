@@ -1155,6 +1155,8 @@ def span_single_image_simple(profile):
 
 def group_persp_data(persp_dat, groups):
     """Rerturn list of grouped perspective data objects."""
+    if not persp_dat:
+        return [None] * len(groups)
     group_persp_data_list = []
     for grp in groups:
         group_persp_data = {

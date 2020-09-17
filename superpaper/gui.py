@@ -1069,6 +1069,7 @@ class WallpaperSettingsPanel(wx.Panel):
         )
 
         # span groups
+        groups = None
         if self.cb_spangroups.GetValue():
             groups = self.read_spangroups()
             flat_groups = []
