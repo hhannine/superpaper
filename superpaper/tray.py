@@ -87,6 +87,7 @@ class TaskBarIcon(wx.adv.TaskBarIcon):
         # Should now return an object if a previous profile was written or
         # None if no previous data was found
         self.active_profile = read_active_profile()
+        wpproc.G_ACTIVE_PROFILE = self.active_profile.name
         self.start_prev_profile(self.active_profile)
         # if self.active_profile is None:
         #     sp_logging.G_LOGGER.info("Starting up the first profile found.")
@@ -344,13 +345,14 @@ It is already registered for another action.".format(profile.hk_binding, profile
                         sp_logging.G_LOGGER.info(
                             "Running quick profile job with profile: %s",
                             profile.name)
+                    self.active_profile = profile
+                    wpproc.G_ACTIVE_PROFILE = self.active_profile.name
                     quick_profile_job(profile)
                     if sp_logging.DEBUG:
                         sp_logging.G_LOGGER.info(
                             "Starting timed profile job with profile: %s",
                             profile.name)
                     self.repeating_timer, thrd = run_profile_job(profile)
-                    self.active_profile = profile
                     write_active_profile(profile.name)
                     if sp_logging.DEBUG:
                         sp_logging.G_LOGGER.info("Wrote active profile: %s",
@@ -365,13 +367,14 @@ It is already registered for another action.".format(profile.hk_binding, profile
                     sp_logging.G_LOGGER.info(
                         "Running quick profile job with profile: %s",
                         profile.name)
+                self.active_profile = profile
+                wpproc.G_ACTIVE_PROFILE = self.active_profile.name
                 quick_profile_job(profile)
                 if sp_logging.DEBUG:
                     sp_logging.G_LOGGER.info(
                         "Starting timed profile job with profile: %s",
                         profile.name)
                 self.repeating_timer, thrd = run_profile_job(profile)
-                self.active_profile = profile
                 write_active_profile(profile.name)
                 if sp_logging.DEBUG:
                     sp_logging.G_LOGGER.info("Wrote active profile: %s",

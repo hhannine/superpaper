@@ -57,6 +57,7 @@ RESOLUTION_ARRAY = []
 DISPLAY_OFFSET_ARRAY = []
 
 G_ACTIVE_DISPLAYSYSTEM = None
+G_ACTIVE_PROFILE = None
 G_WALLPAPER_CHANGE_LOCK = Lock()
 G_SUPPORTED_IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".webp")
 G_SET_COMMAND_STRING = ""
@@ -1148,7 +1149,8 @@ def span_single_image_simple(profile):
 
     outputfile, outputfile_old = alternating_outputfile(profile.name)
     img_resize.save(outputfile, quality=95) # set quality if jpg is used, png unaffected
-    set_wallpaper(outputfile)
+    if profile.name == G_ACTIVE_PROFILE:
+        set_wallpaper(outputfile)
     if os.path.exists(outputfile_old):
         os.remove(outputfile_old)
     return 0
@@ -1159,13 +1161,13 @@ def group_persp_data(persp_dat, groups):
         return [None] * len(groups)
     group_persp_data_list = []
     for grp in groups:
-        group_persp_data = {
+        group_data = {
             "central_disp": persp_dat["central_disp"],
             "viewer_pos": persp_dat["viewer_pos"],
             "swivels": [persp_dat["swivels"][index] for index in grp],
             "tilts": [persp_dat["tilts"][index] for index in grp]
         }
-        group_persp_data_list.append(group_persp_data)
+        group_persp_data_list.append(group_data)
     return group_persp_data_list
 
 # Take pixel densities of displays into account to have the image match
@@ -1271,7 +1273,8 @@ def span_single_image_advanced(profile):
     # Saving combined image
     outputfile, outputfile_old = alternating_outputfile(profile.name)
     combined_image.save(outputfile, quality=95) # set quality if jpg is used, png unaffected
-    set_wallpaper(outputfile)
+    if profile.name == G_ACTIVE_PROFILE:
+        set_wallpaper(outputfile)
     if os.path.exists(outputfile_old):
         os.remove(outputfile_old)
     return 0
@@ -1305,7 +1308,8 @@ def set_multi_image_wallpaper(profile):
 
     outputfile, outputfile_old = alternating_outputfile(profile.name)
     combined_image.save(outputfile, quality=95) # set quality if jpg is used, png unaffected
-    set_wallpaper(outputfile)
+    if profile.name == G_ACTIVE_PROFILE:
+        set_wallpaper(outputfile)
     if os.path.exists(outputfile_old):
         os.remove(outputfile_old)
     return 0
