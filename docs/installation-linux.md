@@ -25,7 +25,7 @@ Because of the differences between Linux distributions the installation options 
 
 ### Step 2: Install superpaper from PyPI
 
-Superpaper is available from [PyPI](https://pypi.org/project/superpaper), and needs `Python 3.6+`.
+Superpaper is available from [PyPI](https://pypi.org/project/superpaper), and needs `Python 3.6+`. To install, run in a terminal:
 
 ```sh
 python3 -m pip install --user --upgrade superpaper
@@ -39,8 +39,3 @@ Snaps are currently not packaged, however for reference: To install the Snap (if
 ```
 sudo snap install superpaper_1.2.0_amd64_experimental_classic.snap --classic --dangerous
 ```
-
-
-# Continue reading
-
-[Continue](./README.md/##Installation) reading where you left.

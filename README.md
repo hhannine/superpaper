@@ -75,7 +75,7 @@ The AppImage will run once you make it executable.
 
 ### Mac OS X
 
- You must install the dependencies and run the project, see [development-macos](./docs/development-macOS.md).
+ You must install the dependencies and run the project, see [development-macos](./docs/development-macos.md).
 
 
 ## Usage
@@ -112,4 +112,4 @@ For some common problems and solutions, check [Known issues](./docs/known-issues
 
 ## License
 
-Superpaper is published under the [MIT License](./LICENSE)
+Superpaper is published under the [MIT License](./LICENSE).
