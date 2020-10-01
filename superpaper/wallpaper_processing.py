@@ -1362,7 +1362,7 @@ spi_success: '%s'", spi_success)
         subprocess.Popen(script % outputfile, shell=True)
     else:
         sp_logging.G_LOGGER.info("Unknown platform.system(): %s", pltform)
-
+    return 0
 
 def set_wallpaper_linux(outputfile):
     """
@@ -1468,6 +1468,7 @@ def set_wallpaper_piecewise(image_piece_list):
             xfce_actions(None, image_piece_list)
     else:
         pass
+    return 0
 
 
 def special_image_cropper(outputfile):
