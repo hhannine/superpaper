@@ -1222,14 +1222,15 @@ def span_single_image_advanced(profile):
             canvas_tuple_trgt = tuple(compute_working_canvas(grp_crops))
             sp_logging.G_LOGGER.info("Back-projected canvas size: %s", canvas_tuple_proj)
             img_workingsize = resize_to_fill(img, canvas_tuple_proj)
-            for crop_tup, coeffs, ppin_crop, res in zip(proj_plane_crops,
-                                                        persp_coeffs,
-                                                        grp_crops,
-                                                        grp_res_arr):
+            for crop_tup, coeffs, ppin_crop, (i_res, res) in zip(proj_plane_crops,
+                                                                 persp_coeffs,
+                                                                 grp_crops,
+                                                                 enumerate(grp_res_arr)):
                 # Whole image needs to be transformed for each display separately
                 # since the coeffs live between the full back-projected plane
                 # containing all displays and the full 'target' working canvas
                 # size canvas_tuple_trgt containing ppi normalized displays.
+                print("test persp ires")
                 persp_crop = img_workingsize.transform(canvas_tuple_trgt,
                                                        Image.PERSPECTIVE, coeffs,
                                                        Image.BICUBIC)
@@ -1240,7 +1241,7 @@ def span_single_image_advanced(profile):
                 # Resize correct crop to actual display resolution
                 crop_img = crop_img.resize(res, resample=Image.LANCZOS)
                 # cropped_images.append(crop_img) #old
-                cropped_images[grp[grp_res_arr.index(res)]] = crop_img
+                cropped_images[grp[i_res]] = crop_img
         else:
             # larger working size needed to fill all the normalized lower density
             # displays. Takes account manual offsets that might require extra space.
@@ -1251,15 +1252,15 @@ def span_single_image_advanced(profile):
             img_workingsize = resize_to_fill(img, canvas_tuple_eff)
             # Simultaneously make crops at working size and then resize down to actual
             # resolution from RESOLUTION_ARRAY as needed.
-            for crop_tup, res in zip(grp_crops, grp_res_arr):
+            for crop_tup, (i_res, res) in zip(grp_crops, enumerate(grp_res_arr)):
                 crop_img = img_workingsize.crop(crop_tup)
                 if crop_img.size == res:
                     # cropped_images.append(crop_img)
-                    cropped_images[grp[grp_res_arr.index(res)]] = crop_img
+                    cropped_images[grp[i_res]] = crop_img
                 else:
                     crop_img = crop_img.resize(res, resample=Image.LANCZOS)
                     # cropped_images.append(crop_img)
-                    cropped_images[grp[grp_res_arr.index(res)]] = crop_img
+                    cropped_images[grp[i_res]] = crop_img
     # Combine crops to a single canvas of the size of the actual desktop
     # actual combined size of the display resolutions
     canvas_tuple_fin = tuple(compute_canvas(RESOLUTION_ARRAY, DISPLAY_OFFSET_ARRAY))
