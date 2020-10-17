@@ -466,7 +466,7 @@ class App(wx.App):
     def OnInit(self):
         """Starts tray icon loop."""
         frame = wx.Frame(None)
-        self.locale = wx.Locale(wx.LANGUAGE_ENGLISH_US)
+        self.locale = wx.Locale(wx.LANGUAGE_DEFAULT)
         self.SetTopWindow(frame)
         TaskBarIcon(frame)
         return True
