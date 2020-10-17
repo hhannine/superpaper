@@ -354,7 +354,7 @@ class WallpaperSettingsPanel(wx.Panel):
         self.button_help_spang.Bind(wx.EVT_BUTTON, self.onHelpSpanGroups)
         sizer_spangroups_cb.Add(self.cb_spangroups, 0, wx.ALIGN_LEFT|wx.LEFT, 5)
         sizer_spangroups_cb.AddStretchSpacer()
-        sizer_spangroups_cb.Add(self.button_help_spang, 0, wx.ALIGN_RIGHT|wx.RIGHT, 5)
+        sizer_spangroups_cb.Add(self.button_help_spang, 0, wx.RIGHT, 5)
         sizer_spangroups_data = wx.WrapSizer(wx.HORIZONTAL)
         self.ch_list_spangroups = self.list_of_wxchoice(self, wpproc.NUM_DISPLAYS, 0.4)
         for ch in self.ch_list_spangroups:
