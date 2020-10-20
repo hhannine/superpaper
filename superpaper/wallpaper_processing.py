@@ -1170,6 +1170,26 @@ def group_persp_data(persp_dat, groups):
         group_persp_data_list.append(group_data)
     return group_persp_data_list
 
+def translate_to_group_coordinates(group_crop_list):
+    """Translates lists of group crops into groups internal coordinates."""
+    if len(group_crop_list) == 1:
+        return group_crop_list
+    else:
+        group_crop_list_transl = []
+        for grp_crops in group_crop_list:
+            left_anch = min([crp[0] for crp in grp_crops])
+            top_anch = min([crp[1] for crp in grp_crops])
+            transl_crops = []
+            for crp in grp_crops:
+                transl_crops.append(
+                    (crp[0] - left_anch,
+                     crp[1] - top_anch,
+                     crp[2] - left_anch,
+                     crp[3] - top_anch)
+                )
+            group_crop_list_transl.append(transl_crops)
+        return group_crop_list_transl
+
 # Take pixel densities of displays into account to have the image match
 # physically between displays.
 def span_single_image_advanced(profile):
@@ -1204,7 +1224,8 @@ def span_single_image_advanced(profile):
     else:
         spangroups = [list(range(NUM_DISPLAYS))]
 
-    grp_crop_tuples = [[crop_tuples[index] for index in grp] for grp in spangroups]
+    grp_crop_tuples = translate_to_group_coordinates(
+        [[crop_tuples[index] for index in grp] for grp in spangroups])
     grp_res_array = [[RESOLUTION_ARRAY[index] for index in grp] for grp in spangroups]
     grp_persp_dat = group_persp_data(persp_dat, spangroups)
 
@@ -1230,7 +1251,6 @@ def span_single_image_advanced(profile):
                 # since the coeffs live between the full back-projected plane
                 # containing all displays and the full 'target' working canvas
                 # size canvas_tuple_trgt containing ppi normalized displays.
-                print("test persp ires")
                 persp_crop = img_workingsize.transform(canvas_tuple_trgt,
                                                        Image.PERSPECTIVE, coeffs,
                                                        Image.BICUBIC)
