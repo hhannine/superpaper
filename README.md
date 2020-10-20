@@ -99,8 +99,10 @@ If you run into issues and Superpaper closes unexpectedly, you can either:
 - Enable logging in the Settings.
 - Manually enable logging in the 'general_settings' file by setting 'logging=true'.
 - Run Superpaper from the command-line with the switch '--debug' to get debugging prints.
-```
-python3 pyinstaller_wrapper.py --debug
+```sh
+superpaper --debug
+#or
+./Superpaper-2.0.2-x86_64.AppImage --debug
 ```
 Check the logs and come create an issue!
 
