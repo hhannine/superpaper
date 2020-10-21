@@ -41,7 +41,7 @@ def set_spanmode():
             subprocess.run(["gsettings", "set",
                             "org.mate.background", "picture-options",
                             "spanned"])
-        elif desk_env.lower() == "lubuntu" or "lxqt" in desk_env.lower():
+        elif desk_env and (desk_env.lower() == "lubuntu" or "lxqt" in desk_env.lower()):
             try:
                 subprocess.run(["pcmanfm", "--wallpaper-mode=stretch"])
             except OSError:
