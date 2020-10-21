@@ -20,6 +20,7 @@ Superpaper is an advanced multi monitor wallpaper manager for **Linux** and **Wi
 ### Features in detail
 - Set a single image across all displays
 - Set different image on every display
+- Span images on groups of displays: one image on laptop screen and another spanned on two external monitors, for example.
 - **Pixel density correction**: span an image flawlessly across displays of different shapes and sizes!
 - **Bezel correction**: let the image continuously span behind your bezels.
 - **Perspective correction**: span the image even more flawlessly!
@@ -87,10 +88,6 @@ You can either:
   - Control Superpaper in the background from the tray menu or with hotkeys.
 - Call it from the [command-line](./docs/cli-usage.md)
   - Perspectives cannot be configured or used through the CLI currently.
-
-**Note**: You might have to set your OS to `span` the wallpaper so it is displayed correctly:
-- On Windows: Personalization -> Background -> Choose a fit -> Span.
-- Gnome: tweak-tools or gsettings in terminal: `gsettings set org.gnome.desktop.background picture-options spanned`
 
 
 ## Troubleshooting
