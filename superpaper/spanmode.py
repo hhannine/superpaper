@@ -26,29 +26,30 @@ def set_spanmode():
         winreg.SetValueEx(reg_key_desktop, "TileWallpaper", 0, winreg.REG_SZ, "0")
     elif pltf == "Linux":
         desk_env = os.environ.get("DESKTOP_SESSION")
-        if desk_env in ["gnome", "gnome-wayland",
-                          "unity", "ubuntu",
-                          "pantheon", "budgie-desktop",
-                          "pop"]:
-            subprocess.run(["gsettings", "set",
-                            "org.gnome.desktop.background", "picture-options",
-                            "spanned"])
-        elif desk_env in ["cinnamon"]:
-            subprocess.run(["gsettings", "set",
-                            "org.cinnamon.desktop.background", "picture-options",
-                            "spanned"])
-        elif desk_env in ["mate"]:
-            subprocess.run(["gsettings", "set",
-                            "org.mate.background", "picture-options",
-                            "spanned"])
-        elif desk_env and (desk_env.lower() == "lubuntu" or "lxqt" in desk_env.lower()):
-            try:
-                subprocess.run(["pcmanfm", "--wallpaper-mode=stretch"])
-            except OSError:
+        if desk_env:
+            if desk_env in ["gnome", "gnome-wayland",
+                            "unity", "ubuntu",
+                            "pantheon", "budgie-desktop",
+                            "pop"]:
+                subprocess.run(["gsettings", "set",
+                                "org.gnome.desktop.background", "picture-options",
+                                "spanned"])
+            elif desk_env in ["cinnamon"]:
+                subprocess.run(["gsettings", "set",
+                                "org.cinnamon.desktop.background", "picture-options",
+                                "spanned"])
+            elif desk_env in ["mate"]:
+                subprocess.run(["gsettings", "set",
+                                "org.mate.background", "picture-options",
+                                "spanned"])
+            elif desk_env.lower() == "lubuntu" or "lxqt" in desk_env.lower():
                 try:
-                    subprocess.run(["pcmanfm-qt", "--wallpaper-mode=stretch"])
+                    subprocess.run(["pcmanfm", "--wallpaper-mode=stretch"])
                 except OSError:
-                    pass
+                    try:
+                        subprocess.run(["pcmanfm-qt", "--wallpaper-mode=stretch"])
+                    except OSError:
+                        pass
     elif pltf == "Darwin":
         # Mac support TODO
         pass

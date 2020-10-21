@@ -1437,7 +1437,7 @@ def set_wallpaper_linux(outputfile):
                             outputfile])
         elif desk_env in ["xfce", "xubuntu", "ubuntustudio"]:
             xfce_actions(outputfile)
-        elif desk_env and (desk_env.lower() == "lubuntu" or "lxqt" in desk_env.lower()):
+        elif desk_env.lower() == "lubuntu" or "lxqt" in desk_env.lower():
             try:
                 subprocess.run(["pcmanfm", "-w", outputfile])
             except OSError:
