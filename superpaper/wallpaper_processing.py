@@ -1615,7 +1615,9 @@ while(k < desktopArray.length) {{
     k = k+1;
 }}
 """
+    profname = None
     if outputfile:
+        profname = os.path.splitext(os.path.basename(outputfile))[0][:-2]
         img_names = special_image_cropper(outputfile)
     elif not outputfile and image_piece_list:
         if sp_logging.DEBUG:
@@ -1637,9 +1639,10 @@ while(k < desktopArray.length) {{
             "org.kde.plasmashell",
             "/PlasmaShell"),
         dbus_interface="org.kde.PlasmaShell")
-    plasma_interface.evaluateScript(
-        script.format(imagelist=filess_img_names_str)
-    )
+    if profname == G_ACTIVE_PROFILE or image_piece_list:
+        plasma_interface.evaluateScript(
+            script.format(imagelist=filess_img_names_str)
+        )
 
     # Delete old images after new ones are set
     if outputfile:
