@@ -181,6 +181,9 @@ class WallpaperSettingsPanel(wx.Panel):
         self.ch_sshow_sort = wx.Choice(statbox_parent_sshow, -1, name="SortChoice",
                                        #  size=(self.tc_width*0.7, -1),
                                        choices=["Shuffle", "Alphabetical"])
+        self.st_sshow_fit = wx.StaticText(statbox_parent_sshow, -1, "Fit:")
+        self.ch_sshow_fit = wx.Choice(statbox_parent_sshow, -1, name="FitChoice",
+                                       choices=["Fill", "Fit", "Stretch"])
         # ch_sort_size = self.ch_sshow_sort.GetClientSize()
         self.st_sshow_delay = wx.StaticText(statbox_parent_sshow, -1, "Delay (minutes):")
         self.tc_sshow_delay = wx.TextCtrl(
@@ -191,15 +194,19 @@ class WallpaperSettingsPanel(wx.Panel):
         )
         self.cb_slideshow = wx.CheckBox(statbox_parent_sshow, -1, "Slideshow")
         self.st_sshow_sort.Disable()
+        self.st_sshow_fit.Disable()
         self.st_sshow_delay.Disable()
         self.tc_sshow_delay.Disable()
         self.ch_sshow_sort.Disable()
+        self.ch_sshow_fit.Disable()
         self.cb_slideshow.Bind(wx.EVT_CHECKBOX, self.onCheckboxSlideshow)
         self.sizer_setting_slideshow.Add(self.cb_slideshow, 0, wx.ALIGN_LEFT|wx.ALL, 5)
         sizer_sshow_subsettings.Add(self.st_sshow_delay, 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT, 0)
         sizer_sshow_subsettings.Add(self.tc_sshow_delay, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 0)
         sizer_sshow_subsettings.Add(self.st_sshow_sort, 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT, 0)
         sizer_sshow_subsettings.Add(self.ch_sshow_sort, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 0)
+        sizer_sshow_subsettings.Add(self.st_sshow_fit, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 0)
+        sizer_sshow_subsettings.Add(self.ch_sshow_fit, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 0)
         self.sizer_setting_slideshow.Add(sizer_sshow_subsettings, 0, wx.ALIGN_LEFT|wx.LEFT|wx.BOTTOM, 10)
         # self.sizer_setting_slideshow.AddSpacer(5)
 
@@ -495,11 +502,20 @@ class WallpaperSettingsPanel(wx.Panel):
                 self.ch_sshow_sort.SetSelection(1)
             else:
                 self.ch_sshow_sort.SetSelection(wx.NOT_FOUND)
+            if profile.fit == "fill":
+                self.ch_sshow_fit.SetSelection(0)
+            elif profile.fit == "fit":
+                self.ch_sshow_fit.SetSelection(1)
+            elif profile.fit == "stretch":
+                self.ch_sshow_fit.SetSelection(2)
+            else:
+                self.ch_sshow_fit.SetSelection(wx.NOT_FOUND)
         else:
             self.cb_slideshow.SetValue(False)
             wx.PostEvent(self.cb_slideshow, wx.CommandEvent(commandEventType=wx.EVT_CHECKBOX.typeId))
             self.tc_sshow_delay.Clear()
             self.ch_sshow_sort.SetSelection(wx.NOT_FOUND)
+            self.ch_sshow_fit.SetSelection(wx.NOT_FOUND)
 
         if profile.hk_binding:
             self.cb_hotkey.SetValue(True)
@@ -558,6 +574,7 @@ class WallpaperSettingsPanel(wx.Panel):
             display_data = self.display_sys.get_disp_list(False)
         self.wpprev_pnl.preview_wallpaper(
             profile.next_wallpaper_files(),
+            profile.fit,
             self.show_advanced_settings,
             self.use_multi_image,
             display_data,
@@ -774,9 +791,16 @@ class WallpaperSettingsPanel(wx.Panel):
         leftdown = wx.GetMouseState().LeftIsDown()
         update = bool(self.resized and not leftdown)
         if update:
+            fit = self.ch_sshow_fit.GetString(self.ch_sshow_fit.GetSelection())
+            if fit is None or fit == "":
+                fit = "fill"
+            else:
+                fit = fit.lower()
+
             self.wpprev_pnl.full_refresh_preview(update,
                                                  self.show_advanced_settings,
                                                  self.use_multi_image,
+                                                 fit,
                                                  spangroups=self.read_spangroups(True))
             self.resized = False
         else:
@@ -812,8 +836,16 @@ class WallpaperSettingsPanel(wx.Panel):
         spangroups = None
         if self.cb_spangroups.GetValue():
             spangroups = self.read_spangroups(True)
+
+        fit = self.ch_sshow_fit.GetString(self.ch_sshow_fit.GetSelection())
+        if fit is None or fit == "":
+            fit = "fill"
+        else:
+            fit = fit.lower()
+
         self.wpprev_pnl.update_display_data(
             display_data,
+            fit,
             self.show_advanced_settings,
             self.use_multi_image,
             spangroups=spangroups
@@ -864,8 +896,16 @@ class WallpaperSettingsPanel(wx.Panel):
             for tc, diag in zip(self.tc_list_diaginch, diags):
                 tc.ChangeValue(diag)
             display_data = self.display_sys.get_disp_list(self.show_advanced_settings)
+
+            fit = self.ch_sshow_fit.GetString(self.ch_sshow_fit.GetSelection())
+            if fit is None or fit == "":
+                fit = "fill"
+            else:
+                fit = fit.lower()
+
             self.wpprev_pnl.update_display_data(
                 display_data,
+                fit,
                 self.show_advanced_settings,
                 self.use_multi_image
             )
@@ -945,8 +985,16 @@ class WallpaperSettingsPanel(wx.Panel):
         self.display_sys.update_display_diags(inches)
         self.display_sys.save_system()
         display_data = self.display_sys.get_disp_list(self.show_advanced_settings)
+
+        fit = self.ch_sshow_fit.GetString(self.ch_sshow_fit.GetSelection())
+        if fit is None or fit == "":
+            fit = "fill"
+        else:
+            fit = fit.lower()
+
         self.wpprev_pnl.update_display_data(
             display_data,
+            fit,
             self.show_advanced_settings,
             self.use_multi_image
         )
@@ -1040,6 +1088,7 @@ class WallpaperSettingsPanel(wx.Panel):
         if tmp_profile.slideshow:
             tmp_profile.delay = str(60*float(self.tc_sshow_delay.GetLineText(0))) # save delay as seconds for compatibility!
             tmp_profile.sortmode = self.ch_sshow_sort.GetString(self.ch_sshow_sort.GetSelection()).lower()
+            tmp_profile.fit = self.ch_sshow_fit.GetString(self.ch_sshow_fit.GetSelection()).lower()
         if self.cb_hotkey.GetValue():
             tmp_profile.hk_binding = self.tc_hotkey_bind.GetLineText(0)
 
@@ -1133,6 +1182,7 @@ class WallpaperSettingsPanel(wx.Panel):
                 display_data = self.display_sys.get_disp_list(False)
             self.wpprev_pnl.preview_wallpaper(
                 saved_profile.next_wallpaper_files(),
+                tmp_profile.fit,
                 self.show_advanced_settings,
                 self.use_multi_image,
                 display_data,
@@ -1162,6 +1212,7 @@ class WallpaperSettingsPanel(wx.Panel):
         self.cb_slideshow.SetValue(False)
         self.tc_sshow_delay.ChangeValue("")
         self.ch_sshow_sort.SetSelection(wx.NOT_FOUND)
+        self.ch_sshow_fit.SetSelection(wx.NOT_FOUND)
         self.onCheckboxSlideshow(None)
 
         self.cb_offsets.SetValue(False)
@@ -1331,10 +1382,11 @@ class WallpaperPreviewPanel(wx.Panel):
     configuration. Method looks up saved setups to see if one
     exists that matches the given resolutions, offsets and sizes.
     """
-    def __init__(self, parent, display_sys, image_list = None, use_ppi_px = False, use_multi_image = False):
+    def __init__(self, parent, display_sys, image_list=None, fit="fill", use_ppi_px=False, use_multi_image=False):
         self.preview_size = (1080,400)
         wx.Panel.__init__(self, parent, size=self.preview_size)
         self.frame = parent
+        self.fit = fit
 
         # Buttons
         self.config_mode = False
@@ -1510,13 +1562,14 @@ class WallpaperPreviewPanel(wx.Panel):
         self.move_buttons()
         self.move_bezel_buttons()
 
-    def full_refresh_preview(self, is_resized, use_ppi_px, use_multi_image, spangroups=None):
+    def full_refresh_preview(self, is_resized, use_ppi_px, use_multi_image, fit, spangroups=None):
         self.use_multi_image = use_multi_image
+        self.fit = fit
         if is_resized and not self.config_mode:
             dtop_canvas_relsz, dtop_canvas_pos, scaling_fac = self.fit_canvas_wrkarea(self.dtop_canvas_px)
             # if (self.current_preview_images and dtop_canvas_relsz is not self.dtop_canvas_relsz):
-            if (self.current_preview_images):
-                self.preview_wallpaper(self.current_preview_images, use_ppi_px, use_multi_image, spangroups=spangroups)
+            if self.current_preview_images:
+                self.preview_wallpaper(self.current_preview_images, fit, use_ppi_px, use_multi_image, spangroups=spangroups)
                 self.move_bezel_buttons()
                 # self.st_bmp_canvas.Hide()
             else:
@@ -1528,6 +1581,7 @@ class WallpaperPreviewPanel(wx.Panel):
 
 
     def preview_wallpaper(self, image_list,
+                          fit,
                           use_ppi_px=False,
                           use_multi_image=False,
                           display_data=None,
@@ -1543,7 +1597,7 @@ class WallpaperPreviewPanel(wx.Panel):
                 image_list.append(image_list[0])
             for img_nm, st_bmp in zip(image_list, self.preview_img_list):
                 prev_sz = st_bmp.GetSize()
-                st_bmp.SetBitmap(self.resize_and_bitmap(img_nm, prev_sz))
+                st_bmp.SetBitmap(self.resize_and_bitmap(img_nm, prev_sz, fit))
         elif use_ppi_px and spangroups:
             self.use_multi_image = True # disables canvas drawing
             # for each group of displays, run span wallpaper preview
@@ -1556,7 +1610,7 @@ class WallpaperPreviewPanel(wx.Panel):
 
                 canv_sz, canvas_pos = self.canvas_display_group(display_rel_sizes, (0, 0))
                 print(canv_sz, canvas_pos)
-                bmp_clr, bmp_bw = self.resize_and_bitmap(img_nm, canv_sz, True)
+                bmp_clr, bmp_bw = self.resize_and_bitmap(img_nm, canv_sz, fit, True)
                 for (disp,
                      img_sz,
                      bez_szs,
@@ -1576,7 +1630,7 @@ class WallpaperPreviewPanel(wx.Panel):
             # and crop pieces to show on monitor previews unaltered.
             # With use_ppi_px any provided bezels will be drawn.
             canv_sz = self.st_bmp_canvas.GetSize()
-            bmp_clr, bmp_bw = self.resize_and_bitmap(img, canv_sz, True)
+            bmp_clr, bmp_bw = self.resize_and_bitmap(img, canv_sz, fit, True)
             self.st_bmp_canvas.SetBitmap(bmp_bw)
             # self.st_bmp_canvas.Show()
 
@@ -1599,7 +1653,7 @@ class WallpaperPreviewPanel(wx.Panel):
             # set canvas to fit with keeping aspect the image, with dim/blur
             # and crop pieces to show on monitor previews unaltered.
             canv_sz = self.st_bmp_canvas.GetSize()
-            bmp_clr, bmp_bw = self.resize_and_bitmap(img, canv_sz, True)
+            bmp_clr, bmp_bw = self.resize_and_bitmap(img, canv_sz, fit, True)
             self.st_bmp_canvas.SetBitmap(bmp_bw)
             # self.st_bmp_canvas.Show()
 
@@ -1613,10 +1667,10 @@ class WallpaperPreviewPanel(wx.Panel):
         self.draw_monitor_numbers(use_ppi_px)
         self.Refresh()
 
-    def resize_and_bitmap(self, fname, size, enhance_color=False):
+    def resize_and_bitmap(self, fname, size, fit, enhance_color=False):
         """Take filename of an image and resize and center crop it to size."""
         try:
-            pil = resize_to_fill(Image.open(fname), size, quality="fast")
+            pil = resize_to_fill(Image.open(fname), size, fit, quality="fast")
         except UnidentifiedImageError:
             msg = ("Opening image '%s' failed with PIL.UnidentifiedImageError."
                    "It could be corrupted or is of foreign type.") % fname
@@ -1669,10 +1723,10 @@ class WallpaperPreviewPanel(wx.Panel):
         return img_out.ConvertToBitmap()
 
 
-    def update_display_data(self, display_data, use_ppi_px, use_multi_image, spangroups=None):
+    def update_display_data(self, display_data, fit, use_ppi_px, use_multi_image, spangroups=None):
         self.display_data = display_data
         self.refresh_preview()
-        self.full_refresh_preview(True, use_ppi_px, use_multi_image, spangroups=spangroups)
+        self.full_refresh_preview(True, use_ppi_px, use_multi_image, fit, spangroups=spangroups)
 
 
     #
@@ -1905,7 +1959,7 @@ class WallpaperPreviewPanel(wx.Panel):
         display_data = self.display_sys.get_disp_list(use_ppi_norm=True)
         # Full redraw of preview with new offset data
         if self.current_preview_images:
-            self.preview_wallpaper(self.current_preview_images, True, False,
+            self.preview_wallpaper(self.current_preview_images, self.fit, True, False,
                                    display_data=display_data)
         else:
             self.display_data = display_data
@@ -1953,7 +2007,7 @@ class WallpaperPreviewPanel(wx.Panel):
         # redraw preview with restored data
         self.display_data = self.display_sys.get_disp_list(True)
         self.refresh_preview()
-        self.full_refresh_preview(True, True, False)
+        self.full_refresh_preview(True, True, False, self.fit)
         # self.show_staticbmps(True)
         self.frame.toggle_radio_and_profile_choice(True)
         self.frame.toggle_bezel_buttons(False, True)
@@ -2262,7 +2316,7 @@ class WallpaperPreviewPanel(wx.Panel):
         # Show preview positioning config button
         self.toggle_buttons(True, False)
         # self.draggable_shapes = []  # Destroys DragShapes / manually drawn previews
-        self.full_refresh_preview(True, True, False)
+        self.full_refresh_preview(True, True, False, fit=self.fit)
         # self.show_staticbmps(True)
         self.Refresh()
         # trigger a DisplaySystem save.
@@ -2281,7 +2335,7 @@ class WallpaperPreviewPanel(wx.Panel):
             pops[1].set_bezel_value(bez_mms[1])
         self.display_data = self.display_sys.get_disp_list(True)
         # self.draggable_shapes = []  # Destroys DragShapes / manually drawn previews
-        self.full_refresh_preview(True, True, False)
+        self.full_refresh_preview(True, True, False, fit=self.fit)
         # self.show_staticbmps(True)
         self.Refresh()
 

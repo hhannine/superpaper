@@ -245,6 +245,7 @@ class ProfileData(object):
         self.file = profile_file
         self.name = "default_profile"
         self.spanmode = "single"  # single / multi
+        self.fit = "fill"
         self.spangroups = None
         self.slideshow = True
         self.delay_list = [600]
@@ -287,6 +288,13 @@ class ProfileData(object):
                         self.spanmode = wrd1
                     else:
                         sp_logging.G_LOGGER.info("Exception: unknown spanmode: %s \
+                                in profile: %s", words[1], self.name)
+                elif words[0] == "fit":
+                    wrd1 = words[1].strip().lower()
+                    if wrd1 == "fill" or wrd1 == "fit" or wrd1 == "stretch":
+                        self.fit = wrd1
+                    else:
+                        sp_logging.G_LOGGER.info("Exception: unknown fit: %s \
                                 in profile: %s", words[1], self.name)
                 elif words[0] == "spangroups":
                     self.spangroups = []
@@ -654,6 +662,7 @@ class TempProfileData(object):
     def __init__(self):
         self.name = None
         self.spanmode = None
+        self.fit = "fill"
         self.spangroups = None
         self.slideshow = None
         self.delay = None
@@ -686,6 +695,8 @@ class TempProfileData(object):
                 tpfile.write("delay=" + str(self.delay) + "\n")
             if self.sortmode:
                 tpfile.write("sortmode=" + str(self.sortmode) + "\n")
+            if self.fit:
+                tpfile.write("fit=" + str(self.fit) + "\n")
             if self.inches:
                 tpfile.write("diagonal_inches=" + str(self.inches) + "\n")
             if self.manual_offsets:
