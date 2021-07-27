@@ -918,7 +918,7 @@ def compute_ppi_corrected_res_array(res_array, ppi_list_rel_density):
 
 # resize image to fill given rectangle and do a centered crop to size.
 # Return output image.
-def resize_to_fill(img, res, fit="fill", quality=Image.LANCZOS):
+def resize_to_fill(img, res, fit, quality=Image.LANCZOS):
     """Resize image to fill given rectangle and do a centered crop to size."""
     if quality == "fast":
         quality = Image.HAMMING
@@ -1279,7 +1279,7 @@ def span_single_image_advanced(profile):
             # Canvas containing ppi normalized displays
             canvas_tuple_trgt = tuple(compute_working_canvas(grp_crops))
             sp_logging.G_LOGGER.info("Back-projected canvas size: %s", canvas_tuple_proj)
-            img_workingsize = resize_to_fill(img, canvas_tuple_proj)
+            img_workingsize = resize_to_fill(img, canvas_tuple_proj, profile.fit)
             for crop_tup, coeffs, ppin_crop, (i_res, res) in zip(proj_plane_crops,
                                                                  persp_coeffs,
                                                                  grp_crops,

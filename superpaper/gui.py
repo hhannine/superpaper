@@ -791,11 +791,9 @@ class WallpaperSettingsPanel(wx.Panel):
         leftdown = wx.GetMouseState().LeftIsDown()
         update = bool(self.resized and not leftdown)
         if update:
-            fit = self.ch_sshow_fit.GetString(self.ch_sshow_fit.GetSelection())
+            fit = self.ch_sshow_fit.GetString(self.ch_sshow_fit.GetSelection()).lower()
             if fit is None or fit == "":
                 fit = "fill"
-            else:
-                fit = fit.lower()
 
             self.wpprev_pnl.full_refresh_preview(update,
                                                  self.show_advanced_settings,
@@ -837,11 +835,9 @@ class WallpaperSettingsPanel(wx.Panel):
         if self.cb_spangroups.GetValue():
             spangroups = self.read_spangroups(True)
 
-        fit = self.ch_sshow_fit.GetString(self.ch_sshow_fit.GetSelection())
+        fit = self.ch_sshow_fit.GetString(self.ch_sshow_fit.GetSelection()).lower()
         if fit is None or fit == "":
             fit = "fill"
-        else:
-            fit = fit.lower()
 
         self.wpprev_pnl.update_display_data(
             display_data,
@@ -897,11 +893,9 @@ class WallpaperSettingsPanel(wx.Panel):
                 tc.ChangeValue(diag)
             display_data = self.display_sys.get_disp_list(self.show_advanced_settings)
 
-            fit = self.ch_sshow_fit.GetString(self.ch_sshow_fit.GetSelection())
+            fit = self.ch_sshow_fit.GetString(self.ch_sshow_fit.GetSelection()).lower()
             if fit is None or fit == "":
                 fit = "fill"
-            else:
-                fit = fit.lower()
 
             self.wpprev_pnl.update_display_data(
                 display_data,
@@ -986,11 +980,9 @@ class WallpaperSettingsPanel(wx.Panel):
         self.display_sys.save_system()
         display_data = self.display_sys.get_disp_list(self.show_advanced_settings)
 
-        fit = self.ch_sshow_fit.GetString(self.ch_sshow_fit.GetSelection())
+        fit = self.ch_sshow_fit.GetString(self.ch_sshow_fit.GetSelection()).lower()
         if fit is None or fit == "":
             fit = "fill"
-        else:
-            fit = fit.lower()
 
         self.wpprev_pnl.update_display_data(
             display_data,
@@ -1182,7 +1174,7 @@ class WallpaperSettingsPanel(wx.Panel):
                 display_data = self.display_sys.get_disp_list(False)
             self.wpprev_pnl.preview_wallpaper(
                 saved_profile.next_wallpaper_files(),
-                tmp_profile.fit,
+                saved_profile.fit,
                 self.show_advanced_settings,
                 self.use_multi_image,
                 display_data,

@@ -245,7 +245,7 @@ class ProfileData(object):
         self.file = profile_file
         self.name = "default_profile"
         self.spanmode = "single"  # single / multi
-        self.fit = "fill"
+        self.fit = None
         self.spangroups = None
         self.slideshow = True
         self.delay_list = [600]
@@ -604,7 +604,7 @@ class CLIProfileData(ProfileData):
     the images given as input.
     """
 
-    def __init__(self, files, ppiarr=None, inches=None,
+    def __init__(self, files, fit=None, ppiarr=None, inches=None,
                  bezels=None, offsets=None, perspective=None):
         self.name = "cli"
         self.spanmode = ""  # single / multi
@@ -612,6 +612,7 @@ class CLIProfileData(ProfileData):
             self.spanmode = "single"
         else:
             self.spanmode = "multi"
+        self.fit = fit
 
         self.ppimode = None
         if ppiarr is None and inches is None:
