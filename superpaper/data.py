@@ -544,7 +544,7 @@ Use absolute paths for best reliabilty.".format(path)
                 next_image = iterable.__next__()
                 if os.path.isfile(next_image):
                     files.append(next_image)
-                else:
+                elif next_image is not None and next_image != "":
                     # reload all files by initializing
                     if sp_logging.DEBUG:
                         sp_logging.G_LOGGER.info("Ran into an invalid file, reinitializing..")
@@ -565,16 +565,18 @@ Use absolute paths for best reliabilty.".format(path)
                 return self
 
             def __next__(self):
-                if self.counter < len(self.files):
+                if len(self.files) > 0 and self.counter < len(self.files):
                     image = self.files[self.counter]
                     self.counter += 1
                     return image
                 else:
                     self.counter = 0
                     self.arrange_list()
-                    image = self.files[self.counter]
-                    self.counter += 1
-                    return image
+                    if len(self.files) > 0 and self.counter < len(self.files):
+                        image = self.files[self.counter]
+                        self.counter += 1
+                        return image
+                    return ""
 
             def arrange_list(self):
                 """Reorders the image list as requested. Mostly for reoccuring shuffling."""

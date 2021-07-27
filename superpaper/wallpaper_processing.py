@@ -999,7 +999,8 @@ def resize_to_fill(img, res, fit, quality=Image.LANCZOS):
                 new_size[0],
                 round(extra_height/2) + res[1])
             cropped_res = img.crop(crop_tuple)
-            if abs(cropped_res.size - res) > 4:  # we rounded 4 times, so 4 in the worst case. probably within 1
+            # we rounded 4 times, so 4 in the worst case. probably within 1
+            if abs(cropped_res.size[0] - res[0]) <= 4 or abs(cropped_res.size[1] - res[1]) <= 4:
                 return cropped_res
             else:
                 sp_logging.G_LOGGER.info(
@@ -1030,7 +1031,8 @@ def resize_to_fill(img, res, fit, quality=Image.LANCZOS):
                 round(extra_width/2) + res[0],
                 new_size[1])
             cropped_res = img.crop(crop_tuple)
-            if abs(cropped_res.size - res) > 4:  # we rounded 4 times, so 4 in the worst case. probably within 1
+            # we rounded 4 times, so 4 in the worst case. probably within 1
+            if abs(cropped_res.size[0] - res[0]) <= 4 or abs(cropped_res.size[1] - res[1]) <= 4:
                 return cropped_res
             else:
                 sp_logging.G_LOGGER.info(

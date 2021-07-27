@@ -1640,7 +1640,7 @@ class WallpaperPreviewPanel(wx.Panel):
                 crop_w_bez = self.bezels_to_bitmap(crop, sz, bez_szs)
                 st_bmp.SetBitmap(crop_w_bez)
                 # st_bmp.Show()
-        else:
+        elif len(image_list) > 0:
             img = image_list[0]
             # set canvas to fit with keeping aspect the image, with dim/blur
             # and crop pieces to show on monitor previews unaltered.
