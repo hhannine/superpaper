@@ -1181,8 +1181,10 @@ def span_single_image_simple(profile):
     except UnidentifiedImageError:
         sp_logging.G_LOGGER.info(("Opening image '%s' failed with PIL.UnidentifiedImageError."
                                   "It could be corrupted or is of foreign type."), file)
+        return
+
     canvas_tuple = tuple(compute_canvas(RESOLUTION_ARRAY, DISPLAY_OFFSET_ARRAY))
-    img_resize = resize_to_fill(img, canvas_tuple)
+    img_resize = resize_to_fill(img, canvas_tuple, profile.fit)
 
     outputfile, outputfile_old = alternating_outputfile(profile.name)
     img_resize.save(outputfile, quality=95) # set quality if jpg is used, png unaffected
@@ -1306,7 +1308,7 @@ def span_single_image_advanced(profile):
             # Image is now the height of the eff tallest display + possible manual
             # offsets and the width of the combined eff widths + possible manual
             # offsets.
-            img_workingsize = resize_to_fill(img, canvas_tuple_eff)
+            img_workingsize = resize_to_fill(img, canvas_tuple_eff, profile.fit)
             # Simultaneously make crops at working size and then resize down to actual
             # resolution from RESOLUTION_ARRAY as needed.
             for crop_tup, (i_res, res) in zip(grp_crops, enumerate(grp_res_arr)):
