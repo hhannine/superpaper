@@ -27,7 +27,7 @@ def set_spanmode():
     elif pltf == "Linux":
         desk_env = os.environ.get("DESKTOP_SESSION")
         if desk_env:
-            if desk_env in ["gnome", "gnome-wayland",
+            if desk_env in ["gnome", "gnome-wayland", "gnome-xorg",
                             "unity", "ubuntu",
                             "pantheon", "budgie-desktop",
                             "pop"]:
