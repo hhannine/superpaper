@@ -1418,7 +1418,7 @@ def set_wallpaper_linux(outputfile):
                     formatted_command.append(term.format(image=outputfile))
                 sp_logging.G_LOGGER.info("Formatted custom command is: '%s'", formatted_command)
                 subprocess.run(formatted_command)
-        elif desk_env in ["gnome", "gnome-wayland",
+        elif desk_env in ["gnome", "gnome-wayland", "gnome-xorg",
                           "unity", "ubuntu",
                           "pantheon", "budgie-desktop",
                           "pop"]:
