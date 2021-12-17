@@ -1529,11 +1529,11 @@ def remove_old_temp_files(outputfile):
     opname = os.path.splitext(opbase)[0]
     # print(opname)
     oldfileid = ""
-    if "-a" in opname:
+    if opname.endswith("-a"):
         newfileid = "-a"
         oldfileid = "-b"
         # print(oldfileid)
-    elif "-b" in opname:
+    elif opname.endswith("-b"):
         newfileid = "-b"
         oldfileid = "-a"
         # print(oldfileid)
