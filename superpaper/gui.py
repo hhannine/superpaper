@@ -99,13 +99,13 @@ class WallpaperSettingsPanel(wx.Panel):
         #    Note: horizontal sizer needs children to have proportion = 1
         #    in order to expand them horizontally instead of vertically.
         self.sizer_setting_sizers.Add(
-            self.sizer_settings_left, 1, wx.CENTER|wx.EXPAND|wx.TOP|wx.LEFT, 5
+            self.sizer_settings_left, 5, wx.CENTER|wx.EXPAND|wx.TOP|wx.LEFT, 5
             )
         self.sizer_setting_sizers.Add(
-            self.sizer_settings_right, 2, wx.CENTER|wx.EXPAND|wx.TOP|wx.LEFT, 0
+            self.sizer_settings_right, 10, wx.CENTER|wx.EXPAND|wx.TOP|wx.LEFT, 0
             )
         self.sizer_setting_sizers.Add(
-            self.sizer_setting_adv, 0.8, wx.CENTER|wx.EXPAND|wx.TOP|wx.RIGHT, 5
+            self.sizer_setting_adv, 4, wx.CENTER|wx.EXPAND|wx.TOP|wx.RIGHT, 5
             )
         self.sizer_setting_sizers.Layout()
 
@@ -1724,7 +1724,7 @@ class WallpaperPreviewPanel(wx.Panel):
             new_width = scaling_fac * canvas_px[0]
             anchor_left = (work_sz[0] - new_width)/2
             anchor_top = rel_achor_gap * work_sz[1]
-        canvas_rel = (new_width, new_height)
+        canvas_rel = (round(new_width), round(new_height))
         canvas_rel_pos = (anchor_left, anchor_top)
         return (canvas_rel, canvas_rel_pos, scaling_fac)
 
@@ -1748,8 +1748,8 @@ class WallpaperPreviewPanel(wx.Panel):
                     (
                         # tuple 1: size = res + bez
                         (
-                            scaling_fac * (res[0] + bez[0]),
-                            scaling_fac * (res[1] + bez[1])
+                            round(scaling_fac * (res[0] + bez[0])),
+                            round(scaling_fac * (res[1] + bez[1]))
                         ),
                         # tuple 2: pos
                         (
@@ -1784,7 +1784,7 @@ class WallpaperPreviewPanel(wx.Panel):
                 off = canvas_pos
                 display_szs_pos.append(
                     (
-                        tuple([px*scaling_fac for px in disp.resolution]),
+                        tuple([round(px*scaling_fac) for px in disp.resolution]),
                         tuple([doff[0]*scaling_fac + off[0], doff[1]*scaling_fac + off[1]])
                     )
                 )
