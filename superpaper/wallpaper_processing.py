@@ -1128,7 +1128,7 @@ def alternating_outputfile(prof_name):
         outputfile_old = os.path.join(TEMP_PATH, prof_name + "-b." + ftype)
     return (outputfile, outputfile_old)
 
-def span_single_image_simple(profile):
+def span_single_image_simple(profile, force):
     """
     Spans a single image across all monitors. No corrections.
 
@@ -1149,8 +1149,8 @@ def span_single_image_simple(profile):
 
     outputfile, outputfile_old = alternating_outputfile(profile.name)
     img_resize.save(outputfile, quality=95) # set quality if jpg is used, png unaffected
-    if profile.name == G_ACTIVE_PROFILE:
-        set_wallpaper(outputfile)
+    if profile.name == G_ACTIVE_PROFILE or force:
+        set_wallpaper(outputfile, force)
     if os.path.exists(outputfile_old):
         os.remove(outputfile_old)
     return 0
@@ -1192,7 +1192,7 @@ def translate_to_group_coordinates(group_crop_list):
 
 # Take pixel densities of displays into account to have the image match
 # physically between displays.
-def span_single_image_advanced(profile):
+def span_single_image_advanced(profile, force):
     """
     Applies wallpaper using PPI, bezel, offset corrections.
 
@@ -1294,14 +1294,14 @@ def span_single_image_advanced(profile):
     # Saving combined image
     outputfile, outputfile_old = alternating_outputfile(profile.name)
     combined_image.save(outputfile, quality=95) # set quality if jpg is used, png unaffected
-    if profile.name == G_ACTIVE_PROFILE:
-        set_wallpaper(outputfile)
+    if profile.name == G_ACTIVE_PROFILE or force:
+        set_wallpaper(outputfile, force)
     if os.path.exists(outputfile_old):
         os.remove(outputfile_old)
     return 0
 
 
-def set_multi_image_wallpaper(profile):
+def set_multi_image_wallpaper(profile, force):
     """Sets a distinct image on each monitor.
 
     Since most platforms only support setting a single image
@@ -1329,8 +1329,8 @@ def set_multi_image_wallpaper(profile):
 
     outputfile, outputfile_old = alternating_outputfile(profile.name)
     combined_image.save(outputfile, quality=95) # set quality if jpg is used, png unaffected
-    if profile.name == G_ACTIVE_PROFILE:
-        set_wallpaper(outputfile)
+    if profile.name == G_ACTIVE_PROFILE or force:
+        set_wallpaper(outputfile, force)
     if os.path.exists(outputfile_old):
         os.remove(outputfile_old)
     return 0
@@ -1342,7 +1342,7 @@ def errcheck(result, func, args):
         raise ctypes.WinError(ctypes.get_last_error())
 
 
-def set_wallpaper(outputfile):
+def set_wallpaper(outputfile, force=False):
     """
     Master method to set the composed image as wallpaper.
 
@@ -1373,7 +1373,7 @@ def set_wallpaper(outputfile):
             sp_logging.G_LOGGER.info("SystemParametersInfo wallpaper set failed with \
 spi_success: '%s'", spi_success)
     elif pltform == "Linux":
-        set_wallpaper_linux(outputfile)
+        set_wallpaper_linux(outputfile, force)
     elif pltform == "Darwin":
         script = """/usr/bin/osascript<<END
                     tell application "Finder"
@@ -1385,7 +1385,7 @@ spi_success: '%s'", spi_success)
         sp_logging.G_LOGGER.info("Unknown platform.system(): %s", pltform)
     return 0
 
-def set_wallpaper_linux(outputfile):
+def set_wallpaper_linux(outputfile, force=False):
     """
     Wallpaper setter for Linux hosts.
 
@@ -1449,7 +1449,7 @@ def set_wallpaper_linux(outputfile):
                     sys.exit(1)
         # elif desk_env in ["/usr/share/xsessions/plasma", "plasma"]:
         elif running_kde():
-            kdeplasma_actions(outputfile)
+            kdeplasma_actions(outputfile, force)
         elif "i3" in desk_env or desk_env in ["/usr/share/xsessions/bspwm"]:
             subprocess.run(["feh", "--bg-scale", "--no-xinerama", outputfile])
         else:
@@ -1552,7 +1552,7 @@ def remove_old_temp_files(outputfile):
                 # print(temp_file)
                 os.remove(os.path.join(TEMP_PATH, temp_file))
 
-def kdeplasma_actions(outputfile, image_piece_list = None):
+def kdeplasma_actions(outputfile, image_piece_list = None, force=False):
     """
     Sets the multi monitor wallpaper on KDE.
 
@@ -1639,7 +1639,7 @@ while(k < desktopArray.length) {{
             "org.kde.plasmashell",
             "/PlasmaShell"),
         dbus_interface="org.kde.PlasmaShell")
-    if profname == G_ACTIVE_PROFILE or image_piece_list:
+    if profname == G_ACTIVE_PROFILE or image_piece_list or force:
         plasma_interface.evaluateScript(
             script.format(imagelist=filess_img_names_str)
         )
@@ -1702,18 +1702,20 @@ def xfce_actions(outputfile, image_piece_list = None):
         remove_old_temp_files(outputfile)
 
 
-def change_wallpaper_job(profile):
-    """Centralized wallpaper method that calls setter algorithm based on input prof settings."""
+def change_wallpaper_job(profile, force=False):
+    """Centralized wallpaper method that calls setter algorithm based on input prof settings.
+    When force, skip the profile name check
+    """
     with G_WALLPAPER_CHANGE_LOCK:
         if profile.spanmode.startswith("single") and profile.ppimode is False:
-            thrd = Thread(target=span_single_image_simple, args=(profile,), daemon=True)
+            thrd = Thread(target=span_single_image_simple, args=(profile, force), daemon=True)
             thrd.start()
         elif ((profile.spanmode.startswith("single") and profile.ppimode is True) or
                profile.spanmode.startswith("advanced")):
-            thrd = Thread(target=span_single_image_advanced, args=(profile,), daemon=True)
+            thrd = Thread(target=span_single_image_advanced, args=(profile, force), daemon=True)
             thrd.start()
         elif profile.spanmode.startswith("multi"):
-            thrd = Thread(target=set_multi_image_wallpaper, args=(profile,), daemon=True)
+            thrd = Thread(target=set_multi_image_wallpaper, args=(profile, force), daemon=True)
             thrd.start()
         else:
             sp_logging.G_LOGGER.info("Unkown profile spanmode: %s", profile.spanmode)
