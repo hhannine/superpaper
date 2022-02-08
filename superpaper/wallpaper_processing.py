@@ -1425,7 +1425,7 @@ def set_wallpaper_linux(outputfile):
             subprocess.run(["gsettings", "set",
                             "org.gnome.desktop.background", "picture-uri",
                             file])
-        elif desk_env in ["cinnamon"]:
+        elif desk_env in ["cinnamon"] or "cinnamon" in desk_env.lower():
             subprocess.run(["gsettings", "set",
                             "org.cinnamon.desktop.background", "picture-uri",
                             file])
