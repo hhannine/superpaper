@@ -99,13 +99,13 @@ class WallpaperSettingsPanel(wx.Panel):
         #    Note: horizontal sizer needs children to have proportion = 1
         #    in order to expand them horizontally instead of vertically.
         self.sizer_setting_sizers.Add(
-            self.sizer_settings_left, 1, wx.CENTER|wx.EXPAND|wx.TOP|wx.LEFT, 5
+            self.sizer_settings_left, 5, wx.CENTER|wx.EXPAND|wx.TOP|wx.LEFT, 5
             )
         self.sizer_setting_sizers.Add(
-            self.sizer_settings_right, 2, wx.CENTER|wx.EXPAND|wx.TOP|wx.LEFT, 0
+            self.sizer_settings_right, 10, wx.CENTER|wx.EXPAND|wx.TOP|wx.LEFT, 0
             )
         self.sizer_setting_sizers.Add(
-            self.sizer_setting_adv, 0.8, wx.CENTER|wx.EXPAND|wx.TOP|wx.RIGHT, 5
+            self.sizer_setting_adv, 4, wx.CENTER|wx.EXPAND|wx.TOP|wx.RIGHT, 5
             )
         self.sizer_setting_sizers.Layout()
 
@@ -1242,7 +1242,7 @@ class WallpaperSettingsPanel(wx.Panel):
                                  flat_offsets,
                                  perspective
                                 )
-        thrd = change_wallpaper_job(profile)
+        thrd = change_wallpaper_job(profile, force=True)
         while thrd.is_alive():
             time.sleep(0.5)
         del busy
@@ -1538,6 +1538,13 @@ class WallpaperPreviewPanel(wx.Panel):
         self.refresh_preview(use_ppi_px)
         self.current_preview_images = image_list
 
+        def safe_sub_bitmap(bm, rect):
+            if rect.GetBottom() >= bm.GetHeight():
+                rect.SetBottom(bm.GetHeight() - 1)
+            if rect.GetRight() >= bm.GetWidth():
+                rect.SetRight(bm.GetWidth() - 1)
+            return bm.GetSubBitmap(rect)
+
         if use_multi_image:
             while len(image_list) < len(self.preview_img_list):
                 image_list.append(image_list[0])
@@ -1567,7 +1574,7 @@ class WallpaperPreviewPanel(wx.Panel):
                     sz = disp[0]
                     pos = (disp[1][0] - canvas_pos[0], disp[1][1] - canvas_pos[1])
                     print("pos", pos, "img_sz", img_sz)
-                    crop = bmp_clr.GetSubBitmap(wx.Rect(pos, img_sz))
+                    crop = safe_sub_bitmap(bmp_clr, wx.Rect(pos, img_sz))
                     crop_w_bez = self.bezels_to_bitmap(crop, sz, bez_szs)
                     st_bmp.SetBitmap(crop_w_bez)
         elif use_ppi_px and not spangroups:
@@ -1590,7 +1597,7 @@ class WallpaperPreviewPanel(wx.Panel):
                                 self.preview_img_list):
                 sz = disp[0]
                 pos = (disp[1][0] - canvas_pos[0], disp[1][1] - canvas_pos[1])
-                crop = bmp_clr.GetSubBitmap(wx.Rect(pos, img_sz))
+                crop = safe_sub_bitmap(bmp_clr, wx.Rect(pos, img_sz))
                 crop_w_bez = self.bezels_to_bitmap(crop, sz, bez_szs)
                 st_bmp.SetBitmap(crop_w_bez)
                 # st_bmp.Show()
@@ -1607,7 +1614,7 @@ class WallpaperPreviewPanel(wx.Panel):
             for disp, st_bmp in zip(self.display_rel_sizes, self.preview_img_list):
                 sz = disp[0]
                 pos = (disp[1][0] - canvas_pos[0], disp[1][1] - canvas_pos[1])
-                crop = bmp_clr.GetSubBitmap(wx.Rect(pos, sz))
+                crop = safe_sub_bitmap(bmp_clr, wx.Rect(pos, sz))
                 st_bmp.SetBitmap(crop)
                 # st_bmp.Show()
         self.draw_monitor_numbers(use_ppi_px)
@@ -1724,8 +1731,8 @@ class WallpaperPreviewPanel(wx.Panel):
             new_width = scaling_fac * canvas_px[0]
             anchor_left = (work_sz[0] - new_width)/2
             anchor_top = rel_achor_gap * work_sz[1]
-        canvas_rel = (new_width, new_height)
-        canvas_rel_pos = (anchor_left, anchor_top)
+        canvas_rel = (round(new_width), round(new_height))
+        canvas_rel_pos = (round(anchor_left), round(anchor_top))
         return (canvas_rel, canvas_rel_pos, scaling_fac)
 
     def displays_on_canvas(self, disp_data, canvas_pos, scaling_fac, use_ppi_px=False):
@@ -1748,29 +1755,29 @@ class WallpaperPreviewPanel(wx.Panel):
                     (
                         # tuple 1: size = res + bez
                         (
-                            scaling_fac * (res[0] + bez[0]),
-                            scaling_fac * (res[1] + bez[1])
+                            round(scaling_fac * (res[0] + bez[0])),
+                            round(scaling_fac * (res[1] + bez[1]))
                         ),
                         # tuple 2: pos
                         (
-                            (scaling_fac * doff[0]) + off[0],
-                            (scaling_fac * doff[1]) + off[1]
+                           round(scaling_fac * doff[0]) + off[0],
+                           round(scaling_fac * doff[1]) + off[1]
                         )
                     )
                 )
                 image_szs.append(
                     (
-                        scaling_fac * res[0],
-                        scaling_fac * res[1]
+                        round(scaling_fac * res[0]),
+                        round(scaling_fac * res[1])
                     )
                 )
                 if bez[0] != 0:
-                    right_bez = (scaling_fac * bez[0],
-                                 scaling_fac * (res[1] + bez[1]))
+                    right_bez = (round(scaling_fac * bez[0]),
+                                 round(scaling_fac * (res[1] + bez[1])))
                 else:
                     right_bez = (0, 0)
                 if bez[1] != 0:
-                    bottom_bez = (scaling_fac * res[0], scaling_fac * bez[1])
+                    bottom_bez = (round(scaling_fac * res[0]), round(scaling_fac * bez[1]))
                 else:
                     bottom_bez = (0, 0)
                 bz_szs.append(
@@ -1784,8 +1791,8 @@ class WallpaperPreviewPanel(wx.Panel):
                 off = canvas_pos
                 display_szs_pos.append(
                     (
-                        tuple([px*scaling_fac for px in disp.resolution]),
-                        tuple([doff[0]*scaling_fac + off[0], doff[1]*scaling_fac + off[1]])
+                        tuple([round(px*scaling_fac) for px in disp.resolution]),
+                        tuple([round(doff[0]*scaling_fac) + off[0], round(doff[1]*scaling_fac) + off[1]])
                     )
                 )
             return display_szs_pos

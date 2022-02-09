@@ -600,6 +600,7 @@ class CLIProfileData(ProfileData):
                  bezels=None, offsets=None, perspective=None):
         self.name = "cli"
         self.spanmode = ""  # single / multi
+        self.spangroups = None
         if len(files) == 1:
             self.spanmode = "single"
         else:

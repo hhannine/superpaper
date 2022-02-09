@@ -1102,7 +1102,7 @@ class PerspectiveConfig(wx.Dialog):
                                  flat_offsets,
                                  perspective
                                 )
-        thrd = change_wallpaper_job(profile)
+        thrd = change_wallpaper_job(profile, force=True)
         while thrd.is_alive():
             time.sleep(0.5)
         del busy
