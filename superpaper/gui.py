@@ -908,8 +908,8 @@ class WallpaperSettingsPanel(wx.Panel):
             target_w = target_h*w2h_ratio
             pos = (round((target_h - target_w)/2), 0)
         bmp = wximg.Scale(
-            target_w,
-            target_h,
+            round(target_w),
+            round(target_h),
             quality=wx.IMAGE_QUALITY_BOX_AVERAGE
             ).Resize(
                 self.tsize, pos
