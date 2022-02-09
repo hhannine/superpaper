@@ -1,5 +1,6 @@
 name=example
 spanmode=single
+fit=fill
 slideshow=true
 delay=120
 sortmode=shuffle

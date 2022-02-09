@@ -1,5 +1,6 @@
 name=example_multi
 spanmode=multi
+fit=fill
 slideshow=true
 delay=120
 sortmode=shuffle

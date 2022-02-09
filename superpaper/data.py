@@ -245,6 +245,7 @@ class ProfileData(object):
         self.file = profile_file
         self.name = "default_profile"
         self.spanmode = "single"  # single / multi
+        self.fit = None
         self.spangroups = None
         self.slideshow = True
         self.delay_list = [600]
@@ -287,6 +288,13 @@ class ProfileData(object):
                         self.spanmode = wrd1
                     else:
                         sp_logging.G_LOGGER.info("Exception: unknown spanmode: %s \
+                                in profile: %s", words[1], self.name)
+                elif words[0] == "fit":
+                    wrd1 = words[1].strip().lower()
+                    if wrd1 == "fill" or wrd1 == "fit" or wrd1 == "stretch":
+                        self.fit = wrd1
+                    else:
+                        sp_logging.G_LOGGER.info("Exception: unknown fit: %s \
                                 in profile: %s", words[1], self.name)
                 elif words[0] == "spangroups":
                     self.spangroups = []
@@ -536,7 +544,7 @@ Use absolute paths for best reliabilty.".format(path)
                 next_image = iterable.__next__()
                 if os.path.isfile(next_image):
                     files.append(next_image)
-                else:
+                elif next_image is not None and next_image != "":
                     # reload all files by initializing
                     if sp_logging.DEBUG:
                         sp_logging.G_LOGGER.info("Ran into an invalid file, reinitializing..")
@@ -557,16 +565,18 @@ Use absolute paths for best reliabilty.".format(path)
                 return self
 
             def __next__(self):
-                if self.counter < len(self.files):
+                if len(self.files) > 0 and self.counter < len(self.files):
                     image = self.files[self.counter]
                     self.counter += 1
                     return image
                 else:
                     self.counter = 0
                     self.arrange_list()
-                    image = self.files[self.counter]
-                    self.counter += 1
-                    return image
+                    if len(self.files) > 0 and self.counter < len(self.files):
+                        image = self.files[self.counter]
+                        self.counter += 1
+                        return image
+                    return ""
 
             def arrange_list(self):
                 """Reorders the image list as requested. Mostly for reoccuring shuffling."""
@@ -596,7 +606,7 @@ class CLIProfileData(ProfileData):
     the images given as input.
     """
 
-    def __init__(self, files, ppiarr=None, inches=None,
+    def __init__(self, files, fit=None, ppiarr=None, inches=None,
                  bezels=None, offsets=None, perspective=None):
         self.name = "cli"
         self.spanmode = ""  # single / multi
@@ -604,6 +614,7 @@ class CLIProfileData(ProfileData):
             self.spanmode = "single"
         else:
             self.spanmode = "multi"
+        self.fit = fit
 
         self.ppimode = None
         if ppiarr is None and inches is None:
@@ -654,6 +665,7 @@ class TempProfileData(object):
     def __init__(self):
         self.name = None
         self.spanmode = None
+        self.fit = "fill"
         self.spangroups = None
         self.slideshow = None
         self.delay = None
@@ -686,6 +698,8 @@ class TempProfileData(object):
                 tpfile.write("delay=" + str(self.delay) + "\n")
             if self.sortmode:
                 tpfile.write("sortmode=" + str(self.sortmode) + "\n")
+            if self.fit:
+                tpfile.write("fit=" + str(self.fit) + "\n")
             if self.inches:
                 tpfile.write("diagonal_inches=" + str(self.inches) + "\n")
             if self.manual_offsets:
