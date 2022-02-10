@@ -32,12 +32,12 @@ class ConfigFrame(wx.Frame):
         self.frame_sizer.Add(config_panel, 1, wx.EXPAND)
         self.SetAutoLayout(True)
         self.SetSizer(self.frame_sizer)
-        self.SetMinSize((600,600))
         self.SetIcon(wx.Icon(TRAY_ICON, wx.BITMAP_TYPE_PNG))
         self.Fit()
         self.Layout()
         self.Center()
         self.Show()
+        self.SetMinSize((800,600))
 
 class WallpaperSettingsPanel(wx.Panel):
     """This class defines the wallpaper config dialog UI."""
@@ -99,27 +99,25 @@ class WallpaperSettingsPanel(wx.Panel):
         #    Note: horizontal sizer needs children to have proportion = 1
         #    in order to expand them horizontally instead of vertically.
         self.sizer_setting_sizers.Add(
-            self.sizer_settings_left, 5, wx.CENTER|wx.EXPAND|wx.TOP|wx.LEFT, 5
+            self.sizer_settings_left, 0, wx.CENTER|wx.EXPAND|wx.TOP|wx.LEFT, 5
             )
         self.sizer_setting_sizers.Add(
-            self.sizer_settings_right, 10, wx.CENTER|wx.EXPAND|wx.TOP|wx.LEFT, 0
+            self.sizer_settings_right, 1, wx.CENTER|wx.EXPAND|wx.TOP|wx.LEFT, 0
             )
         self.sizer_setting_sizers.Add(
-            self.sizer_setting_adv, 4, wx.CENTER|wx.EXPAND|wx.TOP|wx.RIGHT, 5
+            self.sizer_setting_adv, 0, wx.CENTER|wx.EXPAND|wx.TOP|wx.RIGHT, 5
             )
-        self.sizer_setting_sizers.Layout()
 
         self.sizer_bottom_half.Add(self.sizer_profiles, 0, wx.CENTER|wx.EXPAND|wx.ALL, 0)
         self.sizer_bottom_half.Add(self.sizer_setting_sizers, 1, wx.CENTER|wx.EXPAND|wx.ALL, 0)
         self.sizer_bottom_half.Add(self.sizer_bottom_buttonrow, 0, wx.CENTER|wx.EXPAND|wx.ALL, 0)
-        # self.sizer_bottom_half.SetMinSize(1000,500)
 
         # Collect items at main sizer
         self.sizer_main.Add(self.sizer_top_half, 1, wx.CENTER|wx.EXPAND|wx.BOTTOM, 5)
         self.sizer_main.Add(self.sizer_bottom_half, 0, wx.CENTER|wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, 0)
 
         self.SetSizer(self.sizer_main)
-        self.sizer_main.Fit(parent)
+        self.sizer_main.Fit(self.frame)
 
         self.sizer_setting_sizers.Hide(self.sizer_setting_adv)
 
@@ -274,6 +272,9 @@ class WallpaperSettingsPanel(wx.Panel):
         self.sizer_settings_right.Add(
             self.sizer_setting_paths, 1, wx.CENTER|wx.EXPAND|wx.TOP|wx.LEFT|wx.RIGHT, 5
         )
+        self.path_listctrl.InvalidateBestSize()
+        # self.sizer_setting_paths.SetItemMinSize(self.path_listctrl, (1000, -1))
+
 
 
     def create_sizer_settings_advanced(self):
@@ -659,6 +660,8 @@ class WallpaperSettingsPanel(wx.Panel):
         self.sizer_setting_sizers.Show(self.sizer_setting_adv, show=show_bool)
         self.toggle_bezel_buttons(enable_config_butt=True)
         # To only reveal sizer sit no frame resize
+        self.path_listctrl.InvalidateBestSize()
+        # self.sizer_setting_paths.SetItemMinSize(self.path_listctrl, (1000, -1))
         self.sizer_main.Layout()
         # to re-layout the whole window making it wider run:
         # self.sizer_setting_adv.Layout()
@@ -724,6 +727,7 @@ class WallpaperSettingsPanel(wx.Panel):
             self.sizer_setting_paths.Insert(1, self.path_listctrl, 1,
                                             wx.CENTER | wx.EXPAND | wx.ALL, 5)
             self.path_listctrl.InvalidateBestSize()
+            # self.sizer_setting_paths.SetItemMinSize(self.path_listctrl, (1000, -1))
             self.sizer_main.Layout()
         return True
 
