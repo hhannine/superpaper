@@ -553,7 +553,7 @@ class DisplaySystem():
             )
         return bezels
 
-    def update_display_diags(self, diag_inches):
+    def update_display_diags(self, diag_inches, reset_offsets=True):
         """Overwrite detected display sizes with user input."""
         if diag_inches == "auto":
             self.use_user_diags = False
@@ -567,7 +567,8 @@ class DisplaySystem():
             for dsp, diag in zip(self.disp_list, diag_inches):
                 dsp.ppi_and_physsize_from_diagonal_inch(diag)
             self.compute_ppinorm_resolutions()
-            self.compute_initial_preview_offsets()
+            if reset_offsets:
+                self.compute_initial_preview_offsets()
 
 
     def save_system(self):
@@ -676,8 +677,7 @@ class DisplaySystem():
             self.update_ppinorm_offsets(ppi_norm_offsets) # Bezels & user diagonals always included.
             if diagonal_inches:
                 sp_logging.G_LOGGER.info("Updating diagonal_inches")
-                self.update_display_diags(diagonal_inches)
-                self.compute_ppinorm_resolutions()
+                self.update_display_diags(diagonal_inches, reset_offsets=False)
             self.use_perspective = use_perspective
             if def_perspective == "None":
                 self.default_perspective = None
