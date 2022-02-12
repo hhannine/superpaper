@@ -2375,8 +2375,8 @@ class WallpaperPreviewPanel(wx.Panel):
         sz = st_bmp.GetSize()
         pos = st_bmp.GetPosition()
         bsz = self.bez_butt_sz
-        pos_rb = (sz[0] + pos[0] - bsz[0]/2, sz[1]/2 + pos[1] - bsz[1]/2)
-        pos_bb = (sz[0]/2 + pos[0] - bsz[0]/2, sz[1] + pos[1] - bsz[1]/2)
+        pos_rb = (round(sz[0] + pos[0] - bsz[0]/2), round(sz[1]/2 + pos[1] - bsz[1]/2))
+        pos_bb = (round(sz[0]/2 + pos[0] - bsz[0]/2), round(sz[1] + pos[1] - bsz[1]/2))
         return [pos_rb, pos_bb]
 
     def move_bezel_buttons(self):
