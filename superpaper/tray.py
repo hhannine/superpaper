@@ -15,11 +15,9 @@ from superpaper.gui import ConfigFrame
 from superpaper.configuration_dialogs import SettingsFrame, HelpFrame
 from superpaper.message_dialog import show_message_dialog
 from superpaper.data import (GeneralSettingsData,
-                  list_profiles, read_active_profile, write_active_profile)
+    list_profiles, open_profile, read_active_profile, write_active_profile)
 from superpaper.wallpaper_processing import (get_display_data,
-                                  run_profile_job, quick_profile_job,
-                                  change_wallpaper_job
-                                  )
+    run_profile_job, quick_profile_job, change_wallpaper_job)
 
 try:
     import wx
@@ -34,14 +32,18 @@ except ImportError as import_e:
 # Constants
 TRAY_TOOLTIP = "Superpaper"
 TRAY_ICON = os.path.join(sp_paths.PATH, "superpaper/resources/superpaper.png")
+STARTUP_PROFILE = None
 
 
-
-def tray_loop():
+def tray_loop(profile=None):
     """Runs the tray applet."""
+    global STARTUP_PROFILE
     if not os.path.isdir(sp_paths.PROFILES_PATH):
         os.mkdir(sp_paths.PROFILES_PATH)
     if "wx" in sys.modules:
+        if profile:
+            STARTUP_PROFILE = profile
+            sp_logging.G_LOGGER.info("Startup profile: {}".format(profile))
         app = App(False)
         app.MainLoop()
     else:
@@ -86,7 +88,10 @@ class TaskBarIcon(wx.adv.TaskBarIcon):
             sp_logging.G_LOGGER.info("END Listing profiles for menu.")
         # Should now return an object if a previous profile was written or
         # None if no previous data was found
-        self.active_profile = read_active_profile()
+        if STARTUP_PROFILE:
+            self.active_profile = open_profile(STARTUP_PROFILE)
+        else:
+            self.active_profile = read_active_profile()
         if self.active_profile:
             wpproc.G_ACTIVE_PROFILE = self.active_profile.name
         self.start_prev_profile(self.active_profile)

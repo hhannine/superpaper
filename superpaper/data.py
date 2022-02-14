@@ -44,6 +44,17 @@ def list_profiles():
             sp_logging.G_LOGGER.info("Listed profile: %s", profile_list[i].name)
     return profile_list
 
+def open_profile(profile):
+    """Returns a ProfileData object."""
+    prof_file = os.path.join(sp_paths.PROFILES_PATH, profile + ".profile")
+    if os.path.isfile(prof_file):
+        prof = ProfileData(prof_file)
+    elif os.path.isfile(profile):
+        prof = ProfileData(profile)
+    else:
+        prof = None
+    return prof
+
 def read_active_profile():
     """Reads last active profile from file at startup."""
     fname = os.path.join(sp_paths.TEMP_PATH, "running_profile")
@@ -244,7 +255,7 @@ class ProfileData(object):
 
         self.file = profile_file
         self.name = "default_profile"
-        self.spanmode = "single"  # single / multi
+        self.spanmode = "single"  # single / advanced / multi
         self.spangroups = None
         self.slideshow = True
         self.delay_list = [600]
@@ -596,56 +607,35 @@ class CLIProfileData(ProfileData):
     the images given as input.
     """
 
-    def __init__(self, files, ppiarr=None, inches=None,
-                 bezels=None, offsets=None, perspective=None):
+    def __init__(self, files, advanced=False, perspective=None, spangroups=None, offsets=None):
         self.name = "cli"
+        self.files = []
         self.spanmode = ""  # single / multi
-        self.spangroups = None
-        if len(files) == 1:
+        self.spangroups = spangroups
+        self.ppimode = False # keep this for legacy profile support
+        self.perspective = perspective
+        self.manual_offsets = wpproc.NUM_DISPLAYS * [(0, 0)]
+
+        if len(files) == 1 and not advanced:
             self.spanmode = "single"
+        elif advanced:
+            self.spanmode = "advanced"
         else:
             self.spanmode = "multi"
 
-        self.ppimode = None
-        if ppiarr is None and inches is None:
-            self.ppimode = False
-            self.ppi_array = wpproc.NUM_DISPLAYS * [100]
-        else:
-            self.ppimode = True
-            if inches:
-                self.ppi_array = self.compute_ppis(inches)
-            else:
-                self.ppi_array = ppiarr
-
-        if offsets is None:
-            self.manual_offsets = wpproc.NUM_DISPLAYS * [(0, 0)]
-        else:
-            self.manual_offsets = wpproc.NUM_DISPLAYS * [(0, 0)]
+        if offsets:
             off_pairs_zip = zip(*[iter(offsets)]*2)
             off_pairs = [tuple(p) for p in off_pairs_zip]
             for off, i in zip(off_pairs, range(len(self.manual_offsets))):
                 self.manual_offsets[i] = off
-            # print(self.manual_offsets)
             for pair in self.manual_offsets:
                 self.manual_offsets[self.manual_offsets.index(pair)] = (int(pair[0]), int(pair[1]))
-            # print(self.manual_offsets)
 
-        self.ppi_array_relative_density = []
-        self.bezels = bezels
-        self.bezel_px_offsets = []
-        self.perspective = perspective
-        #self.files = files
-        self.files = []
         for item in files:
             self.files.append(os.path.realpath(item))
-        #
-        if self.ppimode is True:
-            self.compute_relative_densities()
-            if self.bezels:
-                self.compute_bezel_px_offsets()
 
     def next_wallpaper_files(self):
-        """Returns the images given at construction time."""
+        """Returns a list of the real paths of the images given at construction time."""
         return self.files
 
 
