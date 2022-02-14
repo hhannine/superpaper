@@ -58,8 +58,6 @@ If you find Superpaper useful please consider supporting its development:
 - [Support via PayPal](https://www.paypal.me/superpaper/5)
 - [Support via Github Sponsors](https://github.com/sponsors/hhannine)
 
-Github matches your donations done through the sponsorship program!
-
 
 ## Installation
 
