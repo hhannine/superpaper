@@ -8,6 +8,7 @@ import logging
 import math
 import os
 import random
+import datetime
 import sys
 
 import superpaper.sp_logging as sp_logging
@@ -259,7 +260,7 @@ class ProfileData(object):
         self.spangroups = None
         self.slideshow = True
         self.delay_list = [600]
-        self.sortmode = "shuffle"  # shuffle ( random , sorted? )
+        self.sortmode = "shuffle"  # shuffle / alphabetical / date_seeded_shuffle
         self.ppimode = False
         self.ppi_array = wpproc.NUM_DISPLAYS * [100]
         self.ppi_array_relative_density = []
@@ -322,6 +323,8 @@ class ProfileData(object):
                 elif words[0] == "sortmode":
                     wrd1 = words[1].strip().lower()
                     if wrd1 == "shuffle":
+                        self.sortmode = wrd1
+                    elif wrd1 == "date_seeded_shuffle":
                         self.sortmode = wrd1
                     elif wrd1 == "alphabetical":
                         self.sortmode = wrd1
@@ -582,15 +585,12 @@ Use absolute paths for best reliabilty.".format(path)
             def arrange_list(self):
                 """Reorders the image list as requested. Mostly for reoccuring shuffling."""
                 if self.sortmode == "shuffle":
-                    if sp_logging.DEBUG and sp_logging.VERBOSE:
-                        sp_logging.G_LOGGER.info("Shuffling files: %s", self.files)
                     random.shuffle(self.files)
-                    if sp_logging.DEBUG and sp_logging.VERBOSE:
-                        sp_logging.G_LOGGER.info("Shuffled files: %s", self.files)
+                elif self.sortmode == "date_seeded_shuffle":
+                    today = datetime.datetime.now()
+                    random.Random(today.strftime("%Y%m%d%H")).shuffle(self.files)
                 elif self.sortmode == "alphabetical":
                     self.files.sort()
-                    if sp_logging.DEBUG and sp_logging.VERBOSE:
-                        sp_logging.G_LOGGER.info("Sorted files: %s", self.files)
                 else:
                     sp_logging.G_LOGGER.info(
                         "ImageList.arrange_list: unknown sortmode: %s",

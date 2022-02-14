@@ -178,7 +178,7 @@ class WallpaperSettingsPanel(wx.Panel):
         self.st_sshow_sort = wx.StaticText(statbox_parent_sshow, -1, "Slideshow order:")
         self.ch_sshow_sort = wx.Choice(statbox_parent_sshow, -1, name="SortChoice",
                                        #  size=(self.tc_width*0.7, -1),
-                                       choices=["Shuffle", "Alphabetical"])
+                                       choices=["Shuffle", "Alphabetical", "Date seeded shuffle"])
         # ch_sort_size = self.ch_sshow_sort.GetClientSize()
         self.st_sshow_delay = wx.StaticText(statbox_parent_sshow, -1, "Delay (minutes):")
         self.tc_sshow_delay = wx.TextCtrl(
@@ -195,9 +195,9 @@ class WallpaperSettingsPanel(wx.Panel):
         self.cb_slideshow.Bind(wx.EVT_CHECKBOX, self.onCheckboxSlideshow)
         self.sizer_setting_slideshow.Add(self.cb_slideshow, 0, wx.ALIGN_LEFT|wx.ALL, 5)
         sizer_sshow_subsettings.Add(self.st_sshow_delay, 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT, 0)
-        sizer_sshow_subsettings.Add(self.tc_sshow_delay, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 0)
+        sizer_sshow_subsettings.Add(self.tc_sshow_delay, 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT|wx.ALIGN_LEFT, 3)
         sizer_sshow_subsettings.Add(self.st_sshow_sort, 0, wx.ALIGN_CENTER_VERTICAL|wx.LEFT, 0)
-        sizer_sshow_subsettings.Add(self.ch_sshow_sort, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 0)
+        sizer_sshow_subsettings.Add(self.ch_sshow_sort, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.ALIGN_LEFT, 5)
         self.sizer_setting_slideshow.Add(sizer_sshow_subsettings, 0, wx.ALIGN_LEFT|wx.LEFT|wx.BOTTOM, 10)
         # self.sizer_setting_slideshow.AddSpacer(5)
 
@@ -494,6 +494,8 @@ class WallpaperSettingsPanel(wx.Panel):
                 self.ch_sshow_sort.SetSelection(0)
             elif profile.sortmode == "alphabetical":
                 self.ch_sshow_sort.SetSelection(1)
+            elif profile.sortmode == "date_seeded_shuffle":
+                self.ch_sshow_sort.SetSelection(2)
             else:
                 self.ch_sshow_sort.SetSelection(wx.NOT_FOUND)
         else:
@@ -1043,7 +1045,7 @@ class WallpaperSettingsPanel(wx.Panel):
         tmp_profile.slideshow = self.cb_slideshow.GetValue()
         if tmp_profile.slideshow:
             tmp_profile.delay = str(60*float(self.tc_sshow_delay.GetLineText(0))) # save delay as seconds for compatibility!
-            tmp_profile.sortmode = self.ch_sshow_sort.GetString(self.ch_sshow_sort.GetSelection()).lower()
+            tmp_profile.sortmode = self.ch_sshow_sort.GetString(self.ch_sshow_sort.GetSelection()).lower().replace(" ", "_")
         if self.cb_hotkey.GetValue():
             tmp_profile.hk_binding = self.tc_hotkey_bind.GetLineText(0)
 
