@@ -57,6 +57,10 @@ class BrowsePaths(wx.Dialog):
             filter="Image files (*.jpg, *.png)|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tiff;*.webp"
         )
         sizer_browse.Add(self.dir3, 1, wx.CENTER|wx.ALL|wx.EXPAND, 5)
+        self.cb_showhidden = wx.CheckBox(self, -1, "Show hidden files")
+        self.cb_showhidden.Bind(wx.EVT_CHECKBOX, self.onCheckboxShowHidden)
+        sizer_browse.Add(self.cb_showhidden, 0, wx.ALIGN_LEFT|wx.ALL, 5)
+
         st_paths_list = wx.StaticText(
             self, -1,
             "Selected wallpaper source directories and files:"
@@ -185,8 +189,8 @@ class BrowsePaths(wx.Dialog):
             target_h = self.tsize[1]
             target_w = target_h*w2h_ratio
             pos = (round((target_h - target_w)/2), 0)
-        bmp = wximg.Scale(target_w,
-                          target_h,
+        bmp = wximg.Scale(round(target_w),
+                          round(target_h),
                           quality=wx.IMAGE_QUALITY_BOX_AVERAGE
                          ).Resize(self.tsize,
                                   pos
@@ -230,6 +234,9 @@ class BrowsePaths(wx.Dialog):
         current_settings = GeneralSettingsData()
         current_settings.browse_default_dir = ""
         current_settings.save_settings()
+
+    def onCheckboxShowHidden(self, event):
+        self.dir3.ShowHidden(self.cb_showhidden.GetValue())
 
 
     def onOk(self, event):
