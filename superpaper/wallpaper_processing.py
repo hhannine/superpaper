@@ -1488,8 +1488,8 @@ def set_wallpaper_piecewise(image_piece_list):
         # if desk_env in ["/usr/share/xsessions/plasma", "plasma"]:
         if running_kde():
             kdeplasma_actions(None, image_piece_list)
-        elif desk_env in ["xfce", "xubuntu", "ubuntustudio"]:
-            xfce_actions(None, image_piece_list)
+        # elif desk_env in ["xfce", "xubuntu", "ubuntustudio"]:
+            # xfce_actions(None, image_piece_list)
     else:
         pass
     return 0
@@ -1652,7 +1652,8 @@ while(k < desktopArray.length) {{
         remove_old_temp_files(outputfile)
 
 
-def xfce_actions(outputfile, image_piece_list = None):
+# def xfce_actions(outputfile, image_piece_list = None):
+def xfce_actions(outputfile):
     """
     Sets the multi monitor wallpaper on XFCE.
 
@@ -1661,19 +1662,6 @@ def xfce_actions(outputfile, image_piece_list = None):
     monitor. This means that the composed image must be cut into
     correct pieces that then are set to their respective displays.
     """
-    if outputfile:
-        img_names = special_image_cropper(outputfile)
-    elif not outputfile and image_piece_list:
-        if sp_logging.DEBUG:
-            sp_logging.G_LOGGER.info("XFCE: Using image piece list!")
-        img_names = image_piece_list
-    else:
-        if sp_logging.DEBUG:
-            sp_logging.G_LOGGER.info("Error! XFCE actions called without arguments!")
-
-    monitors = []
-    for mon_index in range(NUM_DISPLAYS):
-        monitors.append("monitor" + str(mon_index))
 
     read_prop = subprocess.Popen(["xfconf-query",
                                   "-c",
@@ -1684,22 +1672,17 @@ def xfce_actions(outputfile, image_piece_list = None):
                                  stdout=subprocess.PIPE)
     props = read_prop.stdout.read().decode("utf-8").split("\n")
     for prop in props:
-        for monitor, imgname in zip(monitors, img_names):
-            if monitor in prop:
-                if "last-image" in prop or "image-path" in prop:
-                    os.system(
-                        "xfconf-query -c xfce4-desktop -p "
-                        + prop
-                        + " -s ''")
-                    os.system(
-                        "xfconf-query -c xfce4-desktop -p "
-                        + prop
-                        + " -s '%s'" % imgname)
-                if "image-show" in prop:
-                    os.system(
-                        "xfconf-query -c xfce4-desktop -p "
-                        + prop
-                        + " -s 'true'")
+        if "workspace0/image-style" in prop:
+            os.system(
+                "xfconf-query -c xfce4-desktop -p "
+                + prop
+                + " -s 6")
+        elif "workspace0/last-image" in prop:
+            os.system(
+                "xfconf-query -c xfce4-desktop -p "
+                + prop
+                + " -s '%s'" % outputfile)
+
     # Delete old images after new ones are set
     if outputfile:
         remove_old_temp_files(outputfile)
@@ -1798,8 +1781,8 @@ def use_image_pieces():
         # if desk_env in ["/usr/share/xsessions/plasma", "plasma"]:
         if running_kde():
             return True
-        elif desk_env in ["xfce", "xubuntu", "ubuntustudio"]:
-            return True
+        # elif desk_env in ["xfce", "xubuntu", "ubuntustudio"]:
+            # return True
         else:
             return False
     else:
