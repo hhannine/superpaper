@@ -31,15 +31,15 @@ def set_spanmode():
                             "unity", "ubuntu",
                             "pantheon", "budgie-desktop",
                             "pop"]:
-                subprocess.run(["gsettings", "set",
+                subprocess.run(["/usr/bin/gsettings", "set",
                                 "org.gnome.desktop.background", "picture-options",
                                 "spanned"])
             elif desk_env in ["cinnamon"]:
-                subprocess.run(["gsettings", "set",
+                subprocess.run(["/usr/bin/gsettings", "set",
                                 "org.cinnamon.desktop.background", "picture-options",
                                 "spanned"])
             elif desk_env in ["mate"]:
-                subprocess.run(["gsettings", "set",
+                subprocess.run(["/usr/bin/gsettings", "set",
                                 "org.mate.background", "picture-options",
                                 "spanned"])
             elif desk_env.lower() == "lubuntu" or "lxqt" in desk_env.lower():
