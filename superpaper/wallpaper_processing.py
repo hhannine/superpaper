@@ -16,7 +16,7 @@ import sys
 from operator import itemgetter
 from threading import Lock, Thread, Timer
 
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, ImageOps, UnidentifiedImageError
 from screeninfo import get_monitors
 
 import superpaper.perspective as persp
@@ -1141,6 +1141,7 @@ def span_single_image_simple(profile, force):
         sp_logging.G_LOGGER.info(file)
     try:
         img = Image.open(file)
+        img = ImageOps.exif_transpose(img)
     except UnidentifiedImageError:
         sp_logging.G_LOGGER.info(("Opening image '%s' failed with PIL.UnidentifiedImageError."
                                   "It could be corrupted or is of foreign type."), file)
@@ -1203,6 +1204,7 @@ def span_single_image_advanced(profile, force):
         sp_logging.G_LOGGER.info(files)
     try:
         img_list = [Image.open(fil) for fil in files]
+        img_list = [ImageOps.exif_transpose(img) for img in img_list]
     except UnidentifiedImageError:
         sp_logging.G_LOGGER.info(("Opening image '%s' failed with PIL.UnidentifiedImageError."
                                   "It could be corrupted or is of foreign type."), files)
@@ -1317,6 +1319,7 @@ def set_multi_image_wallpaper(profile, force):
         # image = Image.open(file)
         try:
             image = Image.open(file)
+            image = ImageOps.exif_transpose(image)
         except UnidentifiedImageError:
             sp_logging.G_LOGGER.info(("Opening image '%s' failed with PIL.UnidentifiedImageError."
                                       "It could be corrupted or is of foreign type."), file)
