@@ -28,6 +28,7 @@ Superpaper is an advanced multi monitor wallpaper manager for **Linux** and **Wi
 - Slideshow with configurable file order from local sources
 - Add wallpapers one by one or a folder at a time (no subfolders)
 - Command-line interface
+- Run a script after wallpaper change: [example script](./example-script/run-after-wp-change.py)
 - Tray applet for slideshow control
 - Hotkey support for easy slideshow control (Only Linux and Windows)
 - Align test tool to help fine tune your settings (Accessible only from GUI)

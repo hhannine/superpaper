@@ -1386,6 +1386,11 @@ spi_success: '%s'", spi_success)
         subprocess.Popen(script % outputfile, shell=True)
     else:
         sp_logging.G_LOGGER.info("Unknown platform.system(): %s", pltform)
+    script_file = os.path.join(CONFIG_PATH, "run-after-wp-change.py")
+    if os.path.isfile(script_file):
+        subprocess.run(["python3",
+                        script_file,
+                        outputfile])
     return 0
 
 def set_wallpaper_linux(outputfile, force=False):
