@@ -41,6 +41,12 @@ def running_kde():
 
 if platform.system() == "Windows":
     import ctypes
+    from typing import List
+    import pythoncom
+    import pywintypes
+    import win32gui
+    from win32com.shell import shell, shellcon
+    user32 = ctypes.windll.user32
 elif platform.system() == "Linux":
     # KDE has special needs
     # if os.environ.get("DESKTOP_SESSION") in ["/usr/share/xsessions/plasma", "plasma"]:
@@ -1344,6 +1350,59 @@ def errcheck(result, func, args):
     if not result:
         raise ctypes.WinError(ctypes.get_last_error())
 
+def _make_filter(class_name: str, title: str):
+    """https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-enumwindows"""
+
+    def enum_windows(handle: int, h_list: list):
+        if not (class_name or title):
+            h_list.append(handle)
+        if class_name and class_name not in win32gui.GetClassName(handle):
+            return True  # continue enumeration
+        if title and title not in win32gui.GetWindowText(handle):
+            return True  # continue enumeration
+        h_list.append(handle)
+
+    return enum_windows
+
+
+def find_window_handles(parent: int = None, window_class: str = None, title: str = None) -> List[int]:
+    cb = _make_filter(window_class, title)
+    try:
+        handle_list = []
+        if parent:
+            win32gui.EnumChildWindows(parent, cb, handle_list)
+        else:
+            win32gui.EnumWindows(cb, handle_list)
+        return handle_list
+    except pywintypes.error:
+        return []
+
+
+def force_refresh_syspar():
+    user32.UpdatePerUserSystemParameters(1)
+
+
+def enable_activedesktop():
+    """https://stackoverflow.com/a/16351170"""
+    try:
+        progman = find_window_handles(window_class='Progman')[0]
+        cryptic_params = (0x52c, 0, 0, 0, 500, None)
+        user32.SendMessageTimeoutW(progman, *cryptic_params)
+    except IndexError as e:
+        raise WindowsError('Cannot enable Active Desktop') from e
+
+
+def set_wallpaper_win(image_path: str, use_activedesktop: bool = True):
+    if use_activedesktop:
+        enable_activedesktop()
+    pythoncom.CoInitialize()
+    iad = pythoncom.CoCreateInstance(shell.CLSID_ActiveDesktop,
+                                     None,
+                                     pythoncom.CLSCTX_INPROC_SERVER,
+                                     shell.IID_IActiveDesktop)
+    iad.SetWallpaper(str(image_path), 0)
+    iad.ApplyChanges(shellcon.AD_APPLY_ALL)
+    force_refresh_syspar()
 
 def set_wallpaper(outputfile, force=False):
     """
@@ -1355,26 +1414,28 @@ def set_wallpaper(outputfile, force=False):
     """
     pltform = platform.system()
     if pltform == "Windows":
-        spi_setdeskwallpaper = 20
-        spif_update_ini_file = 1
-        spif_send_change = 2
-        user32 = ctypes.WinDLL('user32', use_last_error=True)
-        spiw = user32.SystemParametersInfoW
-        spiw.argtypes = [
-            ctypes.c_uint,
-            ctypes.c_uint,
-            ctypes.c_void_p,
-            ctypes.c_uint]
-        spiw.restype = ctypes.c_int
-        spiw.errcheck = errcheck
-        spi_success = spiw(
-            spi_setdeskwallpaper,
-            0,
-            outputfile,
-            spif_update_ini_file | spif_send_change)
-        if spi_success == 0:
-            sp_logging.G_LOGGER.info("SystemParametersInfo wallpaper set failed with \
-spi_success: '%s'", spi_success)
+        set_wallpaper_win(outputfile)
+    # Old wallpaper setting code with no transition
+#         spi_setdeskwallpaper = 20
+#         spif_update_ini_file = 1
+#         spif_send_change = 2
+#         user32 = ctypes.WinDLL('user32', use_last_error=True)
+#         spiw = user32.SystemParametersInfoW
+#         spiw.argtypes = [
+#             ctypes.c_uint,
+#             ctypes.c_uint,
+#             ctypes.c_void_p,
+#             ctypes.c_uint]
+#         spiw.restype = ctypes.c_int
+#         spiw.errcheck = errcheck
+#         spi_success = spiw(
+#             spi_setdeskwallpaper,
+#             0,
+#             outputfile,
+#             spif_update_ini_file | spif_send_change)
+#         if spi_success == 0:
+#             sp_logging.G_LOGGER.info("SystemParametersInfo wallpaper set failed with \
+# spi_success: '%s'", spi_success)
     elif pltform == "Linux":
         set_wallpaper_linux(outputfile, force)
     elif pltform == "Darwin":
@@ -1765,6 +1826,17 @@ def quick_profile_job(profile):
                               args=(image_pieces,),
                               daemon=True)
                 thrd.start()
+            elif platform.system() == "Windows":
+                # Skip quick switch on Windows if not using perspective corrections.
+                if profile.spanmode == "advanced" and G_ACTIVE_DISPLAYSYSTEM.use_perspective:
+                    if ((profile.perspective == "default" and G_ACTIVE_DISPLAYSYSTEM.default_perspective != None) or
+                         profile.perspective not in ["default", "disabled"]):
+                        thrd = Thread(target=set_wallpaper,
+                              args=(os.path.join(TEMP_PATH, files[0]),),
+                              daemon=True)
+                        thrd.start()
+                else:
+                    pass
             else:
                 thrd = Thread(target=set_wallpaper,
                               args=(os.path.join(TEMP_PATH, files[0]),),
