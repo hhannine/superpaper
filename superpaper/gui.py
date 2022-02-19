@@ -2347,7 +2347,10 @@ class WallpaperPreviewPanel(wx.Panel):
 
     def popup_at_button(self, button):
         """Initialize a popup at button position."""
-        pop = self.BezelEntryPopup(self, wx.SIMPLE_BORDER|wx.PU_CONTAINS_CONTROLS)
+        try:
+            pop = self.BezelEntryPopup(self, wx.SIMPLE_BORDER|wx.PU_CONTAINS_CONTROLS)
+        except AttributeError:
+            pop = self.BezelEntryPopup(self, wx.SIMPLE_BORDER)
         return pop
 
     def move_popup_to_button(self, pop, button):
