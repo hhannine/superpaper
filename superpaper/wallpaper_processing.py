@@ -1726,12 +1726,12 @@ def run_profile_job(profile):
         sp_logging.G_LOGGER.info("running profile job with profile: %s", profile.name)
 
     if not profile.slideshow:
-        if sp_logging.DEBUG:
-            sp_logging.G_LOGGER.info("Running a one-off wallpaper change.")
+        # if sp_logging.DEBUG:
+        #     sp_logging.G_LOGGER.info("Running a one-off wallpaper change.")
         thrd = change_wallpaper_job(profile)
     elif profile.slideshow:
-        if sp_logging.DEBUG:
-            sp_logging.G_LOGGER.info("Running wallpaper slideshow.")
+        # if sp_logging.DEBUG:
+        #     sp_logging.G_LOGGER.info("Running wallpaper slideshow.")
         thrd = change_wallpaper_job(profile)
         repeating_timer = RepeatedTimer(
             profile.delay_list[0], change_wallpaper_job, profile)

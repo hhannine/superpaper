@@ -42,8 +42,8 @@ def list_profiles():
                 continue
             else:
                 continue
-        if sp_logging.DEBUG:
-            sp_logging.G_LOGGER.info("Listed profile: %s", profile_list[i].name)
+        # if sp_logging.DEBUG:
+        #     sp_logging.G_LOGGER.info("Listed profile: %s", profile_list[i].name)
     return profile_list
 
 def open_profile(profile):
@@ -68,9 +68,9 @@ def read_active_profile():
             for line in rp_file:     # loop through line by line
                 line.rstrip("\r\n")
                 profname = line
-                if sp_logging.DEBUG:
-                    sp_logging.G_LOGGER.info("read profile name from 'running_profile': %s",
-                                             profname)
+                # if sp_logging.DEBUG:
+                #     sp_logging.G_LOGGER.info("read profile name from 'running_profile': %s",
+                #                              profname)
                 prof_file = os.path.join(sp_paths.PROFILES_PATH, profname + ".profile")
                 if os.path.isfile(prof_file):
                     profile = ProfileData(prof_file)
@@ -383,12 +383,12 @@ class ProfileData(object):
                 elif words[0] == "hotkey":
                     binding_strings = words[1].strip().split("+")
                     self.hk_binding = tuple(binding_strings)
-                    if sp_logging.DEBUG:
-                        sp_logging.G_LOGGER.info("hkBinding: %s", self.hk_binding)
+                    # if sp_logging.DEBUG:
+                    #     sp_logging.G_LOGGER.info("hkBinding: %s", self.hk_binding)
                 elif words[0] == "perspective":
                     self.perspective = words[1].strip()
-                    if sp_logging.DEBUG:
-                        sp_logging.G_LOGGER.info("perspective preset: %s", self.perspective)
+                    # if sp_logging.DEBUG:
+                    #     sp_logging.G_LOGGER.info("perspective preset: %s", self.perspective)
                 elif words[0].startswith("display"):
                     paths = words[1].strip().split(";")
                     paths = list(filter(None, paths))  # drop empty strings
@@ -440,9 +440,9 @@ class ProfileData(object):
             return 1
         for ppi in self.ppi_array:
             self.ppi_array_relative_density.append((1 / max_density) * float(ppi))
-        if sp_logging.DEBUG:
-            sp_logging.G_LOGGER.info("relative pixel densities: %s",
-                                     self.ppi_array_relative_density)
+        # if sp_logging.DEBUG:
+        #     sp_logging.G_LOGGER.info("relative pixel densities: %s",
+        #                              self.ppi_array_relative_density)
 
     def compute_bezel_px_offsets(self):
         """Computes bezel sizes in pixels based on display PPIs."""

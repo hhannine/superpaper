@@ -81,11 +81,11 @@ class TaskBarIcon(wx.adv.TaskBarIcon):
         self.repeating_timer = None
         self.pause_item = None
         self.is_paused = False
-        if sp_logging.DEBUG:
-            sp_logging.G_LOGGER.info("START Listing profiles for menu.")
+        # if sp_logging.DEBUG:
+            # sp_logging.G_LOGGER.info("START Listing profiles for menu.")
         self.list_of_profiles = list_profiles()
-        if sp_logging.DEBUG:
-            sp_logging.G_LOGGER.info("END Listing profiles for menu.")
+        # if sp_logging.DEBUG:
+            # sp_logging.G_LOGGER.info("END Listing profiles for menu.")
         # Should now return an object if a previous profile was written or
         # None if no previous data was found
         if STARTUP_PROFILE:
@@ -332,13 +332,13 @@ It is already registered for another action.".format(profile.hk_binding, profile
                 "start_profile: profile is None. \
                 Do you have any profiles in /profiles?")
         elif self.active_profile is not None:
-            if sp_logging.DEBUG:
-                sp_logging.G_LOGGER.info(
-                    "Check if the starting profile is already running: %s",
-                    profile.name)
-                sp_logging.G_LOGGER.info(
-                    "name check: %s, %s",
-                    profile.name, self.active_profile.name)
+            # if sp_logging.DEBUG:
+                # sp_logging.G_LOGGER.info(
+                #     "Check if the starting profile is already running: %s",
+                #     profile.name)
+                # sp_logging.G_LOGGER.info(
+                #     "name check: %s, %s",
+                #     profile.name, self.active_profile.name)
             if profile.name == self.active_profile.name and not force_reload:
                 self.next_wallpaper(event)
                 return 0
@@ -360,9 +360,9 @@ It is already registered for another action.".format(profile.hk_binding, profile
                             profile.name)
                     self.repeating_timer, thrd = run_profile_job(profile)
                     write_active_profile(profile.name)
-                    if sp_logging.DEBUG:
-                        sp_logging.G_LOGGER.info("Wrote active profile: %s",
-                                                 profile.name)
+                    # if sp_logging.DEBUG:
+                    #     sp_logging.G_LOGGER.info("Wrote active profile: %s",
+                    #                              profile.name)
                     return thrd
         else:
             with self.job_lock:
@@ -382,9 +382,9 @@ It is already registered for another action.".format(profile.hk_binding, profile
                         profile.name)
                 self.repeating_timer, thrd = run_profile_job(profile)
                 write_active_profile(profile.name)
-                if sp_logging.DEBUG:
-                    sp_logging.G_LOGGER.info("Wrote active profile: %s",
-                                             profile.name)
+                # if sp_logging.DEBUG:
+                #     sp_logging.G_LOGGER.info("Wrote active profile: %s",
+                #                              profile.name)
                 return thrd
 
     def next_wallpaper(self, event):
