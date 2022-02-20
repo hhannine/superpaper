@@ -7,6 +7,7 @@ Written by Henri Hänninen.
 import logging
 import math
 import os
+import platform
 import random
 import datetime
 import sys
@@ -180,7 +181,10 @@ class GeneralSettingsData(object):
             # if file does not exist, create it and write default values.
             general_settings_file = open(fname, "x")
             general_settings_file.write("logging=false\n")
-            general_settings_file.write("use hotkeys=true\n")
+            if platform.system() == "Darwin":
+                general_settings_file.write("use hotkeys=false\n")
+            else:
+                general_settings_file.write("use hotkeys=true\n")
             general_settings_file.write("next wallpaper hotkey=control+super+w\n")
             self.hk_binding_next = ("control", "super", "w")
             general_settings_file.write("pause wallpaper hotkey=control+super+shift+p\n")
