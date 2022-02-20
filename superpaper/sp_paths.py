@@ -37,7 +37,7 @@ def setup_config_path():
         # Windows and Mac default to the old portable config behavior
         config_path = PATH
         # and test if it is writable:
-        if not test_full_write_access(config_path):
+        if not test_full_write_access(config_path) or test_git_path(PATH):
             # if it is not writable, use %LOCALAPPDATA%\Superpaper
             config_path = os.path.join(os.getenv("LOCALAPPDATA"), "Superpaper")
             if not os.path.isdir(config_path):
@@ -75,7 +75,7 @@ def setup_cache_path():
         parent_path = PATH
         temp_path = os.path.join(parent_path, "temp")
         # and test if it is writable:
-        if not test_full_write_access(parent_path):
+        if not test_full_write_access(parent_path) or test_git_path(PATH):
             # if it is not writable, use %LOCALAPPDATA%\Superpaper\temp
             temp_path = os.path.join(os.getenv("LOCALAPPDATA"), os.path.join("Superpaper", "temp"))
             if not os.path.isdir(temp_path):
@@ -115,6 +115,12 @@ def test_full_write_access(path):
         return True
     except PermissionError:
         # There is no access to create folders in path:
+        return False
+
+def test_git_path(path):
+    if "github\superpaper" in path.lower():
+        return True
+    else:
         return False
 
 
