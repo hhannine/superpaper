@@ -28,7 +28,7 @@ class BrowsePaths(wx.Dialog):
                            'Choose image source directories or image files',
                            size=(250, 250),
                            style=wx.RESIZE_BORDER|wx.DEFAULT_DIALOG_STYLE)
-        self.SetMinSize((250, 250))
+        # self.SetMinSize((250, 250))
         BMP_SIZE = 32
         self.tsize = (BMP_SIZE, BMP_SIZE)
         self.il = wx.ImageList(BMP_SIZE, BMP_SIZE)
@@ -111,7 +111,7 @@ class BrowsePaths(wx.Dialog):
         sizer_main.Add(sizer_buttons, 0, wx.ALL|wx.EXPAND, 5)
         # self.SetSizer(sizer_main)
         self.SetSizerAndFit(sizer_main)
-        self.SetSize((450, 650))
+        self.SetSize((-1, 650))
         # self.SetAutoLayout(True)
 
     def create_paths_listctrl(self, use_multi_image):
