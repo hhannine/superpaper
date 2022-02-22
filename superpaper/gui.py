@@ -2399,6 +2399,9 @@ class WallpaperPreviewPanel(wx.Panel):
 
 
     def onBezelButton(self, event):
+        for pop in self.bezel_popups:
+            pop[0].Hide()
+            pop[1].Hide()
         self.move_bezel_popups()
         #Get button instance and find it in list
         button = event.GetEventObject()
@@ -2408,17 +2411,20 @@ class WallpaperPreviewPanel(wx.Panel):
 
         # Pick and show respective popup
         pop = self.bezel_popups[button_pos[0]][button_pos[1]]
-        pop.Popup()
+        # pop.Popup()
+        pop.Show()
 
 
     #
     # Bezel entry pop-up
     #
 
-    class BezelEntryPopup(wx.PopupTransientWindow):
+    # class BezelEntryPopup(wx.PopupTransientWindow):
+    class BezelEntryPopup(wx.PopupWindow):
         """Popup that is shown when a bezel button is pressed in bezel config."""
         def __init__(self, parent, style):
-            wx.PopupTransientWindow.__init__(self, parent, style)
+            # wx.PopupTransientWindow.__init__(self, parent, style)
+            wx.PopupWindow.__init__(self, parent, style)
             self.preview = parent
             pnl = wx.Panel(self)
             # pnl.SetBackgroundColour("CADET BLUE")
@@ -2451,7 +2457,8 @@ class WallpaperPreviewPanel(wx.Panel):
             self.Layout()
 
         def ProcessLeftDown(self, evt):
-            return wx.PopupTransientWindow.ProcessLeftDown(self, evt)
+            # return wx.PopupTransientWindow.ProcessLeftDown(self, evt)
+            pass
 
         def OnEnter(self, evt):
             """Bind pressing Enter in the txtctrl to apply entered value."""
@@ -2484,7 +2491,8 @@ class WallpaperPreviewPanel(wx.Panel):
                         pop_pair[1].bezel_value()
                     )
                 )
-            self.Dismiss()
+            # self.Dismiss()
+            self.Hide()
             # propagate values and refresh preview
             self.preview.display_sys.update_bezels(bezel_mms)
             self.preview.display_data = self.preview.display_sys.get_disp_list(True)
@@ -2498,7 +2506,8 @@ class WallpaperPreviewPanel(wx.Panel):
                 self.tc_bez.SetValue(str(self.current_bez_val))
             else:
                 self.tc_bez.SetValue("0.0")
-            self.Dismiss()
+            # self.Dismiss()
+            self.Hide()
 
         def bezel_value(self):
             """Return the entered bezel thickness as a float."""
