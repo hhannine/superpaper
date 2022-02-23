@@ -1102,13 +1102,8 @@ class PerspectiveConfig(wx.Dialog):
         wx.Yield()
         # Use the simplified CLI profile class
         wpproc.refresh_display_data()
-        profile = CLIProfileData(testimage,
-                                 None,
-                                 inches,
-                                 None,
-                                 flat_offsets,
-                                 perspective
-                                )
+        profile = CLIProfileData(testimage, advanced=True,
+            perspective=perspective, spangroups=None, offsets=flat_offsets)
         thrd = change_wallpaper_job(profile, force=True)
         while thrd.is_alive():
             time.sleep(0.5)
