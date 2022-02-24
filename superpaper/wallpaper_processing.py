@@ -39,6 +39,7 @@ def running_kde():
         return True
     return False
 
+
 if platform.system() == "Windows":
     from superpaper.wallpaper_windows import set_wallpaper_win
 elif platform.system() == "Linux":
@@ -46,6 +47,9 @@ elif platform.system() == "Linux":
     # if os.environ.get("DESKTOP_SESSION") in ["/usr/share/xsessions/plasma", "plasma"]:
     if running_kde():
         import dbus
+elif platform.system() == "Darwin":
+    from AppKit import NSScreen, NSWorkspace
+    from Foundation import NSURL
 
 
 # Global constants
@@ -1379,12 +1383,13 @@ def set_wallpaper(outputfile, force=False):
     elif pltform == "Linux":
         set_wallpaper_linux(outputfile, force)
     elif pltform == "Darwin":
-        script = """/usr/bin/osascript<<END
-                    tell application "Finder"
-                    set desktop picture to POSIX file "%s"
-                    end tell
-                    END"""
-        subprocess.Popen(script % outputfile, shell=True)
+        # script = """/usr/bin/osascript<<END
+        #             tell application "Finder"
+        #             set desktop picture to POSIX file "%s"
+        #             end tell
+        #             END"""
+        # subprocess.Popen(script % outputfile, shell=True)
+        set_wallpaper_osx(outputfile, image_piece_list=None, force=force)
     else:
         sp_logging.G_LOGGER.info("Unknown platform.system(): %s", pltform)
     script_file = os.path.join(CONFIG_PATH, "run-after-wp-change.py")
@@ -1393,6 +1398,61 @@ def set_wallpaper(outputfile, force=False):
                         script_file,
                         outputfile])
     return 0
+
+def set_wallpaper_osx(outputfile, image_piece_list = None, force = False):
+    """
+    OSX has a separate desktop for each screen, each of which has their own
+    background image property. This means that the wallpaper has to be set
+    piece-by-piece.
+
+    The list of screens given by NSScreen is not sorted by coordinates so
+    that must be done first.
+
+    https://developer.apple.com/documentation/appkit/nsscreen/1388393-screens
+    https://developer.apple.com/documentation/appkit/nsworkspace/1527228-setdesktopimageurl
+    https://developer.apple.com/documentation/foundation/url
+    """
+    screens = NSScreen.screens()
+
+    # get screen positions on desktop
+    screen_coords = []
+    for scrn in screens:
+        frm = scrn.frame
+        if callable(frm):
+            frm = frm()
+        screen_coords.append((int(frm.origin.x), int(frm.origin.y)))
+
+    # sort screens by their desktop coords
+    screens_and_coords = zip(screens, screen_coords)
+    screens_and_coords.sort(key=lambda x: x[1])
+    sorted_screens = [sac[0] for sac in screens_and_coords]
+
+    # image cropper to get image list
+    profname = None
+    if outputfile:
+        profname = os.path.splitext(os.path.basename(outputfile))[0][:-2]
+        img_names = special_image_cropper(outputfile)
+    elif not outputfile and image_piece_list:
+        if sp_logging.DEBUG:
+            sp_logging.G_LOGGER.info("KDE: Using image piece list!")
+        img_names = image_piece_list
+    img_piece_urls = [NSURL.fileURLWithPath_(imagepath) for imagepath in img_names]
+
+    # zip screens and image list and loop over setting the images using the shared workspace
+    sharedSpace = NSWorkspace.sharedWorkspace()
+    options = {}
+    if profname == G_ACTIVE_PROFILE or image_piece_list or force:
+        for screen, imgurl in zip(sorted_screens, img_piece_urls):
+            (result, error) = sharedSpace.setDesktopImageURL_forScreen_options_error_(
+                imgurl, screen, options, None
+            )
+            if error:
+                sp_logging.G_LOGGER.info("setDesktopImageURL failed with error: %s", error)
+    
+    # Delete old images after new ones are set
+    if outputfile:
+        remove_old_temp_files(outputfile)
+
 
 def set_wallpaper_linux(outputfile, force=False):
     """
@@ -1490,12 +1550,13 @@ def set_wallpaper_piecewise(image_piece_list):
     """
     pltform = platform.system()
     if pltform == "Linux":
-        desk_env = os.environ.get("DESKTOP_SESSION")
-        # if desk_env in ["/usr/share/xsessions/plasma", "plasma"]:
         if running_kde():
             kdeplasma_actions(None, image_piece_list)
+        # desk_env = os.environ.get("DESKTOP_SESSION")
         # elif desk_env in ["xfce", "xubuntu", "ubuntustudio"]:
             # xfce_actions(None, image_piece_list)
+    elif pltform == "Darwin":
+        set_wallpaper_osx(None, image_piece_list)
     else:
         pass
     return 0
@@ -1794,13 +1855,14 @@ def use_image_pieces():
     """
     pltform = platform.system()
     if pltform == "Linux":
-        desk_env = os.environ.get("DESKTOP_SESSION")
-        # if desk_env in ["/usr/share/xsessions/plasma", "plasma"]:
         if running_kde():
             return True
+        # desk_env = os.environ.get("DESKTOP_SESSION")
         # elif desk_env in ["xfce", "xubuntu", "ubuntustudio"]:
             # return True
         else:
             return False
+    elif pltform == "Darwin":
+        return True
     else:
         return False
