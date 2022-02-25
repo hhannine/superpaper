@@ -1,6 +1,6 @@
 # Superpaper
 
-Superpaper is an advanced multi monitor wallpaper manager for **Linux** and **Windows** operating systems, with partial and untested support for Mac OS X.
+Superpaper is an advanced multi monitor wallpaper manager for **Linux** and **Windows** operating systems, with partial support (no hotkeys) for **MacOS**.
 
 ![](https://raw.githubusercontent.com/hhannine/Superpaper/branch-resources/readme-banner.jpg)
 ![](https://raw.githubusercontent.com/hhannine/Superpaper/branch-resources/gui-screenshot.png)
@@ -14,7 +14,7 @@ Superpaper is an advanced multi monitor wallpaper manager for **Linux** and **Wi
 - Extensive Linux support!
   - Aims to support all desktop environments
   - Span wallpaper on KDE and XFCE!
-- Cross-platform: works on Linux and Windows
+- Cross-platform: works on Linux, MacOS, and Windows
   - MacOS needs testing and packaging
 
 ### Features in detail
@@ -69,11 +69,11 @@ The AppImage will run once you make it executable.
 
  For native, and other, installation options head over to: [installing on linux](./docs/installation-linux.md). System theme and icon integration can be better on the native (PyPI) installation.
 
-### Windows 10
+### Windows 10 & 11
 
  A Windows installer and a portable package are available on the [releases page](https://github.com/hhannine/superpaper/releases).
 
-### Mac OS X
+### MacOS
 
  You must install the dependencies and run the project, see [development-macos](./docs/development-macos.md).
 

@@ -1389,7 +1389,7 @@ def set_wallpaper(outputfile, force=False):
         #             end tell
         #             END"""
         # subprocess.Popen(script % outputfile, shell=True)
-        set_wallpaper_osx(outputfile, image_piece_list=None, force=force)
+        set_wallpaper_macos(outputfile, image_piece_list=None, force=force)
     else:
         sp_logging.G_LOGGER.info("Unknown platform.system(): %s", pltform)
     script_file = os.path.join(CONFIG_PATH, "run-after-wp-change.py")
@@ -1399,9 +1399,9 @@ def set_wallpaper(outputfile, force=False):
                         outputfile])
     return 0
 
-def set_wallpaper_osx(outputfile, image_piece_list = None, force = False):
+def set_wallpaper_macos(outputfile, image_piece_list = None, force = False):
     """
-    OSX has a separate desktop for each screen, each of which has their own
+    MacOS has a separate desktop for each screen, each of which has their own
     background image property. This means that the wallpaper has to be set
     piece-by-piece.
 
@@ -1556,7 +1556,7 @@ def set_wallpaper_piecewise(image_piece_list):
         # elif desk_env in ["xfce", "xubuntu", "ubuntustudio"]:
             # xfce_actions(None, image_piece_list)
     elif pltform == "Darwin":
-        set_wallpaper_osx(None, image_piece_list)
+        set_wallpaper_macos(None, image_piece_list=image_piece_list)
     else:
         pass
     return 0

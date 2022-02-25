@@ -10,7 +10,7 @@ Install the following:
 - screeninfo: Python library to fetch location and size of physical screens.
 - numpy: NumPy is a general-purpose array-processing package.
 - wxpython (tray applet, GUI & slideshow, optional): wxPython is a cross-platform GUI toolkit for the Python programming language.
-- AppKit: OSX interfacing from python
+- AppKit: MacOS interfacing from python
 - PyObjC: A dependency of AppKit
 
 ```sh
