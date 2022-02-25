@@ -1423,7 +1423,7 @@ def set_wallpaper_macos(outputfile, image_piece_list = None, force = False):
         screen_coords.append((int(frm.origin.x), int(frm.origin.y)))
 
     # sort screens by their desktop coords
-    screens_and_coords = zip(screens, screen_coords)
+    screens_and_coords = list(zip(screens, screen_coords))
     screens_and_coords.sort(key=lambda x: x[1])
     sorted_screens = [sac[0] for sac in screens_and_coords]
 
