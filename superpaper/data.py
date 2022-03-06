@@ -25,25 +25,24 @@ def list_profiles():
     """Lists profiles as initiated objects from the sp_paths.PROFILES_PATH."""
     files = sorted(os.listdir(sp_paths.PROFILES_PATH))
     profile_list = []
-    for i in range(len(files)):
+    for pfle in files:
         try:
-            profile_list.append(ProfileData(os.path.join(sp_paths.PROFILES_PATH, files[i])))
+            if pfle.endswith(".profile"):
+                profile_list.append(ProfileData(os.path.join(sp_paths.PROFILES_PATH, pfle)))
         except Exception as exep:  # TODO implement proper error catching for ProfileData init
-            msg = ("There was an error when loading profile '{}'.\n".format(files[i])
+            msg = ("There was an error when loading profile '{}'.\n".format(pfle)
                    + "Would you like to delete it? Choosing 'No' will just ignore the profile."
             )
             sp_logging.G_LOGGER.info(msg)
             sp_logging.G_LOGGER.info(exep)
             res = show_message_dialog(msg, "Error", style="YES_NO")
             if res:
-                # remove files[i]
-                print("removing:", os.path.join(sp_paths.PROFILES_PATH, files[i]))
-                os.remove(os.path.join(sp_paths.PROFILES_PATH, files[i]))
+                # remove pfle
+                print("removing:", os.path.join(sp_paths.PROFILES_PATH, pfle))
+                os.remove(os.path.join(sp_paths.PROFILES_PATH, pfle))
                 continue
             else:
                 continue
-        # if sp_logging.DEBUG:
-        #     sp_logging.G_LOGGER.info("Listed profile: %s", profile_list[i].name)
     return profile_list
 
 def open_profile(profile):
