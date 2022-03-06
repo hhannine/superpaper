@@ -994,7 +994,9 @@ class WallpaperSettingsPanel(wx.Panel):
             image_list = dlg.il
             self.defdir = dlg.defdir
             self.populate_lc_browse(path_list_data, image_list)
-        dlg.Destroy()
+            dlg.Destroy()
+        else:
+            pass
 
     def onRemoveSource(self, event):
         """Removes selection from wallpaper source ListCtrl."""
