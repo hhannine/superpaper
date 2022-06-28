@@ -39,14 +39,11 @@ def running_kde():
         return True
     return False
 
-
 if platform.system() == "Windows":
     from superpaper.wallpaper_windows import set_wallpaper_win
 elif platform.system() == "Linux":
-    # KDE has special needs
-    # if os.environ.get("DESKTOP_SESSION") in ["/usr/share/xsessions/plasma", "plasma"]:
-    if running_kde():
-        import dbus
+    # DBus is needed by some DEs to correctly set the wallpaper
+    import dbus
 elif platform.system() == "Darwin":
     from AppKit import NSScreen, NSWorkspace
     from Foundation import NSURL
@@ -1491,7 +1488,27 @@ def set_wallpaper_linux(outputfile, force=False):
                           "unity", "ubuntu",
                           "pantheon", "budgie-desktop",
                           "pop"]:
-            subprocess.run(["/usr/bin/gsettings", "set",
+            try:
+                sessionb = dbus.SessionBus()
+                desktop = sessionb.get_object(
+                            "org.freedesktop.portal.Desktop",
+                            "/org/freedesktop/portal/desktop")
+                color_scheme = desktop.Read(
+                                "org.freedesktop.appearance",
+                                "color-scheme",
+                                dbus_interface="org.freedesktop.portal.Settings")
+            except dbus.DBusException:
+                color_scheme = subprocess.run([
+                                "/usr/bin/gsettings", "get",
+                                "org.gnome.desktop.interface", "color-scheme"], 
+                                capture_output=True, universal_newlines=True) \
+                                .stdout.lstrip("\'").rstrip("\'\n")
+            if color_scheme == "1" or color_scheme == 'prefer-dark':
+                subprocess.run(["/usr/bin/gsettings", "set",
+                            "org.gnome.desktop.background", "picture-uri-dark",
+                            file])
+            else:
+                subprocess.run(["/usr/bin/gsettings", "set",
                             "org.gnome.desktop.background", "picture-uri",
                             file])
         elif desk_env in ["cinnamon"] or "cinnamon" in desk_env.lower():
