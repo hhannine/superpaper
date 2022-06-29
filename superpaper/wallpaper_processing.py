@@ -1503,7 +1503,7 @@ def set_wallpaper_linux(outputfile, force=False):
                                 "org.gnome.desktop.interface", "color-scheme"], 
                                 capture_output=True, universal_newlines=True) \
                                 .stdout.lstrip("\'").rstrip("\'\n")
-            if color_scheme == "1" or color_scheme == 'prefer-dark':
+            if color_scheme == 1 or color_scheme == "prefer-dark":
                 subprocess.run(["/usr/bin/gsettings", "set",
                             "org.gnome.desktop.background", "picture-uri-dark",
                             file])
