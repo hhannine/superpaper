@@ -6,6 +6,7 @@ Install the following:
 - [Python 3.6+](https://www.python.org/downloads/)
 
 **Python packages**
+- attrdict: dependency of wxpython
 - Pillow: Pillow is a Python Imaging Library (PIL), which adds support for opening, manipulating, and saving images.
 - screeninfo: Python library to fetch location and size of physical screens.
 - numpy: NumPy is a general-purpose array-processing package.
@@ -14,7 +15,7 @@ Install the following:
 
 ```sh
 # Run the following command in your terminal to install the python packages
-pip3 install --upgrade Pillow screeninfo numpy wxpython PyObjC
+pip3 install --upgrade attrdict Pillow screeninfo numpy wxpython PyObjC
 # Clone the project
 git clone https://github.com/hhannine/superpaper/
 ```
