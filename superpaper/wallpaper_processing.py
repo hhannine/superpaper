@@ -39,7 +39,6 @@ def running_kde():
         return True
     return False
 
-
 if platform.system() == "Windows":
     from superpaper.wallpaper_windows import set_wallpaper_win
 elif platform.system() == "Linux":
@@ -1491,6 +1490,9 @@ def set_wallpaper_linux(outputfile, force=False):
                           "unity", "ubuntu",
                           "pantheon", "budgie-desktop",
                           "pop"]:
+            subprocess.run(["/usr/bin/gsettings", "set",
+                            "org.gnome.desktop.background", "picture-uri-dark",
+                            file])
             subprocess.run(["/usr/bin/gsettings", "set",
                             "org.gnome.desktop.background", "picture-uri",
                             file])
