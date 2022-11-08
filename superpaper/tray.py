@@ -472,7 +472,11 @@ class App(wx.App):
     def OnInit(self):
         """Starts tray icon loop."""
         frame = wx.Frame(None)
-        self.locale = wx.Locale(wx.LANGUAGE_DEFAULT)
+        # self.locale = wx.Locale(wx.LANGUAGE_DEFAULT) # this has been causing errors?
         self.SetTopWindow(frame)
         TaskBarIcon(frame)
         return True
+
+    def InitLocale(self):
+        """Override with nothing (or impliment local if actually needed)"""
+        pass
