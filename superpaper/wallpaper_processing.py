@@ -1474,19 +1474,19 @@ def set_wallpaper_linux(outputfile, force=False):
     if sp_logging.DEBUG:
         sp_logging.G_LOGGER.info("DESKTOP_SESSION is: '%s'", desk_env)
 
+    if set_command != "":
+        if set_command == "feh":
+            sp_logging.G_LOGGER.info("Using 'feh' command mode!")
+            subprocess.run(["feh", "--bg-scale", "--no-xinerama", outputfile])
+        else:
+            command_string_list = set_command.split()
+            formatted_command = []
+            for term in command_string_list:
+                formatted_command.append(term.format(image=outputfile))
+            sp_logging.G_LOGGER.info("Formatted custom command is: '%s'", formatted_command)
+            subprocess.run(formatted_command)
     if desk_env:
-        if set_command != "":
-            if set_command == "feh":
-                sp_logging.G_LOGGER.info("Using 'feh' command mode!")
-                subprocess.run(["feh", "--bg-scale", "--no-xinerama", outputfile])
-            else:
-                command_string_list = set_command.split()
-                formatted_command = []
-                for term in command_string_list:
-                    formatted_command.append(term.format(image=outputfile))
-                sp_logging.G_LOGGER.info("Formatted custom command is: '%s'", formatted_command)
-                subprocess.run(formatted_command)
-        elif desk_env in ["gnome", "gnome-wayland", "gnome-xorg",
+        if desk_env in ["gnome", "gnome-wayland", "gnome-xorg",
                           "unity", "ubuntu",
                           "pantheon", "budgie-desktop",
                           "pop"]:
