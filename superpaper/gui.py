@@ -121,6 +121,12 @@ class WallpaperSettingsPanel(wx.Panel):
 
         self.sizer_setting_sizers.Hide(self.sizer_setting_adv)
 
+        if self.parent_tray_obj.active_profile:
+            active_prof_name = self.parent_tray_obj.active_profile.name
+            active_id = self.choice_profiles.FindString(active_prof_name)
+            self.choice_profiles.SetSelection(active_id)
+            self.populate_fields(self.parent_tray_obj.active_profile)
+
         ### End __init__.
 
 
