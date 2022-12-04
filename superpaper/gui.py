@@ -9,7 +9,7 @@ from PIL import Image, ImageEnhance, UnidentifiedImageError
 import superpaper.sp_logging as sp_logging
 import superpaper.wallpaper_processing as wpproc
 from superpaper.configuration_dialogs import BrowsePaths, PerspectiveConfig, DisplayPositionEntry, HelpFrame, HelpPopup
-from superpaper.data import GeneralSettingsData, ProfileData, TempProfileData, CLIProfileData, list_profiles
+from superpaper.data import GeneralSettingsData, ProfileData, TempProfileData, CLIProfileData, list_profiles, open_profile
 from superpaper.message_dialog import show_message_dialog
 from superpaper.sp_paths import PATH, CONFIG_PATH, PROFILES_PATH
 from superpaper.wallpaper_processing import NUM_DISPLAYS, get_display_data, change_wallpaper_job, resize_to_fill
@@ -1134,10 +1134,12 @@ class WallpaperSettingsPanel(wx.Panel):
 
         # test collected data and save if it is valid, otherwise pass
         if tmp_profile.test_save():
+            old_profile = open_profile(tmp_profile.name)
             saved_file = tmp_profile.save()
             self.update_choiceprofile()
             self.parent_tray_obj.reload_profiles(event)
-            self.parent_tray_obj.register_hotkeys()
+            # self.parent_tray_obj.register_hotkeys()
+            self.parent_tray_obj.update_hotkey(tmp_profile.name, old_profile.hk_binding, tmp_profile.hk_binding)
             self.choice_profiles.SetSelection(self.choice_profiles.FindString(tmp_profile.name))
             # Update wallpaper preview from selected profile
             saved_profile = ProfileData(saved_file)

@@ -125,16 +125,17 @@ hotkeys will not work. Exception: %s", excep)
     def register_hotkeys(self):
         """Registers system-wide hotkeys for profiles and application interaction."""
         if self.g_settings.use_hotkeys is True:
-            try:
-                # import keyboard # https://github.com/boppreh/keyboard
-                # This import allows access to the specific errors in this method.
-                from system_hotkey import (SystemHotkey, SystemHotkeyError,
-                                           SystemRegisterError,
-                                           UnregisterError, InvalidKeyError)
-            except ImportError as import_e:
-                sp_logging.G_LOGGER.info(
-                    "WARNING: Could not import keyboard hotkey hook library, \
-hotkeys will not work. Exception: %s", import_e)
+            if "system_hotkey" not in sys.modules:
+                try:
+                    # import keyboard # https://github.com/boppreh/keyboard
+                    # This import allows access to the specific errors in this method.
+                    from system_hotkey import (SystemHotkey, SystemHotkeyError,
+                                            SystemRegisterError,
+                                            UnregisterError, InvalidKeyError)
+                except ImportError as import_e:
+                    sp_logging.G_LOGGER.info(
+                        "WARNING: Could not import keyboard hotkey hook library, \
+    hotkeys will not work. Exception: %s", import_e)
             if "system_hotkey" in sys.modules:
                 try:
                     # Keyboard bindings: https://github.com/boppreh/keyboard
@@ -148,24 +149,28 @@ hotkeys will not work. Exception: %s", import_e)
                     #     check_queue_interval=0.05)
 
                     # Unregister previous hotkeys
-                    if self.seen_binding:
-                        for binding in self.seen_binding:
-                            try:
-                                self.hk.unregister(binding)
-                                if sp_logging.DEBUG:
-                                    sp_logging.G_LOGGER.info("Unreg hotkey %s",
-                                                             binding)
-                            except (SystemHotkeyError, UnregisterError, InvalidKeyError):
-                                try:
-                                    self.hk2.unregister(binding)
-                                    if sp_logging.DEBUG:
-                                        sp_logging.G_LOGGER.info("Unreg hotkey %s",
-                                                                 binding)
-                                except (SystemHotkeyError, UnregisterError, InvalidKeyError):
-                                    if sp_logging.DEBUG:
-                                        sp_logging.G_LOGGER.info("Could not unreg hotkey '%s'",
-                                                                 binding)
-                        self.seen_binding = set()
+                    # if self.seen_binding:
+                        # for binding in self.seen_binding:
+                        #     try:
+                        #         self.hk.unregister(binding)
+                        #         if sp_logging.DEBUG:
+                        #             sp_logging.G_LOGGER.info("Unreg hotkey %s",
+                        #                                      binding)
+                        #     except (SystemHotkeyError, UnregisterError, InvalidKeyError):
+                        #         pass
+                        #     try:
+                        #         self.hk2.unregister(binding)
+                        #         if sp_logging.DEBUG:
+                        #             sp_logging.G_LOGGER.info("Unreg hotkey %s",
+                        #                                         binding)
+                        #     except (SystemHotkeyError, UnregisterError, InvalidKeyError):
+                        #         if sp_logging.DEBUG:
+                        #             sp_logging.G_LOGGER.info("Could not unreg hotkey '%s'",
+                        #                                         binding)
+                        # from system_hotkey import SystemHotkey
+                        # self.hk = SystemHotkey(check_queue_interval=0.05)
+                        # self.hk2 = SystemHotkey(consumer=self.profile_consumer, check_queue_interval=0.05)
+                        # self.seen_binding = set()
 
 
                     # register general bindings
@@ -232,6 +237,38 @@ It is already registered for another action.".format(profile.hk_binding, profile
                         sp_logging.G_LOGGER.info("Coulnd't register hotkeys, exception:")
                         sp_logging.G_LOGGER.info(sys.exc_info()[0])
 
+    def update_hotkey(self, profile_name, old_hotkey, new_hotkey):
+        print(profile_name)
+        print(old_hotkey)
+        print(new_hotkey)
+        new_hotkey = tuple(new_hotkey.split("+"))
+        print(new_hotkey)
+        if old_hotkey == new_hotkey:
+            return
+        profile = self.get_profile_by_name(profile_name)
+        print(profile.name)
+        if old_hotkey is not None:
+            self.hk2.unregister(old_hotkey)
+            self.seen_binding.remove(old_hotkey)
+        if new_hotkey is not None:
+            try:
+                self.hk2.register(new_hotkey, profile, overwrite=False)
+                self.seen_binding.add(new_hotkey)
+                print("SUCCESS?")
+            except:
+                msg = "Error: could not register hotkey {}. \
+Check that it is formatted properly and valid keys.".format(profile.hk_binding)
+                sp_logging.G_LOGGER.info(msg)
+                sp_logging.G_LOGGER.info(sys.exc_info()[0])
+                show_message_dialog(msg, "Error")
+
+    def get_profile_by_name(self, name):
+        for prof in self.list_of_profiles:
+            print(prof.name)
+            print(name)
+            if prof.name == name:
+                return prof
+        return None
 
 
     def profile_consumer(self, event, hotkey, profile):
