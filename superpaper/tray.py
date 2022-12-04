@@ -238,15 +238,10 @@ It is already registered for another action.".format(profile.hk_binding, profile
                         sp_logging.G_LOGGER.info(sys.exc_info()[0])
 
     def update_hotkey(self, profile_name, old_hotkey, new_hotkey):
-        print(profile_name)
-        print(old_hotkey)
-        print(new_hotkey)
         new_hotkey = tuple(new_hotkey.split("+"))
-        print(new_hotkey)
         if old_hotkey == new_hotkey:
             return
         profile = self.get_profile_by_name(profile_name)
-        print(profile.name)
         if old_hotkey is not None:
             self.hk2.unregister(old_hotkey)
             self.seen_binding.remove(old_hotkey)
@@ -254,7 +249,6 @@ It is already registered for another action.".format(profile.hk_binding, profile
             try:
                 self.hk2.register(new_hotkey, profile, overwrite=False)
                 self.seen_binding.add(new_hotkey)
-                print("SUCCESS?")
             except:
                 msg = "Error: could not register hotkey {}. \
 Check that it is formatted properly and valid keys.".format(profile.hk_binding)
@@ -264,8 +258,6 @@ Check that it is formatted properly and valid keys.".format(profile.hk_binding)
 
     def get_profile_by_name(self, name):
         for prof in self.list_of_profiles:
-            print(prof.name)
-            print(name)
             if prof.name == name:
                 return prof
         return None
