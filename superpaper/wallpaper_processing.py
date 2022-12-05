@@ -1154,7 +1154,7 @@ def span_single_image_simple(profile, force):
     outputfile, outputfile_old = alternating_outputfile(profile.name)
     img_resize.save(outputfile, quality=95) # set quality if jpg is used, png unaffected
     if profile.name == G_ACTIVE_PROFILE or force:
-        set_wallpaper(outputfile, force)
+        set_wallpaper(outputfile, force, [file])
     if os.path.exists(outputfile_old):
         os.remove(outputfile_old)
     return 0
@@ -1300,7 +1300,7 @@ def span_single_image_advanced(profile, force):
     outputfile, outputfile_old = alternating_outputfile(profile.name)
     combined_image.save(outputfile, quality=95) # set quality if jpg is used, png unaffected
     if profile.name == G_ACTIVE_PROFILE or force:
-        set_wallpaper(outputfile, force)
+        set_wallpaper(outputfile, force, files)
     if os.path.exists(outputfile_old):
         os.remove(outputfile_old)
     return 0
@@ -1336,7 +1336,7 @@ def set_multi_image_wallpaper(profile, force):
     outputfile, outputfile_old = alternating_outputfile(profile.name)
     combined_image.save(outputfile, quality=95) # set quality if jpg is used, png unaffected
     if profile.name == G_ACTIVE_PROFILE or force:
-        set_wallpaper(outputfile, force)
+        set_wallpaper(outputfile, force, files)
     if os.path.exists(outputfile_old):
         os.remove(outputfile_old)
     return 0
@@ -1347,7 +1347,7 @@ def set_multi_image_wallpaper(profile, force):
 #     if not result:
 #         raise ctypes.WinError(ctypes.get_last_error())
 
-def set_wallpaper(outputfile, force=False):
+def set_wallpaper(outputfile, force=False, source_files=None):
     """
     Master method to set the composed image as wallpaper.
 
@@ -1395,7 +1395,8 @@ def set_wallpaper(outputfile, force=False):
     if os.path.isfile(script_file):
         subprocess.run(["python3",
                         script_file,
-                        outputfile])
+                        outputfile,
+                        source_files])
     return 0
 
 def set_wallpaper_macos(outputfile, image_piece_list = None, force = False):

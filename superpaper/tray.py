@@ -238,7 +238,10 @@ It is already registered for another action.".format(profile.hk_binding, profile
                         sp_logging.G_LOGGER.info(sys.exc_info()[0])
 
     def update_hotkey(self, profile_name, old_hotkey, new_hotkey):
-        new_hotkey = tuple(new_hotkey.split("+"))
+        if new_hotkey:
+            new_hotkey = tuple(new_hotkey.split("+"))
+        else:
+            return
         if old_hotkey == new_hotkey:
             return
         profile = self.get_profile_by_name(profile_name)
