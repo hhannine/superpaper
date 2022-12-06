@@ -1958,7 +1958,7 @@ class WallpaperPreviewPanel(wx.Panel):
             shp.pos = off[1]
         # Restore backed up offsets
         self.display_sys.update_ppinorm_offsets(ppinorm_offs)
-        self.positions_dragged = False
+        self.positions_dragged = True
         self.Refresh()
 
     def onEntry(self, evt):
