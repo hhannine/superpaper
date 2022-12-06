@@ -1378,6 +1378,7 @@ class WallpaperPreviewPanel(wx.Panel):
         self.create_bezel_buttons()
 
         self.draggable_shapes = []
+        self.positions_dragged = False
         self.Bind(wx.EVT_PAINT, self.OnPaint)
 
 
@@ -1658,7 +1659,7 @@ class WallpaperPreviewPanel(wx.Panel):
 
     def bezels_to_bitmap(self, bmp, disp_sz, bez_rects):
         """Add bezel rectangles ( right_bez , bottom_bez ) to given bitmap."""
-        sp_logging.G_LOGGER.info("bezels_to_bitmap: bez_rects: %s", bez_rects)
+        # sp_logging.G_LOGGER.info("bezels_to_bitmap: bez_rects: %s", bez_rects)
         right_bez, bottom_bez = bez_rects
         if (right_bez == (0, 0) and bottom_bez == (0, 0)):
             return bmp
@@ -1918,7 +1919,8 @@ class WallpaperPreviewPanel(wx.Panel):
         self.bind_movement_binds(False)
         self.toggle_buttons(True, False)
         # Export and save offsets to DisplaySystem
-        self.export_offsets(self.display_sys)
+        if self.positions_dragged: # only export drag positions if actually dragged
+            self.export_offsets(self.display_sys)
         self.display_sys.save_system()
         display_data = self.display_sys.get_disp_list(use_ppi_norm=True)
         # Full redraw of preview with new offset data
@@ -1931,6 +1933,7 @@ class WallpaperPreviewPanel(wx.Panel):
             self.resize_displays(True)
             # self.show_staticbmps(True)
         self.draggable_shapes = []  # Destroys DragShapes
+        self.positions_dragged = False
         self.frame.toggle_radio_and_profile_choice(True)
         self.frame.toggle_bezel_buttons(False, True)
         self.Refresh()
@@ -1955,11 +1958,12 @@ class WallpaperPreviewPanel(wx.Panel):
             shp.pos = off[1]
         # Restore backed up offsets
         self.display_sys.update_ppinorm_offsets(ppinorm_offs)
+        self.positions_dragged = False
         self.Refresh()
 
     def onEntry(self, evt):
         """Opens display positions accurate entry dialog."""
-        dlg = DisplayPositionEntry(self)
+        dlg = DisplayPositionEntry(self, dragged_positions=self.positions_dragged)
 
     def onCancel(self, evt):
         """Cancel out of diplay position config mode."""
@@ -1975,6 +1979,7 @@ class WallpaperPreviewPanel(wx.Panel):
         # self.show_staticbmps(True)
         self.frame.toggle_radio_and_profile_choice(True)
         self.frame.toggle_bezel_buttons(False, True)
+        self.positions_dragged = False
         self.Refresh()
 
     def onHelp(self, evt):
@@ -2208,6 +2213,7 @@ class WallpaperPreviewPanel(wx.Panel):
         self.drag_shape.shown = True
         self.RefreshRect(self.drag_shape.GetRect())
         self.drag_shape = None
+        self.positions_dragged = True
 
 
     def OnMotion(self, evt):

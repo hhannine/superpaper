@@ -261,7 +261,7 @@ class BrowsePaths(wx.Dialog):
 
 class DisplayPositionEntry(wx.Frame):
     """Display position fine control dialog."""
-    def __init__(self, parent):
+    def __init__(self, parent, dragged_positions=False):
         wx.Frame.__init__(self, parent.frame, -1,
                           'Enter display positions'
                           )
@@ -276,7 +276,8 @@ class DisplayPositionEntry(wx.Frame):
         self.parent.button_save.Disable()
         self.parent.button_cancel.Disable()
         self.display_sys = parent.display_sys
-        self.parent.export_offsets(self.display_sys)  # export dragged offsets first
+        if dragged_positions:
+            self.parent.export_offsets(self.display_sys)  # export dragged offsets first
         self.old_ppinorm_offs = self.display_sys.get_ppinorm_offsets()  # back up the offsets
 
         self.help_bmp = wx.ArtProvider.GetBitmap(wx.ART_QUESTION, wx.ART_BUTTON, (20, 20))
