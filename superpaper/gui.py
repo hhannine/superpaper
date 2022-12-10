@@ -136,7 +136,8 @@ class WallpaperSettingsPanel(wx.Panel):
     #
     def create_sizer_profiles(self):
         # choice menu
-        self.list_of_profiles = list_profiles()
+        # self.list_of_profiles = list_profiles()
+        self.list_of_profiles = self.parent_tray_obj.list_of_profiles
         self.profnames = []
         for prof in self.list_of_profiles:
             self.profnames.append(prof.name)
@@ -566,7 +567,8 @@ class WallpaperSettingsPanel(wx.Panel):
         else:
             display_data = self.display_sys.get_disp_list(False)
         self.wpprev_pnl.preview_wallpaper(
-            profile.next_wallpaper_files(),
+            # profile.next_wallpaper_files(peek=True),
+            self.parent_tray_obj.get_profile_by_name(profile.name).next_wallpaper_files(peek=True),
             self.show_advanced_settings,
             self.use_multi_image,
             display_data,
@@ -607,7 +609,8 @@ class WallpaperSettingsPanel(wx.Panel):
     #
     def update_choiceprofile(self):
         """Reload profile list into the choice box."""
-        self.list_of_profiles = list_profiles()
+        # self.list_of_profiles = list_profiles()
+        self.list_of_profiles = self.parent_tray_obj.list_of_profiles
         self.profnames = []
         for prof in self.list_of_profiles:
             self.profnames.append(prof.name)
@@ -1032,10 +1035,11 @@ class WallpaperSettingsPanel(wx.Panel):
         saved_file = self.onSave(None)
         sp_logging.G_LOGGER.info("onApply profile: saved %s", saved_file)
         if saved_file:
-            saved_profile = ProfileData(saved_file)
+            saved_profile_name = ProfileData(saved_file).name
             self.parent_tray_obj.reload_profiles(event)
+            saved_profile_to_start = self.parent_tray_obj.get_profile_by_name(saved_profile_name)
             wx.Yield()
-            thrd = self.parent_tray_obj.start_profile(event, saved_profile, force_reload=True)
+            thrd = self.parent_tray_obj.start_profile(event, saved_profile_to_start, force_reload=True)
             if thrd:
                 while thrd.is_alive():
                     time.sleep(0.5)
@@ -1136,9 +1140,8 @@ class WallpaperSettingsPanel(wx.Panel):
         if tmp_profile.test_save():
             old_profile = open_profile(tmp_profile.name)
             saved_file = tmp_profile.save()
-            self.update_choiceprofile()
             self.parent_tray_obj.reload_profiles(event)
-            # self.parent_tray_obj.register_hotkeys()
+            self.update_choiceprofile()
             self.parent_tray_obj.update_hotkey(tmp_profile.name, old_profile.hk_binding, tmp_profile.hk_binding)
             self.choice_profiles.SetSelection(self.choice_profiles.FindString(tmp_profile.name))
             # Update wallpaper preview from selected profile
@@ -1148,7 +1151,8 @@ class WallpaperSettingsPanel(wx.Panel):
             else:
                 display_data = self.display_sys.get_disp_list(False)
             self.wpprev_pnl.preview_wallpaper(
-                saved_profile.next_wallpaper_files(),
+                # saved_profile.next_wallpaper_files(),
+                self.parent_tray_obj.get_profile_by_name(saved_profile.name).next_wallpaper_files(peek=True),
                 self.show_advanced_settings,
                 self.use_multi_image,
                 display_data,
@@ -1574,7 +1578,7 @@ class WallpaperPreviewPanel(wx.Panel):
                 preview_img_list = [self.preview_img_list[i] for i in grp]
 
                 canv_sz, canvas_pos = self.canvas_display_group(display_rel_sizes, (0, 0))
-                print(canv_sz, canvas_pos)
+                # print(canv_sz, canvas_pos)
                 bmp_clr, bmp_bw = self.resize_and_bitmap(img_nm, canv_sz, True)
                 for (disp,
                      img_sz,
@@ -1585,7 +1589,7 @@ class WallpaperPreviewPanel(wx.Panel):
                                     preview_img_list):
                     sz = disp[0]
                     pos = (disp[1][0] - canvas_pos[0], disp[1][1] - canvas_pos[1])
-                    print("pos", pos, "img_sz", img_sz)
+                    # print("pos", pos, "img_sz", img_sz)
                     crop = safe_sub_bitmap(bmp_clr, wx.Rect(pos, img_sz))
                     crop_w_bez = self.bezels_to_bitmap(crop, sz, bez_szs)
                     st_bmp.SetBitmap(crop_w_bez)

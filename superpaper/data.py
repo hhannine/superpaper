@@ -493,9 +493,9 @@ class ProfileData(object):
                 "Bezel px calculation: resulting combined manual offset: %s",
                 self.manual_offsets)
 
-    def next_wallpaper_files(self):
+    def next_wallpaper_files(self, peek=False):
         """Asks the file handler iterator for next image(s) for the wallpaper."""
-        return self.file_handler.next_wallpaper_files()
+        return self.file_handler.next_wallpaper_files(peek=peek)
 
     class Filehandler(object):
         """
@@ -546,11 +546,16 @@ Use absolute paths for best reliabilty.".format(path)
                         diplay_image_list,
                         self.sortmode))
 
-        def next_wallpaper_files(self):
+        def next_wallpaper_files(self, peek=False):
             """Calls its internal iterators to give the next image for each monitor."""
             files = []
             for iterable in self.iterators:
-                next_image = iterable.__next__()
+                if peek:
+                    next_image = iterable.__peek__()
+                    # print("PEEKED: {}".format(next_image))
+                else:
+                    next_image = iterable.__next__()
+                    # print("NEXT: {}".format(next_image))
                 if os.path.isfile(next_image):
                     files.append(next_image)
                 else:
@@ -576,14 +581,25 @@ Use absolute paths for best reliabilty.".format(path)
             def __next__(self):
                 if self.counter < len(self.files):
                     image = self.files[self.counter]
-                    self.counter += 1
-                    return image
                 else:
                     self.counter = 0
                     self.arrange_list()
                     image = self.files[self.counter]
-                    self.counter += 1
-                    return image
+                # print(self.counter)
+                # print("next {}".format([self.files[self.counter]]))
+                self.counter += 1
+                return image
+            
+            def __peek__(self):
+                if self.counter < len(self.files):
+                    image = self.files[self.counter]
+                else:
+                    self.counter = 0
+                    self.arrange_list()
+                    image = self.files[self.counter]
+                # print(self.counter)
+                # print("peek {}".format([self.files[self.counter]]))
+                return image
 
             def arrange_list(self):
                 """Reorders the image list as requested. Mostly for reoccuring shuffling."""
