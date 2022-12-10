@@ -61,7 +61,7 @@ if __name__ == "__main__":
             "Pillow>=7.0.0",
             "screeninfo>=0.6.1",
             "numpy>=1.18.0",
-            "system_hotkey>=1.0.3",
+            "system_hotkey310>=1.0.5",
             "xcffib>=0.8.0",
             "xpybutil>=0.0.5"
         ],
