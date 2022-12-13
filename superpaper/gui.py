@@ -2450,7 +2450,7 @@ class WallpaperPreviewPanel(wx.Panel):
                             "Enter the size of adjacent bezels and gap\n"
                             "in millimeters:")
             # self.tc_bez = wx.TextCtrl(pnl, -1, size=(100, -1))
-            self.tc_bez = wx.TextCtrl(pnl, -1, style=wx.TE_RIGHT|wx.TE_PROCESS_ENTER)
+            self.tc_bez = wx.TextCtrl(pnl, -1, size=(60, -1), style=wx.TE_RIGHT|wx.TE_PROCESS_ENTER)
             self.tc_bez.Bind(wx.EVT_TEXT_ENTER, self.OnEnter)
             self.current_bez_val = None
             butt_save = wx.Button(pnl, label="Apply")
