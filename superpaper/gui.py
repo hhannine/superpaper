@@ -2363,8 +2363,10 @@ class WallpaperPreviewPanel(wx.Panel):
     def popup_at_button(self, button):
         """Initialize a popup at button position."""
         try:
+            # print("primary bezel pop")
             pop = self.BezelEntryPopup(self, wx.SIMPLE_BORDER|wx.PU_CONTAINS_CONTROLS)
         except AttributeError:
+            # print("fallback bezel pop")
             pop = self.BezelEntryPopup(self, wx.SIMPLE_BORDER)
         return pop
 
@@ -2434,8 +2436,8 @@ class WallpaperPreviewPanel(wx.Panel):
     # Bezel entry pop-up
     #
 
-    # class BezelEntryPopup(wx.PopupTransientWindow):
-    class BezelEntryPopup(wx.PopupWindow):
+    class BezelEntryPopup(wx.PopupTransientWindow):
+    # class BezelEntryPopup(wx.PopupWindow):
         """Popup that is shown when a bezel button is pressed in bezel config."""
         def __init__(self, parent, style):
             # wx.PopupTransientWindow.__init__(self, parent, style)
