@@ -181,7 +181,8 @@ hotkeys will not work. Exception: %s", excep)
                                 callback=lambda x: self.next_wallpaper(wx.EVT_MENU),
                                 overwrite=False)
                             self.seen_binding.add(self.g_settings.hk_binding_next)
-                        except (SystemHotkeyError, SystemRegisterError, InvalidKeyError):
+                        # except (SystemHotkeyError, SystemRegisterError, InvalidKeyError):
+                        except:
                             msg = "Error: could not register hotkey {}. \
 Check that it is formatted properly and valid keys.".format(self.g_settings.hk_binding_next)
                             sp_logging.G_LOGGER.info(msg)
@@ -194,7 +195,8 @@ Check that it is formatted properly and valid keys.".format(self.g_settings.hk_b
                                 callback=lambda x: self.pause_timer(wx.EVT_MENU),
                                 overwrite=False)
                             self.seen_binding.add(self.g_settings.hk_binding_pause)
-                        except (SystemHotkeyError, SystemRegisterError, InvalidKeyError):
+                        # except (SystemHotkeyError, SystemRegisterError, InvalidKeyError):
+                        except:
                             msg = "Error: could not register hotkey {}. \
 Check that it is formatted properly and valid keys.".format(self.g_settings.hk_binding_pause)
                             sp_logging.G_LOGGER.info(msg)
@@ -220,7 +222,8 @@ Check that it is formatted properly and valid keys.".format(self.g_settings.hk_b
                                 self.hk2.register(profile.hk_binding, profile,
                                                   overwrite=False)
                                 self.seen_binding.add(profile.hk_binding)
-                            except (SystemHotkeyError, SystemRegisterError, InvalidKeyError):
+                            # except (SystemHotkeyError, SystemRegisterError, InvalidKeyError):
+                            except:
                                 msg = "Error: could not register hotkey {}. \
 Check that it is formatted properly and valid keys.".format(profile.hk_binding)
                                 sp_logging.G_LOGGER.info(msg)
@@ -231,8 +234,8 @@ Check that it is formatted properly and valid keys.".format(profile.hk_binding)
 It is already registered for another action.".format(profile.hk_binding, profile.name)
                             sp_logging.G_LOGGER.info(msg)
                             show_message_dialog(msg, "Error")
-                except (SystemHotkeyError, SystemRegisterError,
-                        UnregisterError, InvalidKeyError):
+                # except (SystemHotkeyError, SystemRegisterError, UnregisterError, InvalidKeyError):
+                except:
                     if sp_logging.DEBUG:
                         sp_logging.G_LOGGER.info("Coulnd't register hotkeys, exception:")
                         sp_logging.G_LOGGER.info(sys.exc_info()[0])
