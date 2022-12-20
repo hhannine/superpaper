@@ -91,7 +91,11 @@ class TaskBarIcon(wx.adv.TaskBarIcon):
         if STARTUP_PROFILE:
             self.active_profile = self.get_profile_by_name(STARTUP_PROFILE)
         else:
-            self.active_profile = self.get_profile_by_name(read_active_profile().name)
+            prev_active_prof = read_active_profile()
+            if prev_active_prof:
+                self.active_profile = self.get_profile_by_name(prev_active_prof.name)
+            else:
+                self.active_profile = None
         if self.active_profile:
             wpproc.G_ACTIVE_PROFILE = self.active_profile.name
         self.start_prev_profile(self.active_profile)
