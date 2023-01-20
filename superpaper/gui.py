@@ -1139,10 +1139,13 @@ class WallpaperSettingsPanel(wx.Panel):
         # test collected data and save if it is valid, otherwise pass
         if tmp_profile.test_save():
             old_profile = open_profile(tmp_profile.name)
+            old_profile_binding = None
+            if old_profile:
+                old_profile_binding = old_profile.hk_binding
             saved_file = tmp_profile.save()
             self.parent_tray_obj.reload_profiles(event)
             self.update_choiceprofile()
-            self.parent_tray_obj.update_hotkey(tmp_profile.name, old_profile.hk_binding, tmp_profile.hk_binding)
+            self.parent_tray_obj.update_hotkey(tmp_profile.name, old_profile_binding, tmp_profile.hk_binding)
             self.choice_profiles.SetSelection(self.choice_profiles.FindString(tmp_profile.name))
             # Update wallpaper preview from selected profile
             saved_profile = ProfileData(saved_file)
