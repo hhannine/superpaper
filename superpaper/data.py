@@ -62,7 +62,7 @@ def read_active_profile():
     profname = ""
     profile = None
     if os.path.isfile(fname):
-        rp_file = open(fname, "r")
+        rp_file = open(fname, "r", encoding="utf-8")
         try:
             for line in rp_file:     # loop through line by line
                 line.rstrip("\r\n")
@@ -81,7 +81,7 @@ def read_active_profile():
         finally:
             rp_file.close()
     else:
-        rp_file = open(fname, "x")
+        rp_file = open(fname, "x", encoding="utf-8")
         rp_file.close()
         profile = None
     return profile
@@ -89,7 +89,7 @@ def read_active_profile():
 def write_active_profile(profname):
     """Writes active profile name to file after profile has changed."""
     fname = os.path.join(sp_paths.TEMP_PATH, "running_profile")
-    rp_file = open(fname, "w")
+    rp_file = open(fname, "w", encoding="utf-8")
     rp_file.write(profname)
     rp_file.close()
 
@@ -285,7 +285,7 @@ class ProfileData(object):
 
     def parse_profile(self, parse_file):
         """Read wallpaper profile settings from file."""
-        profile_file = open(parse_file, "r")
+        profile_file = open(parse_file, "r", encoding="utf-8")
         try:
             for line in profile_file:
                 line.strip()
@@ -680,7 +680,7 @@ class TempProfileData(object):
         if self.name is not None:
             fname = os.path.join(PROFILES_PATH, self.name + ".profile")
             try:
-                tpfile = open(fname, "w")
+                tpfile = open(fname, "w", encoding="utf-8")
             except IOError:
                 msg = "Cannot write to file {}".format(fname)
                 show_message_dialog(msg, "Error")
@@ -723,7 +723,7 @@ class TempProfileData(object):
         if self.name is not None and self.name.strip() != "":
             fname = os.path.join(PROFILES_PATH, self.name + ".deleteme")
             try:
-                testfile = open(fname, "w")
+                testfile = open(fname, "w", encoding="utf-8")
                 testfile.close()
                 os.remove(fname)
             except IOError:
