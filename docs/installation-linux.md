@@ -25,11 +25,21 @@ Because of the differences between Linux distributions the installation options 
 
 ### Step 2: Install superpaper from PyPI
 
-Superpaper is available from [PyPI](https://pypi.org/project/superpaper), and needs `Python 3.6+`. To install, run in a terminal:
+Superpaper is available from [PyPI](https://pypi.org/project/superpaper), and needs `Python 3.6+`.
+To install, in a terminal, either:
 
+(a) Install `pipx` from your system's package manager then run
 ```sh
-python3 -m pip install --user --upgrade superpaper
+pipx install --system-site-packages superpaper
 ```
+or (b) Create a virtual environment into which it can be installed, e.g.:
+```sh
+python3 -m venv --system-site-packages .python-venvs/superpaper
+source .python-venvs/superpaper/bin/activate
+pip install superpaper
+deactivate
+```
+
 On some Linux setups you might need to restart or logout and login to get the menu/launcher entry to show up.
 
 
