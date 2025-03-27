@@ -12,25 +12,29 @@ This will allow Superpaper to integrate the best with your system theme and icon
 See the screenshot in the Readme taken on Manjaro KDE.
 
 
-### Step 1: Install wxPython 4.X:
+### Step 1: Install pipx and wxPython 4.X:
 
-Because of the differences between Linux distributions the installation options differ for wxPython:
+Because of the differences between Linux distributions, the installation options differ:
 
-- Arch / Manjaro: `sudo pacman -S python-wxpython`
-- Debian / Ubuntu and relatives: `sudo apt install python3-wxgtk4.0`
-- Fedora : `sudo dnf install python3-wxpython4`
+- Arch / Manjaro: `sudo pacman -S python-pipx python-wxpython`
+- Debian / Ubuntu and relatives: `sudo apt install pipx wxpython-tools`
+- Fedora : `sudo dnf install pipx python3-wxpython4`
 - Older distros with no wxPython4 package: [wxpython.org](https://wxpython.org/pages/downloads/)
   - Install the wheel if available for your OS: CentOS, Debian, Fedora and Ubuntu
+
+Using `pipx` simplifies management of the virtual environment in which Superpaper is installed, but is not a hard requirement.
+You may use a manually created venv.
 
 
 ### Step 2: Install superpaper from PyPI
 
-Superpaper is available from [PyPI](https://pypi.org/project/superpaper), and needs `Python 3.6+`. To install, run in a terminal:
+Superpaper is available from [PyPI](https://pypi.org/project/superpaper), and needs `Python 3.6+`.
+To install, run in a terminal:
 
 ```sh
-python3 -m pip install --user --upgrade superpaper
+pipx install --system-site-packages superpaper
 ```
-On some Linux setups you might need to restart or logout and login to get the menu/launcher entry to show up.
+On some Linux setups, you might need to log out and in, or restart to get the menu/launcher entry to show up.
 
 
 ## Snaps
